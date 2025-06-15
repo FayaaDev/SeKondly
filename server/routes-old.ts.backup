@@ -1,0 +1,794 @@
+import type { Express } from "express";
+import express from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertCaseSchema, insertCommentSchema, insertDocumentSchema } from "@shared/schema";
+import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  dest: uploadDir,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only images (JPEG, JPG, PNG) and PDF files are allowed"));
+    }
+  },
+});
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve uploaded files
+  app.use("/uploads", express.static(uploadDir));
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Public user profile routes (accessible to authenticated users)
+  app.get('/api/users/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return public profile information only
+      const publicProfile = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        specialty: user.specialty,
+        institution: user.institution,
+        experience: user.experience,
+        profileImageUrl: user.profileImageUrl,
+        createdAt: user.createdAt,
+        isApproved: user.isApproved
+      };
+      
+      res.json(publicProfile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  app.get('/api/users/:userId/cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.user.claims.sub;
+      
+      // Get user's approved cases only
+      const cases = await storage.getUserCases(userId);
+      const approvedCases = cases.filter(case_data => case_data.isApproved);
+      
+      res.json(approvedCases);
+    } catch (error) {
+      console.error("Error fetching user cases:", error);
+      res.status(500).json({ message: "Failed to fetch user cases" });
+    }
+  });
+
+  // Get all users (for testing public profiles)
+  app.get('/api/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const publicUsers = users.map(user => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        specialty: user.specialty,
+        institution: user.institution,
+        profileImageUrl: user.profileImageUrl,
+        isApproved: user.isApproved
+      }));
+      res.json(publicUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Update user profile
+  app.patch('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const updateData = req.body;
+      
+      const user = await storage.updateUser(userId, updateData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Profile picture upload endpoint
+  app.post('/api/auth/user/profile-picture', isAuthenticated, upload.single('profilePicture'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Check file type
+      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedMimes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Only JPEG and PNG images are allowed" });
+      }
+
+      // Generate unique filename
+      const fileExtension = path.extname(req.file.originalname);
+      const fileName = `profile_${userId}_${Date.now()}${fileExtension}`;
+      const filePath = path.join(uploadDir, fileName);
+      
+      // Move file to permanent location
+      fs.renameSync(req.file.path, filePath);
+      
+      // Update user's profile image URL
+      const profileImageUrl = `/uploads/${fileName}`;
+      const updatedUser = await storage.updateUser(userId, { profileImageUrl });
+      
+      res.json({ 
+        message: "Profile picture updated successfully",
+        profileImageUrl,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      res.status(500).json({ message: "Failed to upload profile picture" });
+    }
+  });
+
+  // Get feed cases
+  app.get('/api/cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const cases = await storage.getCases(userId, true);
+      res.json(cases);
+    } catch (error) {
+      console.error("Error fetching cases:", error);
+      res.status(500).json({ message: "Failed to fetch cases" });
+    }
+  });
+
+  // Search cases
+  app.get('/api/cases/search', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const { query, specialty, dateRange } = req.query;
+      const cases = await storage.searchCases(userId, {
+        query: query as string,
+        specialty: specialty as string,
+        dateRange: dateRange as string,
+      });
+      
+      res.json(cases);
+    } catch (error) {
+      console.error("Error searching cases:", error);
+      res.status(500).json({ message: "Failed to search cases" });
+    }
+  });
+
+  // Get specific case
+  app.get('/api/cases/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const case_data = await storage.getCase(caseId);
+      if (!case_data) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+
+      // Increment view count
+      await storage.incrementCaseViews(caseId);
+      
+      res.json(case_data);
+    } catch (error) {
+      console.error("Error fetching case:", error);
+      res.status(500).json({ message: "Failed to fetch case" });
+    }
+  });
+
+  // Get user's own cases
+  app.get('/api/my-cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const cases = await storage.getUserCases(userId);
+      res.json(cases);
+    } catch (error) {
+      console.error("Error fetching user cases:", error);
+      res.status(500).json({ message: "Failed to fetch user cases" });
+    }
+  });
+
+  // Create new case
+  app.post('/api/cases', isAuthenticated, upload.array('images', 5), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const validation = insertCaseSchema.safeParse({
+        ...req.body,
+        authorId: userId,
+      });
+
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid case data", 
+          errors: validation.error.issues 
+        });
+      }
+
+      // Handle uploaded images
+      const imageUrls: string[] = [];
+      if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files) {
+          const url = `/uploads/${file.filename}`;
+          imageUrls.push(url);
+        }
+      }
+
+      const caseData = {
+        ...validation.data,
+        imageUrls,
+        isApproved: true, // Cases are immediately approved and visible
+      };
+
+      const newCase = await storage.createCase(caseData);
+      res.status(201).json(newCase);
+    } catch (error) {
+      console.error("Error creating case:", error);
+      res.status(500).json({ message: "Failed to create case" });
+    }
+  });
+
+  // Like/unlike case
+  app.post('/api/cases/:id/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const existingLike = await storage.getCaseLike(caseId, userId);
+      
+      if (existingLike) {
+        await storage.unlikeCase(caseId, userId);
+        res.json({ liked: false });
+      } else {
+        await storage.likeCase(caseId, userId);
+        
+        // Create notification for case author
+        const case_data = await storage.getCase(caseId);
+        if (case_data && case_data.authorId !== userId) {
+          await storage.createNotification({
+            userId: case_data.authorId,
+            type: 'like',
+            title: 'New Like',
+            message: `${user.firstName} ${user.lastName} liked your case "${case_data.title}"`,
+            fromUserId: userId,
+            relatedId: caseId,
+          });
+        }
+        
+        res.json({ liked: true });
+      }
+    } catch (error) {
+      console.error("Error toggling case like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  // Favorite/unfavorite case
+  app.post('/api/cases/:id/favorite', isAuthenticated, async (req: any, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const existingFavorite = await storage.getCaseFavorite(caseId, userId);
+      
+      if (existingFavorite) {
+        await storage.unfavoriteCase(caseId, userId);
+        res.json({ favorited: false });
+      } else {
+        await storage.favoriteCase(caseId, userId);
+        res.json({ favorited: true });
+      }
+    } catch (error) {
+      console.error("Error toggling case favorite:", error);
+      res.status(500).json({ message: "Failed to toggle favorite" });
+    }
+  });
+
+  // Get user's favorite cases
+  app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+
+  // Get public user profile
+  app.get('/api/users/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const targetUserId = req.params.id;
+      const requestingUserId = req.user.claims.sub;
+      const requestingUser = await storage.getUser(requestingUserId);
+      
+      if (!requestingUser?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser || !targetUser.isApproved) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return public profile information (excluding sensitive data)
+      const publicProfile = {
+        id: targetUser.id,
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        profileImageUrl: targetUser.profileImageUrl,
+        specialty: targetUser.specialty,
+        institution: targetUser.institution,
+        experience: targetUser.experience,
+        createdAt: targetUser.createdAt,
+      };
+
+      res.json(publicProfile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  // Get user's public cases
+  app.get('/api/users/:id/cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const targetUserId = req.params.id;
+      const requestingUserId = req.user.claims.sub;
+      const requestingUser = await storage.getUser(requestingUserId);
+      
+      if (!requestingUser?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser || !targetUser.isApproved) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const userCases = await storage.getUserCases(targetUserId);
+      // Only return approved cases for public viewing
+      const approvedCases = userCases.filter(case_data => case_data.isApproved);
+      
+      res.json(approvedCases);
+    } catch (error) {
+      console.error("Error fetching user cases:", error);
+      res.status(500).json({ message: "Failed to fetch user cases" });
+    }
+  });
+
+  // Get case comments
+  app.get('/api/cases/:id/comments', isAuthenticated, async (req: any, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const comments = await storage.getCaseComments(caseId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Add comment to case
+  app.post('/api/cases/:id/comments', isAuthenticated, async (req: any, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const validation = insertCommentSchema.safeParse({
+        ...req.body,
+        caseId,
+        userId,
+      });
+
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid comment data", 
+          errors: validation.error.issues 
+        });
+      }
+
+      const comment = await storage.addComment(validation.data);
+      
+      // Create notification for case author
+      const case_data = await storage.getCase(caseId);
+      if (case_data && case_data.authorId !== userId) {
+        await storage.createNotification({
+          userId: case_data.authorId,
+          type: 'comment',
+          title: 'New Comment',
+          message: `${user.firstName} ${user.lastName} commented on your case "${case_data.title}"`,
+          fromUserId: userId,
+          relatedId: caseId,
+        });
+      }
+      
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
+  // Upload document
+  app.post('/api/documents', isAuthenticated, upload.single('document'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const documentData = {
+        userId,
+        fileName: req.file.originalname,
+        fileUrl: `/uploads/${req.file.filename}`,
+        fileType: req.file.mimetype,
+      };
+
+      const document = await storage.uploadDocument(documentData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ message: "Failed to upload document" });
+    }
+  });
+
+  // Get user notifications
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isApproved) {
+        return res.status(403).json({ message: "Account not approved" });
+      }
+
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Get unread notification count
+  app.get('/api/notifications/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  // Follow/unfollow routes
+  app.post('/api/users/:userId/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const followerId = req.user.claims.sub;
+      const followingId = req.params.userId;
+      
+      if (followerId === followingId) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+      
+      const isAlreadyFollowing = await storage.isFollowing(followerId, followingId);
+      if (isAlreadyFollowing) {
+        return res.status(400).json({ message: "Already following this user" });
+      }
+      
+      const follow = await storage.followUser(followerId, followingId);
+      res.json(follow);
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Failed to follow user" });
+    }
+  });
+
+  app.delete('/api/users/:userId/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const followerId = req.user.claims.sub;
+      const followingId = req.params.userId;
+      
+      await storage.unfollowUser(followerId, followingId);
+      res.json({ message: "Unfollowed successfully" });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Failed to unfollow user" });
+    }
+  });
+
+  app.get('/api/users/:userId/followers', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const followers = await storage.getUserFollowers(userId);
+      res.json(followers);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      res.status(500).json({ message: "Failed to fetch followers" });
+    }
+  });
+
+  app.get('/api/users/:userId/following', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const following = await storage.getUserFollowing(userId);
+      res.json(following);
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      res.status(500).json({ message: "Failed to fetch following" });
+    }
+  });
+
+  app.get('/api/users/:userId/follow-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      const [isFollowing, followersCount, followingCount] = await Promise.all([
+        storage.isFollowing(currentUserId, targetUserId),
+        storage.getFollowersCount(targetUserId),
+        storage.getFollowingCount(targetUserId)
+      ]);
+      
+      res.json({
+        isFollowing,
+        followersCount,
+        followingCount
+      });
+    } catch (error) {
+      console.error("Error fetching follow status:", error);
+      res.status(500).json({ message: "Failed to fetch follow status" });
+    }
+  });
+
+  // Hide specialty endpoint
+  app.post('/api/specialties/hide', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { specialty } = req.body;
+      
+      if (!specialty) {
+        return res.status(400).json({ message: "Specialty is required" });
+      }
+      
+      await storage.hideSpecialty(userId, specialty);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error hiding specialty:', error);
+      res.status(500).json({ message: 'Failed to hide specialty' });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/pending-users', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      console.error("Error fetching pending users:", error);
+      res.status(500).json({ message: "Failed to fetch pending users" });
+    }
+  });
+
+  app.post('/api/admin/approve-user/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const userIdToApprove = req.params.id;
+      const admin = await storage.getUser(adminUserId);
+      
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const approvedUser = await storage.approveUser(userIdToApprove, adminUserId);
+      
+      // Create notification for approved user
+      await storage.createNotification({
+        userId: userIdToApprove,
+        type: 'approval',
+        title: 'Account Approved',
+        message: 'Your account has been approved! You can now access the platform.',
+      });
+      
+      res.json(approvedUser);
+    } catch (error) {
+      console.error("Error approving user:", error);
+      res.status(500).json({ message: "Failed to approve user" });
+    }
+  });
+
+  app.delete('/api/admin/reject-user/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const userIdToReject = req.params.id;
+      const admin = await storage.getUser(adminUserId);
+      
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.rejectUser(userIdToReject);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      res.status(500).json({ message: "Failed to reject user" });
+    }
+  });
+
+  app.get('/api/admin/pending-documents', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const pendingDocuments = await storage.getPendingDocuments();
+      res.json(pendingDocuments);
+    } catch (error) {
+      console.error("Error fetching pending documents:", error);
+      res.status(500).json({ message: "Failed to fetch pending documents" });
+    }
+  });
+
+  app.post('/api/admin/approve-document/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const documentId = parseInt(req.params.id);
+      const admin = await storage.getUser(adminUserId);
+      
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const approvedDocument = await storage.approveDocument(documentId, adminUserId);
+      res.json(approvedDocument);
+    } catch (error) {
+      console.error("Error approving document:", error);
+      res.status(500).json({ message: "Failed to approve document" });
+    }
+  });
+
+  app.post('/api/admin/reject-document/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const documentId = parseInt(req.params.id);
+      const { reason } = req.body;
+      const admin = await storage.getUser(adminUserId);
+      
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const rejectedDocument = await storage.rejectDocument(documentId, adminUserId, reason);
+      res.json(rejectedDocument);
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+      res.status(500).json({ message: "Failed to reject document" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

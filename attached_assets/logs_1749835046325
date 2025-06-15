@@ -1,0 +1,222 @@
+CaseCard.tsx:124 Uncaught TypeError: Cannot read properties of undefined (reading 'profileImageUrl')
+    at CaseCard (CaseCard.tsx:124:45)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=2928f590:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=2928f590:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=2928f590:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=2928f590:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=2928f590:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=2928f590:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=2928f590:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=2928f590:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=2928f590:19137:13)
+CaseCard @ CaseCard.tsx:124
+renderWithHooks @ chunk-RPCDYKBN.js?v=2928f590:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=2928f590:14926
+beginWork @ chunk-RPCDYKBN.js?v=2928f590:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=2928f590:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=2928f590:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=2928f590:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=2928f590:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=2928f590:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=2928f590:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=2928f590:19116
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18874
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=2928f590:555
+flush @ @tanstack_react-query.js?v=2928f590:569
+batch @ @tanstack_react-query.js?v=2928f590:587
+dispatch_fn @ @tanstack_react-query.js?v=2928f590:996
+setData @ @tanstack_react-query.js?v=2928f590:696
+onSuccess @ @tanstack_react-query.js?v=2928f590:897
+resolve @ @tanstack_react-query.js?v=2928f590:456
+Promise.then
+run @ @tanstack_react-query.js?v=2928f590:498
+start @ @tanstack_react-query.js?v=2928f590:536
+fetch @ @tanstack_react-query.js?v=2928f590:926
+executeFetch_fn @ @tanstack_react-query.js?v=2928f590:2211
+onSubscribe @ @tanstack_react-query.js?v=2928f590:1898
+subscribe @ @tanstack_react-query.js?v=2928f590:24
+(anonymous) @ @tanstack_react-query.js?v=2928f590:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=2928f590:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=2928f590:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=2928f590:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=2928f590:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=2928f590:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=2928f590:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=2928f590:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=2928f590:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=2928f590:19416
+commitRoot @ chunk-RPCDYKBN.js?v=2928f590:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+CaseCard.tsx:124 Uncaught TypeError: Cannot read properties of undefined (reading 'profileImageUrl')
+    at CaseCard (CaseCard.tsx:124:45)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=2928f590:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=2928f590:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=2928f590:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=2928f590:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=2928f590:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=2928f590:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=2928f590:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=2928f590:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=2928f590:19137:13)
+CaseCard @ CaseCard.tsx:124
+renderWithHooks @ chunk-RPCDYKBN.js?v=2928f590:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=2928f590:14926
+beginWork @ chunk-RPCDYKBN.js?v=2928f590:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=2928f590:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=2928f590:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=2928f590:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=2928f590:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=2928f590:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=2928f590:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=2928f590:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=2928f590:18736
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18879
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=2928f590:555
+flush @ @tanstack_react-query.js?v=2928f590:569
+batch @ @tanstack_react-query.js?v=2928f590:587
+dispatch_fn @ @tanstack_react-query.js?v=2928f590:996
+setData @ @tanstack_react-query.js?v=2928f590:696
+onSuccess @ @tanstack_react-query.js?v=2928f590:897
+resolve @ @tanstack_react-query.js?v=2928f590:456
+Promise.then
+run @ @tanstack_react-query.js?v=2928f590:498
+start @ @tanstack_react-query.js?v=2928f590:536
+fetch @ @tanstack_react-query.js?v=2928f590:926
+executeFetch_fn @ @tanstack_react-query.js?v=2928f590:2211
+onSubscribe @ @tanstack_react-query.js?v=2928f590:1898
+subscribe @ @tanstack_react-query.js?v=2928f590:24
+(anonymous) @ @tanstack_react-query.js?v=2928f590:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=2928f590:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=2928f590:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=2928f590:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=2928f590:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=2928f590:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=2928f590:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=2928f590:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=2928f590:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=2928f590:19416
+commitRoot @ chunk-RPCDYKBN.js?v=2928f590:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+chunk-RPCDYKBN.js?v=2928f590:14032 The above error occurred in the <CaseCard> component:
+
+    at CaseCard (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/src/components/CaseCard.tsx:30:42)
+    at div
+    at div
+    at div
+    at div
+    at div
+    at PublicProfile (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/src/pages/PublicProfile.tsx:31:18)
+    at Route (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2928f590:323:16)
+    at Switch (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2928f590:379:17)
+    at Router (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/src/App.tsx?v=i-kUITCOdeeXkr1KGDKNl:32:48)
+    at Provider (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AJU3CG7.js?v=2928f590:38:15)
+    at TooltipProvider (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=2928f590:58:5)
+    at QueryClientProvider (https://67229b09-6b15-4d24-8e73-9beacf966115-00-1pb9o5dulb2k6.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2928f590:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=2928f590:14032
+update.callback @ chunk-RPCDYKBN.js?v=2928f590:14052
+callCallback @ chunk-RPCDYKBN.js?v=2928f590:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=2928f590:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=2928f590:17093
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=2928f590:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=2928f590:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=2928f590:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=2928f590:19353
+commitRoot @ chunk-RPCDYKBN.js?v=2928f590:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=2928f590:555
+flush @ @tanstack_react-query.js?v=2928f590:569
+batch @ @tanstack_react-query.js?v=2928f590:587
+dispatch_fn @ @tanstack_react-query.js?v=2928f590:996
+setData @ @tanstack_react-query.js?v=2928f590:696
+onSuccess @ @tanstack_react-query.js?v=2928f590:897
+resolve @ @tanstack_react-query.js?v=2928f590:456
+Promise.then
+run @ @tanstack_react-query.js?v=2928f590:498
+start @ @tanstack_react-query.js?v=2928f590:536
+fetch @ @tanstack_react-query.js?v=2928f590:926
+executeFetch_fn @ @tanstack_react-query.js?v=2928f590:2211
+onSubscribe @ @tanstack_react-query.js?v=2928f590:1898
+subscribe @ @tanstack_react-query.js?v=2928f590:24
+(anonymous) @ @tanstack_react-query.js?v=2928f590:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=2928f590:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=2928f590:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=2928f590:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=2928f590:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=2928f590:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=2928f590:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=2928f590:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=2928f590:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=2928f590:19416
+commitRoot @ chunk-RPCDYKBN.js?v=2928f590:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+chunk-RPCDYKBN.js?v=2928f590:9129 Uncaught TypeError: Cannot read properties of undefined (reading 'profileImageUrl')
+    at CaseCard (CaseCard.tsx:124:45)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=2928f590:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=2928f590:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=2928f590:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=2928f590:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=2928f590:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=2928f590:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=2928f590:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=2928f590:18736:28)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=2928f590:18879:28)
+CaseCard @ CaseCard.tsx:124
+renderWithHooks @ chunk-RPCDYKBN.js?v=2928f590:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=2928f590:14926
+beginWork @ chunk-RPCDYKBN.js?v=2928f590:15914
+beginWork$1 @ chunk-RPCDYKBN.js?v=2928f590:19753
+performUnitOfWork @ chunk-RPCDYKBN.js?v=2928f590:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=2928f590:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=2928f590:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=2928f590:18736
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18879
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=2928f590:555
+flush @ @tanstack_react-query.js?v=2928f590:569
+batch @ @tanstack_react-query.js?v=2928f590:587
+dispatch_fn @ @tanstack_react-query.js?v=2928f590:996
+setData @ @tanstack_react-query.js?v=2928f590:696
+onSuccess @ @tanstack_react-query.js?v=2928f590:897
+resolve @ @tanstack_react-query.js?v=2928f590:456
+Promise.then
+run @ @tanstack_react-query.js?v=2928f590:498
+start @ @tanstack_react-query.js?v=2928f590:536
+fetch @ @tanstack_react-query.js?v=2928f590:926
+executeFetch_fn @ @tanstack_react-query.js?v=2928f590:2211
+onSubscribe @ @tanstack_react-query.js?v=2928f590:1898
+subscribe @ @tanstack_react-query.js?v=2928f590:24
+(anonymous) @ @tanstack_react-query.js?v=2928f590:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=2928f590:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=2928f590:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=2928f590:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=2928f590:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=2928f590:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=2928f590:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=2928f590:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=2928f590:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=2928f590:19416
+commitRoot @ chunk-RPCDYKBN.js?v=2928f590:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=2928f590:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=2928f590:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=2928f590:18627

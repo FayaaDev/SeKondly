@@ -1,0 +1,977 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  SafeAreaView,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { API_BASE_URL } from '../config/api';
+import StorageService from '../lib/storage';
+
+interface OnboardingData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  boardCertification: string;
+  fellowship: string;
+  yearsOfExperience: string;
+  credentialsFile?: DocumentPicker.DocumentPickerAsset;
+}
+
+interface OnboardingFlowProps {
+  onComplete: () => void;
+  onSignIn?: () => void;
+}
+
+type OnboardingScreen = 'welcome' | 'signin' | 'signup' | 'professional' | 'credentials' | 'approval';
+
+const boardCertifications = [
+  'Internal Medicine',
+  'Cardiology',
+  'Neurology',
+  'Orthopedic Surgery',
+  'Emergency Medicine',
+  'Pediatrics',
+  'Psychiatry',
+  'Radiology',
+  'Anesthesiology',
+  'Dermatology',
+  'Oncology',
+  'Other',
+];
+
+/**
+ * OnboardingFlow - Multi-step onboarding component for new users
+ * 
+ * Features:
+ * - Welcome screen with sign-in/sign-up options
+ * - Multi-step sign-up process (personal info, professional info, credentials)
+ * - Document upload for medical credentials
+ * - Form validation and error handling
+ * - iOS-native design patterns
+ * - Progress indicator for multi-step flow
+ * 
+ * @param onComplete - Callback when onboarding is completed successfully
+ * @param onSignIn - Optional callback for existing users to sign in
+ * 
+ * @example
+ * ```tsx
+ * <OnboardingFlow
+ *   onComplete={() => navigation.navigate('Home')}
+ *   onSignIn={() => navigation.navigate('SignIn')}
+ * />
+ * ```
+ */
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn }) => {
+  const queryClient = useQueryClient();
+  const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>('welcome');
+  const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  const [signInData, setSignInData] = useState({
+    username: '',
+    password: '',
+  });
+  const [formData, setFormData] = useState<OnboardingData>({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    boardCertification: '',
+    fellowship: '',
+    yearsOfExperience: '',
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (data: OnboardingData) => {
+      const formData = new FormData();
+      
+      // Add form fields
+      formData.append('firstName', data.firstName);
+      formData.append('lastName', data.lastName);
+      formData.append('phone', data.phone);
+      formData.append('password', data.password);
+      formData.append('boardCertification', data.boardCertification);
+      formData.append('fellowship', data.fellowship || '');
+      formData.append('yearsOfExperience', data.yearsOfExperience);
+      formData.append('email', `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@example.com`);
+      
+      // Add credentials file if uploaded
+      if (data.credentialsFile) {
+        formData.append('credentialsFile', {
+          uri: data.credentialsFile.uri,
+          type: data.credentialsFile.mimeType || 'application/octet-stream',
+          name: data.credentialsFile.name,
+        } as any);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/onboarding`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to complete onboarding');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      setCurrentScreen('approval');
+    },
+    onError: (error: Error) => {
+      Alert.alert('Error', error.message);
+    },
+  });
+
+  const signInMutation = useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Invalid credentials');
+      }
+
+      return response.json();
+    },
+    onSuccess: async (data) => {
+      try {
+        if (data.user) {
+          await StorageService.setUser(data.user);
+          queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+          onComplete();
+        }
+      } catch (error) {
+        console.error('Error saving sign in data:', error);
+        Alert.alert('Error', 'Failed to save login data');
+      }
+    },
+    onError: (error: Error) => {
+      Alert.alert('Sign In Failed', error.message);
+    },
+  });
+
+  const validatePersonalInfo = (): boolean => {
+    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.password || !formData.confirmPassword) {
+      Alert.alert('Required Fields Missing', 'Please fill in all required fields.');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Password Mismatch', 'Passwords do not match.');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      Alert.alert('Password Too Short', 'Password must be at least 6 characters long.');
+      return false;
+    }
+    return true;
+  };
+
+  const validateProfessionalInfo = (): boolean => {
+    if (!formData.boardCertification || !formData.yearsOfExperience) {
+      Alert.alert('Required Fields Missing', 'Please fill in board certification and years of experience.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    switch (currentScreen) {
+      case 'signup':
+        if (validatePersonalInfo()) {
+          setCurrentScreen('professional');
+        }
+        break;
+      case 'professional':
+        if (validateProfessionalInfo()) {
+          setCurrentScreen('credentials');
+        }
+        break;
+      case 'credentials':
+        submitMutation.mutate(formData);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handlePrevious = () => {
+    switch (currentScreen) {
+      case 'signin':
+        setCurrentScreen('welcome');
+        break;
+      case 'signup':
+        setCurrentScreen('welcome');
+        break;
+      case 'professional':
+        setCurrentScreen('signup');
+        break;
+      case 'credentials':
+        setCurrentScreen('professional');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleSignIn = () => {
+    if (!signInData.username || !signInData.password) {
+      Alert.alert('Error', 'Please enter both username and password');
+      return;
+    }
+    signInMutation.mutate(signInData);
+  };
+
+  const handleDocumentPick = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/jpeg', 'image/png'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled) {
+        setFormData(prev => ({ ...prev, credentialsFile: result.assets[0] }));
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick document');
+    }
+  };
+
+  const updateFormData = (key: keyof OnboardingData, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const getProgressPercentage = (): number => {
+    switch (currentScreen) {
+      case 'signup':
+        return 33;
+      case 'professional':
+        return 66;
+      case 'credentials':
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
+  const renderWelcomeScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.welcomeContainer}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Ionicons name="medical" size={48} color="#007AFF" />
+          </View>
+          <Text style={styles.appTitle}>MedConnect</Text>
+          <Text style={styles.appSubtitle}>
+            Connect with colleagues, share challenging cases, and advance medical knowledge together.
+          </Text>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.primaryButton]}
+            onPress={() => setCurrentScreen('signin')}
+          >
+            <Text style={styles.primaryButtonText}>Sign In</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={() => setCurrentScreen('signup')}
+          >
+            <Text style={styles.secondaryButtonText}>Create Account</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  const renderSignInScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.formHeader}>
+              <Ionicons name="log-in-outline" size={48} color="#007AFF" />
+              <Text style={styles.formTitle}>Welcome Back</Text>
+              <Text style={styles.formSubtitle}>Sign in to your existing account</Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Username</Text>
+              <TextInput
+                style={styles.input}
+                value={signInData.username}
+                onChangeText={(text) => setSignInData(prev => ({ ...prev, username: text }))}
+                placeholder="Enter your username"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!signInMutation.isPending}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <TextInput
+                style={styles.input}
+                value={signInData.password}
+                onChangeText={(text) => setSignInData(prev => ({ ...prev, password: text }))}
+                placeholder="Enter your password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!signInMutation.isPending}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+              onPress={handleSignIn}
+              disabled={signInMutation.isPending}
+            >
+              {signInMutation.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Sign In</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+
+  const renderSignUpScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${getProgressPercentage()}%` }]} />
+            </View>
+            <Text style={styles.progressText}>Step 1 of 3: Personal Information</Text>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.formHeader}>
+              <Ionicons name="person-outline" size={48} color="#007AFF" />
+              <Text style={styles.formTitle}>Personal Information</Text>
+              <Text style={styles.formSubtitle}>Let's start with your basic information</Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>First Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.firstName}
+                onChangeText={(text) => updateFormData('firstName', text)}
+                placeholder="Enter your first name"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Last Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.lastName}
+                onChangeText={(text) => updateFormData('lastName', text)}
+                placeholder="Enter your last name"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Phone Number *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.phone}
+                onChangeText={(text) => updateFormData('phone', text)}
+                placeholder="Enter your phone number"
+                keyboardType="phone-pad"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.password}
+                onChangeText={(text) => updateFormData('password', text)}
+                placeholder="Create a password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Confirm Password *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.confirmPassword}
+                onChangeText={(text) => updateFormData('confirmPassword', text)}
+                placeholder="Confirm your password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+              onPress={handleNext}
+            >
+              <Text style={styles.primaryButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+
+  const renderProfessionalScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${getProgressPercentage()}%` }]} />
+            </View>
+            <Text style={styles.progressText}>Step 2 of 3: Professional Information</Text>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.formHeader}>
+              <Ionicons name="school-outline" size={48} color="#007AFF" />
+              <Text style={styles.formTitle}>Professional Information</Text>
+              <Text style={styles.formSubtitle}>Tell us about your medical qualifications</Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Board Certification *</Text>
+              <TouchableOpacity
+                style={styles.pickerButton}
+                onPress={() => setShowSpecialtyPicker(true)}
+              >
+                <Text style={[styles.pickerButtonText, !formData.boardCertification && styles.placeholderText]}>
+                  {formData.boardCertification || 'Select your board certification'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Fellowship (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.fellowship}
+                onChangeText={(text) => updateFormData('fellowship', text)}
+                placeholder="Enter your fellowship specialty"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Years of Experience *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.yearsOfExperience}
+                onChangeText={(text) => updateFormData('yearsOfExperience', text)}
+                placeholder="Enter years of experience"
+                keyboardType="numeric"
+                autoCorrect={false}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+              onPress={handleNext}
+            >
+              <Text style={styles.primaryButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={showSpecialtyPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSpecialtyPicker(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Board Certification</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <ScrollView style={styles.modalContent}>
+            {boardCertifications.map((certification) => (
+              <TouchableOpacity
+                key={certification}
+                style={styles.modalOption}
+                onPress={() => {
+                  updateFormData('boardCertification', certification);
+                  setShowSpecialtyPicker(false);
+                }}
+              >
+                <Text style={styles.modalOptionText}>{certification}</Text>
+                {formData.boardCertification === certification && (
+                  <Ionicons name="checkmark" size={20} color="#007AFF" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    </SafeAreaView>
+  );
+
+  const renderCredentialsScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${getProgressPercentage()}%` }]} />
+            </View>
+            <Text style={styles.progressText}>Step 3 of 3: Upload Credentials</Text>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.formHeader}>
+              <Ionicons name="document-outline" size={48} color="#007AFF" />
+              <Text style={styles.formTitle}>Upload Credentials</Text>
+              <Text style={styles.formSubtitle}>Upload your medical credentials for verification</Text>
+            </View>
+
+            <TouchableOpacity style={styles.uploadContainer} onPress={handleDocumentPick}>
+              {formData.credentialsFile ? (
+                <View style={styles.uploadSuccess}>
+                  <Ionicons name="document" size={48} color="#34C759" />
+                  <Text style={styles.uploadSuccessText}>{formData.credentialsFile.name}</Text>
+                  <Text style={styles.uploadSuccessSubtext}>Tap to change file</Text>
+                </View>
+              ) : (
+                <View style={styles.uploadPrompt}>
+                  <Ionicons name="cloud-upload-outline" size={48} color="#999" />
+                  <Text style={styles.uploadPromptText}>Upload your medical credentials</Text>
+                  <Text style={styles.uploadPromptSubtext}>PDF, JPG, PNG up to 10MB</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.disclaimerText}>
+              Your credentials will be reviewed by our verification team. This process typically takes 1-2 business days.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+              onPress={handleNext}
+              disabled={submitMutation.isPending}
+            >
+              {submitMutation.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Complete Setup</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+
+  const renderApprovalScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.approvalContainer}>
+        <View style={styles.approvalIcon}>
+          <Ionicons name="time-outline" size={64} color="#FF9500" />
+        </View>
+        <Text style={styles.approvalTitle}>Account Under Review</Text>
+        <Text style={styles.approvalSubtitle}>
+          Your account is being reviewed by our medical team. You'll receive an email notification once approved.
+        </Text>
+        
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton]}
+          onPress={onComplete}
+        >
+          <Text style={styles.primaryButtonText}>Check Status</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+
+  switch (currentScreen) {
+    case 'welcome':
+      return renderWelcomeScreen();
+    case 'signin':
+      return renderSignInScreen();
+    case 'signup':
+      return renderSignUpScreen();
+    case 'professional':
+      return renderProfessionalScreen();
+    case 'credentials':
+      return renderCredentialsScreen();
+    case 'approval':
+      return renderApprovalScreen();
+    default:
+      return renderWelcomeScreen();
+  }
+};
+
+const styles = {
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  welcomeContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    paddingBottom: 60,
+  },
+  logoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  logo: {
+    width: 96,
+    height: 96,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 16,
+  },
+  appSubtitle: {
+    fontSize: 18,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  button: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  fullWidthButton: {
+    marginTop: 24,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#007AFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    color: '#007AFF',
+    fontSize: 18,
+    marginLeft: 4,
+  },
+  progressContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: '#E5E5EA',
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#007AFF',
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  formContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  formHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D1D6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  pickerButton: {
+    borderWidth: 1,
+    borderColor: '#D1D1D6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  placeholderText: {
+    color: '#8E8E93',
+  },
+  uploadContainer: {
+    borderWidth: 2,
+    borderColor: '#D1D1D6',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  uploadPrompt: {
+    alignItems: 'center',
+  },
+  uploadPromptText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  uploadPromptSubtext: {
+    fontSize: 14,
+    color: '#C7C7CC',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  uploadSuccess: {
+    alignItems: 'center',
+  },
+  uploadSuccessText: {
+    fontSize: 16,
+    color: '#000',
+    marginTop: 12,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  uploadSuccessSubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#FFFFFF',
+  },
+  modalCancelText: {
+    color: '#007AFF',
+    fontSize: 18,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  approvalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  approvalIcon: {
+    width: 128,
+    height: 128,
+    backgroundColor: '#FFF3CD',
+    borderRadius: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  approvalTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  approvalSubtitle: {
+    fontSize: 18,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 48,
+    paddingHorizontal: 20,
+  },
+} as const;
+
+export default OnboardingFlow;
