@@ -24,6 +24,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../types/navigation';
 import type { CaseWithAuthor, User, UserWithFollowStats } from "../types/schema";
 import CaseDetailModal from "../components/CaseDetailModal";
+import ImageViewerModal from "../components/ImageViewerModal";
 
 type PublicProfileScreenRouteProp = RouteProp<HomeStackParamList, 'PublicProfile'>;
 type PublicProfileScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'PublicProfile'>;
@@ -53,6 +54,8 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
   const [showCaseDetail, setShowCaseDetail] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [imageViewerUser, setImageViewerUser] = useState<{ imageUrl?: string | null; userName: string } | null>(null);
   const { userId } = route.params;
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
@@ -208,6 +211,13 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
             imageUrl={profileUser.profileImageUrl}
             userName={`${profileUser.firstName || ''} ${profileUser.lastName || ''}`.trim()}
             size="large"
+            onPress={() => {
+              setImageViewerUser({
+                imageUrl: profileUser.profileImageUrl,
+                userName: `${profileUser.firstName || ''} ${profileUser.lastName || ''}`.trim()
+              });
+              setShowImageViewer(true);
+            }}
           />
           
           <Text style={styles.userName}>
@@ -341,7 +351,18 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
             ) : (
               (followModalType === 'followers' ? followers : following).map((u: User) => (
                 <TouchableOpacity key={u.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }} onPress={() => { setShowFollowModal(false); navigation.push('PublicProfile', { userId: u.id }); }}>
-                  <ProfilePicture imageUrl={u.profileImageUrl} userName={`${u.firstName || ''} ${u.lastName || ''}`.trim()} size="small" />
+                  <ProfilePicture 
+                    imageUrl={u.profileImageUrl} 
+                    userName={`${u.firstName || ''} ${u.lastName || ''}`.trim()} 
+                    size="small" 
+                    onPress={() => {
+                      setImageViewerUser({
+                        imageUrl: u.profileImageUrl,
+                        userName: `${u.firstName || ''} ${u.lastName || ''}`.trim()
+                      });
+                      setShowImageViewer(true);
+                    }}
+                  />
                   <View style={{ marginLeft: 16 }}>
                     <Text style={{ fontSize: 16, fontWeight: '500' }}>{u.firstName} {u.lastName}</Text>
                     {u.specialty && <Text style={{ color: '#888', fontSize: 14 }}>{u.specialty}</Text>}
@@ -352,6 +373,17 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={showImageViewer}
+        onClose={() => {
+          setShowImageViewer(false);
+          setImageViewerUser(null);
+        }}
+        imageUrl={imageViewerUser?.imageUrl}
+        userName={imageViewerUser?.userName || ''}
+      />
     </SafeAreaView>
   );
 }

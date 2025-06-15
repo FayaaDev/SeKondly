@@ -94,6 +94,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile picture upload endpoint
+  app.post("/api/auth/user/profile-picture", isAuthenticated, upload.single('profilePicture'), async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Check file type
+      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedMimes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Only JPEG and PNG images are allowed" });
+      }
+
+      // The file has already been saved to uploads directory by multer
+      // Generate the profile image URL
+      const profileImageUrl = `/uploads/${req.file.filename}`;
+      
+      // Update user's profile image URL
+      const updatedUser = await storage.updateUser(userId, { profileImageUrl });
+      
+      // Update session user so GET /api/auth/user returns the latest info in development
+      if (req.session) {
+        req.session.user = { ...req.session.user, profileImageUrl };
+      }
+      
+      res.json({ 
+        message: "Profile picture updated successfully",
+        profileImageUrl,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      res.status(500).json({ message: "Failed to upload profile picture" });
+    }
+  });
+
   // Login route
   app.post("/api/auth/login", async (req, res) => {
     try {

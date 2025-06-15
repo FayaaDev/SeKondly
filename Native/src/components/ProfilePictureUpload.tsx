@@ -11,6 +11,8 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config/api';
+import StorageService from '../lib/storage';
 
 interface ProfilePictureUploadProps {
   currentImageUrl?: string;
@@ -28,6 +30,8 @@ export default function ProfilePictureUpload({
 
   const uploadMutation = useMutation({
     mutationFn: async (imageUri: string) => {
+      const authToken = await StorageService.getAuthToken();
+      
       const formData = new FormData();
       formData.append('profilePicture', {
         uri: imageUri,
@@ -35,11 +39,12 @@ export default function ProfilePictureUpload({
         name: 'profile.jpg',
       } as any);
 
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/user/profile-picture`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/user/profile-picture`, {
         method: 'POST',
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
+          ...(authToken && { Authorization: `Bearer ${authToken}` }),
+          // Don't set Content-Type for FormData, let the browser set it with boundary
         },
         credentials: 'include',
       });
