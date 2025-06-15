@@ -55,7 +55,7 @@ export const cases = pgTable("cases", {
   history: text("history").notNull(),
   specialty: varchar("specialty").notNull(),
   authorId: varchar("author_id").notNull(),
-  isApproved: boolean("is_approved").default(false),
+  isApproved: boolean("is_approved").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   approvedAt: timestamp("approved_at"),

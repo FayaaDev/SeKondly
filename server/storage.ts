@@ -43,7 +43,6 @@ export interface IStorage {
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
   deleteCase(id: number): Promise<void>;
   incrementCaseViews(id: number): Promise<void>;
-  searchCases(userId: string, filters: { query?: string; specialty?: string; dateRange?: string }): Promise<CaseWithAuthor[]>;
   
   // Case interaction operations
   likeCase(caseId: number, userId: string): Promise<CaseLike>;
@@ -314,81 +313,6 @@ export class DatabaseStorage implements IStorage {
       .update(cases)
       .set({ viewsCount: sql`${cases.viewsCount} + 1` })
       .where(eq(cases.id, id));
-  }
-
-  async searchCases(userId: string, filters: { query?: string; specialty?: string; dateRange?: string }): Promise<CaseWithAuthor[]> {
-    // Start with basic approved cases query
-    let whereConditions = and(eq(cases.isApproved, true));
-
-    // Add search query filter
-    if (filters.query) {
-      const searchTerm = `%${filters.query.toLowerCase()}%`;
-      whereConditions = and(
-        whereConditions,
-        sql`(LOWER(${cases.title}) LIKE ${searchTerm} OR LOWER(${cases.history}) LIKE ${searchTerm} OR LOWER(${cases.specialty}) LIKE ${searchTerm})`
-      );
-    }
-
-    // Add specialty filter
-    if (filters.specialty && filters.specialty !== 'all') {
-      whereConditions = and(whereConditions, eq(cases.specialty, filters.specialty));
-    }
-
-    // Add date range filter
-    if (filters.dateRange && filters.dateRange !== 'all') {
-      const now = new Date();
-      let dateThreshold: Date;
-
-      switch (filters.dateRange) {
-        case 'today':
-          dateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          break;
-        case 'week':
-          dateThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'month':
-          dateThreshold = new Date(now.getFullYear(), now.getMonth(), 1);
-          break;
-        case '3months':
-          dateThreshold = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-          break;
-        case '6months':
-          dateThreshold = new Date(now.getFullYear(), now.getMonth() - 6, 1);
-          break;
-        case 'year':
-          dateThreshold = new Date(now.getFullYear(), 0, 1);
-          break;
-        default:
-          dateThreshold = new Date(0);
-      }
-
-      whereConditions = and(whereConditions, sql`${cases.createdAt} >= ${dateThreshold}`);
-    }
-
-    return await db
-      .select({
-        id: cases.id,
-        title: cases.title,
-        history: cases.history,
-        specialty: cases.specialty,
-        authorId: cases.authorId,
-        isApproved: cases.isApproved,
-        createdAt: cases.createdAt,
-        updatedAt: cases.updatedAt,
-        approvedAt: cases.approvedAt,
-        approvedBy: cases.approvedBy,
-        imageUrls: cases.imageUrls,
-        likesCount: cases.likesCount,
-        commentsCount: cases.commentsCount,
-        viewsCount: cases.viewsCount,
-        author: users,
-        isLikedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseLikes} WHERE ${caseLikes.caseId} = ${cases.id} AND ${caseLikes.userId} = ${userId})` : sql<boolean>`false`,
-        isFavoritedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseFavorites} WHERE ${caseFavorites.caseId} = ${cases.id} AND ${caseFavorites.userId} = ${userId})` : sql<boolean>`false`,
-      })
-      .from(cases)
-      .innerJoin(users, eq(cases.authorId, users.id))
-      .where(whereConditions)
-      .orderBy(desc(cases.createdAt));
   }
 
   // Case interaction operations

@@ -66,7 +66,12 @@ export default function EditProfileScreen({ navigation }: any) {
       return apiRequest('PATCH', '/api/auth/user', payload);
     },
     onSuccess: async () => {
+      // Invalidate user data to ensure fresh data across the app
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      // Also invalidate cases with all possible specialty values to refresh feed
+      await queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
+      // Invalidate search results too
+      await queryClient.invalidateQueries({ queryKey: ['/api/cases/search'] });
       setIsSaving(false);
       Alert.alert('Profile Updated', 'Your profile has been updated successfully.');
       navigation.goBack();

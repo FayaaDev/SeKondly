@@ -217,7 +217,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single case by ID
   app.get("/api/cases/:id", isAuthenticated, async (req, res) => {
     try {
+      console.log("GET /api/cases/:id - Raw ID:", req.params.id);
       const caseId = parseInt(req.params.id);
+      console.log("GET /api/cases/:id - Parsed ID:", caseId);
+      
+      if (isNaN(caseId)) {
+        return res.status(400).json({ message: "Invalid case ID" });
+      }
+      
       const case_data = await storage.getCase(caseId);
       if (!case_data) {
         return res.status(404).json({ message: "Case not found" });
@@ -265,22 +272,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user cases:", error);
       res.status(500).json({ message: "Failed to fetch user cases" });
-    }
-  });
-
-  // Search cases
-  app.get("/api/cases/search", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user?.id || "mock-user-1";
-      const query = req.query.q as string;
-      const specialty = req.query.specialty as string;
-      const dateRange = req.query.dateRange as string;
-      
-      const results = await storage.searchCases(userId, { query, specialty, dateRange });
-      res.json(results);
-    } catch (error) {
-      console.error("Error searching cases:", error);
-      res.status(500).json({ message: "Failed to search cases" });
     }
   });
 
