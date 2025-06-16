@@ -67,6 +67,7 @@ export type UserWithFollowStats = User & {
 
 // Medical specialties from the backend
 export const MEDICAL_SPECIALTIES = [
+  "Anesthesiology",
   "Cardiology",
   "Dermatology", 
   "Emergency Medicine",
@@ -81,6 +82,7 @@ export const MEDICAL_SPECIALTIES = [
   "Obstetrics & Gynecology",
   "Oncology",
   "Ophthalmology",
+  "Orthopedic Surgery",
   "Orthopedics",
   "Pediatrics",
   "Psychiatry",
@@ -89,6 +91,7 @@ export const MEDICAL_SPECIALTIES = [
   "Rheumatology",
   "Surgery",
   "Urology",
+  "Preventive Medicine",
   "Other"
 ] as const;
 

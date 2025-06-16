@@ -4,21 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { useAuth } from '../hooks/useAuth';
+import { MEDICAL_SPECIALTIES } from '../types/shared';
 
-const boardCertifications = [
-  'Internal Medicine',
-  'Cardiology',
-  'Neurology',
-  'Orthopedic Surgery',
-  'Emergency Medicine',
-  'Pediatrics',
-  'Psychiatry',
-  'Radiology',
-  'Anesthesiology',
-  'Dermatology',
-  'Oncology',
-  'Other',
-];
+// Use centralized medical specialties for board certifications
 
 export default function EditProfileScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -197,7 +185,7 @@ export default function EditProfileScreen({ navigation }: any) {
               <View style={{ width: 60 }} />
             </View>
             <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-              {boardCertifications.map((certification) => (
+              {MEDICAL_SPECIALTIES.map((certification: string) => (
                 <TouchableOpacity
                   key={certification}
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' }}

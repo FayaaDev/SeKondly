@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, X } from "lucide-react";
+import { MEDICAL_SPECIALTIES } from "@/constants/medical";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -17,26 +18,6 @@ export interface SearchFilters {
   specialty: string;
   dateRange: string;
 }
-
-const specialties = [
-  "Cardiology",
-  "Dermatology", 
-  "Emergency Medicine",
-  "Endocrinology",
-  "Gastroenterology",
-  "Hematology",
-  "Infectious Disease",
-  "Nephrology",
-  "Neurology",
-  "Oncology",
-  "Orthopedics",
-  "Pediatrics",
-  "Psychiatry",
-  "Pulmonology",
-  "Radiology",
-  "Surgery",
-  "Urology"
-];
 
 const dateRanges = [
   { value: "today", label: "Today" },
@@ -116,7 +97,7 @@ export default function SearchModal({ isOpen, onClose, onSearch }: SearchModalPr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All specialties</SelectItem>
-                {specialties.map((specialty) => (
+                {MEDICAL_SPECIALTIES.map((specialty: string) => (
                   <SelectItem key={specialty} value={specialty}>
                     {specialty}
                   </SelectItem>

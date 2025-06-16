@@ -13,6 +13,7 @@ import CaseCard from "@/components/CaseCard";
 import NewCaseModal from "@/components/NewCaseModal";
 import BottomNavigation from "@/components/BottomNavigation";
 import FloatingActionButton from "@/components/FloatingActionButton";
+import { MEDICAL_SPECIALTIES } from "@/constants/medical";
 import SearchModal, { SearchFilters } from "@/components/SearchModal";
 import CaseDetailModal from "@/components/CaseDetailModal";
 import OnboardingFlow from "@/components/OnboardingFlow";
@@ -277,7 +278,7 @@ export default function Home() {
       ? cases 
       : cases.filter((case_data) => case_data.specialty === selectedSpecialty);
 
-  const specialties = ["All Cases", "Cardiology", "Emergency", "Surgery", "Radiology", "Neurology", "Pediatrics", "Dermatology", "Orthopedics", "Oncology", "Psychiatry", "Anesthesiology"];
+  const specialties = ["All Cases", ...MEDICAL_SPECIALTIES];
 
   // Filter specialties based on search input
   const filteredSpecialties = specialtySearch 

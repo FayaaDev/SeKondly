@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ProfilePictureUpload from "@/components/ProfilePictureUpload";
 import { User as UserType } from "@shared/schema";
+import { MEDICAL_SPECIALTIES } from "@/constants/medical";
 
 const editProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -29,32 +30,6 @@ const editProfileSchema = z.object({
 });
 
 type EditProfileData = z.infer<typeof editProfileSchema>;
-
-const specialties = [
-  "Anesthesiology",
-  "Cardiology", 
-  "Dermatology",
-  "Emergency Medicine",
-  "Endocrinology",
-  "Family Medicine",
-  "Gastroenterology",
-  "General Surgery",
-  "Hematology",
-  "Internal Medicine",
-  "Neurology",
-  "Obstetrics and Gynecology",
-  "Oncology",
-  "Ophthalmology",
-  "Orthopedic Surgery",
-  "Pathology",
-  "Pediatrics",
-  "Plastic Surgery",
-  "Psychiatry",
-  "Pulmonology",
-  "Radiology",
-  "Rheumatology",
-  "Urology"
-];
 
 const experienceLevels = [
   "Resident (1-3 years)",
@@ -268,7 +243,7 @@ export default function EditProfile() {
                     <SelectValue placeholder="Select your specialty" />
                   </SelectTrigger>
                   <SelectContent>
-                    {specialties.map((specialty) => (
+                    {MEDICAL_SPECIALTIES.map((specialty: string) => (
                       <SelectItem key={specialty} value={specialty}>
                         {specialty}
                       </SelectItem>

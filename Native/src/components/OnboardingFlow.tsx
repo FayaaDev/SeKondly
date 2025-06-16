@@ -17,6 +17,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config/api';
 import StorageService from '../lib/storage';
+import { MEDICAL_SPECIALTIES } from '../types/shared';
 
 interface OnboardingData {
   firstName: string;
@@ -37,20 +38,7 @@ interface OnboardingFlowProps {
 
 type OnboardingScreen = 'welcome' | 'signin' | 'signup' | 'professional' | 'credentials' | 'approval';
 
-const boardCertifications = [
-  'Internal Medicine',
-  'Cardiology',
-  'Neurology',
-  'Orthopedic Surgery',
-  'Emergency Medicine',
-  'Pediatrics',
-  'Psychiatry',
-  'Radiology',
-  'Anesthesiology',
-  'Dermatology',
-  'Oncology',
-  'Other',
-];
+// Use centralized medical specialties for board certifications
 
 /**
  * OnboardingFlow - Multi-step onboarding component for new users
@@ -561,7 +549,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             <View style={{ width: 60 }} />
           </View>
           <ScrollView style={styles.modalContent}>
-            {boardCertifications.map((certification) => (
+            {MEDICAL_SPECIALTIES.map((certification: string) => (
               <TouchableOpacity
                 key={certification}
                 style={styles.modalOption}

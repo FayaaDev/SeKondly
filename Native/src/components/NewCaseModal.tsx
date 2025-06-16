@@ -21,6 +21,7 @@ import { X, Camera, Image as ImageIcon, Save } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StorageService from '../lib/storage';
 import { API_BASE_URL } from '../config/api';
+import { MEDICAL_SPECIALTIES } from '../types/shared';
 
 interface NewCaseModalProps {
   isOpen: boolean;
@@ -319,28 +320,9 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     createCaseMutation.mutate(formData);
   };
 
-  const specialties = [
-    'Cardiology',
-    'Dermatology',
-    'Emergency Medicine',
-    'Endocrinology',
-    'Gastroenterology',
-    'Hematology',
-    'Infectious Disease',
-    'Internal Medicine',
-    'Nephrology',
-    'Neurology',
-    'Oncology',
-    'Orthopedics',
-    'Pediatrics',
-    'Psychiatry',
-    'Pulmonology',
-    'Radiology',
-    'Surgery',
-    'Urology',
-  ];
+  // Use centralized medical specialties list
 
-  const filteredSpecialties = specialties.filter(specialty =>
+  const filteredSpecialties = MEDICAL_SPECIALTIES.filter((specialty: string) =>
     specialty.toLowerCase().includes(specialtyInput.toLowerCase())
   );
 

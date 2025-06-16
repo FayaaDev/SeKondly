@@ -22,11 +22,12 @@ import NewCaseModal from "../components/NewCaseModal";
 import SearchModal from "../components/SearchModal";
 import ProfileModal from "../components/ProfileModal";
 import FloatingActionButton from "../components/FloatingActionButton";
+import { MEDICAL_SPECIALTIES } from "../types/shared";
 import type { 
   Tab, 
   CaseWithAuthor, 
   Notification, 
-  SearchFilters 
+  SearchFilters
 } from "../types/schema";
 
 export default function HomeScreen() {
@@ -148,11 +149,7 @@ export default function HomeScreen() {
   };
 
   // Filter cases by specialty
-  const specialties = [
-    "All Cases", "Cardiology", "Emergency", "Surgery", "Radiology", 
-    "Neurology", "Pediatrics", "Dermatology", "Orthopedics", "Oncology", 
-    "Psychiatry", "Anesthesiology"
-  ];
+  const specialties = ["All Cases", ...MEDICAL_SPECIALTIES];
 
   const filteredCases = isSearchActive 
     ? searchResults
