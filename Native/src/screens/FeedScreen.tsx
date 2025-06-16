@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,26 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from "react-native";
+import * as Haptics from 'expo-haptics';
+import PagerView from 'react-native-pager-view';
+import { 
+  GestureHandlerRootView, 
+  PanGestureHandler, 
+  Directions,
+  State,
+  PanGestureHandlerGestureEvent 
+} from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedGestureHandler, 
+  useAnimatedStyle, 
+  runOnJS, 
+  withSpring,
+  interpolate,
+  Extrapolate
+} from 'react-native-reanimated';
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
@@ -29,6 +48,8 @@ import type { HomeStackParamList } from "../types/navigation";
 import { MEDICAL_SPECIALTIES } from '../types/shared';
 
 type FeedScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Feed'>;
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 /**
  * FeedScreen - Main feed showing all medical cases
@@ -51,6 +72,9 @@ type FeedScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'F
  */
 export default function FeedScreen() {
   const navigation = useNavigation<FeedScreenNavigationProp>();
+  const tabPagerRef = useRef<PagerView>(null);
+  const allPagerRef = useRef<PagerView>(null);
+  const specialtyPagerRef = useRef<PagerView>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'specialty'>('all');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("All Cases");
   const [specialtySearch, setSpecialtySearch] = useState<string>("");
@@ -62,6 +86,14 @@ export default function FeedScreen() {
   const [showCaseDetail, setShowCaseDetail] = useState(false);
   const [selectedCase, setSelectedCase] = useState<CaseWithAuthor | null>(null);
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  // Animated values for smooth tab transitions
+  const translateX = useSharedValue(0);
+  const isHorizontalGesture = useSharedValue(false);
+  
+  // Pan gesture handler refs
+  const horizontalGestureRef = useRef<PanGestureHandler>(null);
   
   const { user } = useAuth();
 
@@ -86,42 +118,31 @@ export default function FeedScreen() {
   }, [user?.specialty, refetchCases]);
 
   // Filter cases based on active tab and selected specialty
-  const filteredCases = React.useMemo(() => {
+  const allTabCases = React.useMemo(() => {
     let filtered = cases;
     
-    if (activeTab === 'specialty') {
-      // In specialty tab: show only user's specialty cases (excluding user's own cases)
-      if (user?.specialty) {
-        const userSpecialty = user.specialty.toLowerCase();
-        filtered = filtered.filter((case_data: any) => 
-          case_data.specialty.toLowerCase() === userSpecialty && 
-          case_data.authorId !== user.id
-        );
-      }
-    } else {
-      // In All tab: show all cases EXCEPT those from user's specialty
-      if (user?.specialty) {
-        const userSpecialty = user.specialty.toLowerCase();
-        filtered = filtered.filter((case_data: any) => 
-          case_data.specialty.toLowerCase() !== userSpecialty
-        );
-      }
+    // In All tab: show all cases EXCEPT those from user's specialty
+    if (user?.specialty) {
+      const userSpecialty = user.specialty.toLowerCase();
+      filtered = filtered.filter((case_data: any) => 
+        case_data.specialty.toLowerCase() !== userSpecialty
+      );
+    }
 
-      // Apply specialty filter if selected in All tab, but only if it's not the user's own specialty
-      if (selectedSpecialty !== "All Cases") {
-        const selectedSpecialtyLower = selectedSpecialty.toLowerCase();
-        const userSpecialtyLower = user?.specialty?.toLowerCase();
-        
-        // Only apply the filter if the selected specialty is different from user's specialty
-        if (selectedSpecialtyLower !== userSpecialtyLower) {
-          filtered = filtered.filter((case_data: any) => 
-            case_data.specialty.toLowerCase() === selectedSpecialtyLower
-          );
-        } else {
-          // If user tries to filter by their own specialty in "All" tab, show empty result
-          // since their specialty cases should be in the specialty tab
-          filtered = [];
-        }
+    // Apply specialty filter if selected in All tab, but only if it's not the user's own specialty
+    if (selectedSpecialty !== "All Cases") {
+      const selectedSpecialtyLower = selectedSpecialty.toLowerCase();
+      const userSpecialtyLower = user?.specialty?.toLowerCase();
+      
+      // Only apply the filter if the selected specialty is different from user's specialty
+      if (selectedSpecialtyLower !== userSpecialtyLower) {
+        filtered = filtered.filter((case_data: any) => 
+          case_data.specialty.toLowerCase() === selectedSpecialtyLower
+        );
+      } else {
+        // If user tries to filter by their own specialty in "All" tab, show empty result
+        // since their specialty cases should be in the specialty tab
+        filtered = [];
       }
     }
 
@@ -148,7 +169,47 @@ export default function FeedScreen() {
     }
     
     return filtered;
-  }, [cases, activeTab, selectedSpecialty, user?.specialty, user?.id, titleSearchKeyword, doctorNameSearch]);
+  }, [cases, selectedSpecialty, user?.specialty, user?.id, titleSearchKeyword, doctorNameSearch]);
+
+  const specialtyTabCases = React.useMemo(() => {
+    let filtered = cases;
+    
+    // In specialty tab: show only user's specialty cases (excluding user's own cases)
+    if (user?.specialty) {
+      const userSpecialty = user.specialty.toLowerCase();
+      filtered = filtered.filter((case_data: any) => 
+        case_data.specialty.toLowerCase() === userSpecialty && 
+        case_data.authorId !== user.id
+      );
+    }
+
+    // Apply title keyword filter
+    if (titleSearchKeyword.trim()) {
+      const keyword = titleSearchKeyword.toLowerCase().trim();
+      filtered = filtered.filter((case_data: any) =>
+        case_data.title.toLowerCase().includes(keyword)
+      );
+    }
+
+    // Apply doctor name filter
+    if (doctorNameSearch.trim()) {
+      const searchName = doctorNameSearch.toLowerCase().trim();
+      filtered = filtered.filter((case_data: any) => {
+        const firstName = case_data.author?.firstName?.toLowerCase() || '';
+        const lastName = case_data.author?.lastName?.toLowerCase() || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        
+        return firstName.includes(searchName) || 
+               lastName.includes(searchName) || 
+               fullName.includes(searchName);
+      });
+    }
+    
+    return filtered;
+  }, [cases, user?.specialty, user?.id, titleSearchKeyword, doctorNameSearch]);
+
+  // Current filtered cases based on active tab
+  const filteredCases = activeTab === 'all' ? allTabCases : specialtyTabCases;
 
   // Reset specialty filter when switching tabs
   useEffect(() => {
@@ -167,6 +228,18 @@ export default function FeedScreen() {
       }
     }
   }, [user?.specialty, selectedSpecialty, activeTab]);
+
+  // Reset page index when filters change or tab changes
+  useEffect(() => {
+    setCurrentPageIndex(0);
+    // Reset both pagers to first page when tab or filters change
+    if (allPagerRef.current) {
+      allPagerRef.current.setPage(0);
+    }
+    if (specialtyPagerRef.current) {
+      specialtyPagerRef.current.setPage(0);
+    }
+  }, [filteredCases.length, activeTab, selectedSpecialty, titleSearchKeyword, doctorNameSearch]);
 
   // Use MEDICAL_SPECIALTIES for the list
   const specialties = ["All Cases", ...MEDICAL_SPECIALTIES];
@@ -214,6 +287,127 @@ export default function FeedScreen() {
   };
 
   const hasActiveFilters = selectedSpecialty !== "All Cases" || titleSearchKeyword.trim() || doctorNameSearch.trim();
+
+  // Handle tab changes - sync with horizontal pager
+  const handleTabChange = (tab: 'all' | 'specialty') => {
+    setActiveTab(tab);
+    const pageIndex = tab === 'all' ? 0 : 1;
+    tabPagerRef.current?.setPage(pageIndex);
+  };
+
+  // Handle horizontal pager page selection
+  const handleTabPageSelected = (pageIndex: number) => {
+    const tab = pageIndex === 0 ? 'all' : 'specialty';
+    setActiveTab(tab);
+  };
+
+  // Function to switch tabs programmatically
+  const switchToTab = (tab: 'all' | 'specialty') => {
+    setActiveTab(tab);
+    const pageIndex = tab === 'all' ? 0 : 1;
+    tabPagerRef.current?.setPage(pageIndex);
+  };
+
+  // Horizontal gesture handler for tab switching
+  const horizontalGestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
+    onStart: (event) => {
+      // Determine if this is primarily a horizontal gesture
+      isHorizontalGesture.value = Math.abs(event.velocityX) > Math.abs(event.velocityY) * 2;
+      if (isHorizontalGesture.value) {
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+      }
+    },
+    onActive: (event) => {
+      // Only handle if it's clearly a horizontal gesture
+      if (isHorizontalGesture.value) {
+        translateX.value = event.translationX;
+      }
+    },
+    onEnd: (event) => {
+      if (isHorizontalGesture.value) {
+        const threshold = screenWidth * 0.25; // 25% of screen width
+        const velocity = Math.abs(event.velocityX);
+        const translation = Math.abs(event.translationX);
+        
+        const shouldSwitch = translation > threshold || velocity > 800;
+        
+        if (shouldSwitch) {
+          runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
+          if (event.translationX > 0 && activeTab === 'specialty') {
+            // Swipe right: go to "All" tab (previous)
+            runOnJS(switchToTab)('all');
+          } else if (event.translationX < 0 && activeTab === 'all') {
+            // Swipe left: go to "Specialty" tab (next)
+            runOnJS(switchToTab)('specialty');
+          }
+        }
+      }
+      
+      // Reset translation
+      translateX.value = withSpring(0);
+      isHorizontalGesture.value = false;
+    },
+  });
+
+  // Animated style for the tab content
+  const animatedTabStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      Math.abs(translateX.value),
+      [0, screenWidth * 0.3],
+      [1, 0.8],
+      Extrapolate.CLAMP
+    );
+    
+    const scale = interpolate(
+      Math.abs(translateX.value),
+      [0, screenWidth * 0.3],
+      [1, 0.95],
+      Extrapolate.CLAMP
+    );
+    
+    return {
+      transform: [
+        { translateX: translateX.value * 0.1 }, // Subtle parallax effect
+        { scale }
+      ],
+      opacity,
+    };
+  });
+
+  // Swipe indicator styles
+  const swipeIndicatorLeftStyle = useAnimatedStyle(() => {
+    const shouldShow = translateX.value > 20 && activeTab === 'specialty';
+    const opacity = interpolate(
+      translateX.value,
+      [20, 80],
+      [0, 1],
+      Extrapolate.CLAMP
+    );
+    
+    return {
+      opacity: shouldShow ? opacity : 0,
+      transform: [
+        { scale: shouldShow ? opacity : 0 }
+      ],
+    };
+  });
+
+  const swipeIndicatorRightStyle = useAnimatedStyle(() => {
+    const shouldShow = translateX.value < -20 && activeTab === 'all';
+    const opacity = interpolate(
+      Math.abs(translateX.value),
+      [20, 80],
+      [0, 1],
+      Extrapolate.CLAMP
+    );
+    
+    return {
+      opacity: shouldShow ? opacity : 0,
+      transform: [
+        { scale: shouldShow ? opacity : 0 }
+      ],
+    };
+  });
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -276,6 +470,97 @@ export default function FeedScreen() {
     );
   };
 
+  // Render vertical pager for cases
+  const renderVerticalPager = (casesData: CaseWithAuthor[], tabType: 'all' | 'specialty') => {
+    const pagerRef = tabType === 'all' ? allPagerRef : specialtyPagerRef;
+    
+    return (
+      <View style={styles.pagerContainer}>
+        <PanGestureHandler
+          activeOffsetY={[-10, 10]}
+          failOffsetX={[-20, 20]}
+          simultaneousHandlers={horizontalGestureRef}
+        >
+          <Animated.View style={{ flex: 1 }}>
+            <PagerView
+              ref={pagerRef}
+              style={styles.pagerView}
+              initialPage={0}
+              orientation="vertical"
+              onPageSelected={(e) => setCurrentPageIndex(e.nativeEvent.position)}
+              onPageScrollStateChanged={(e) => {
+                console.log(`Vertical (${tabType}) page scroll state:`, e.nativeEvent.pageScrollState);
+              }}
+              overdrag={false}
+              scrollEnabled={true}
+              keyboardDismissMode="on-drag"
+              pageMargin={0}
+              overScrollMode="never"
+              layoutDirection="ltr"
+            >
+          {casesData.map((caseData: CaseWithAuthor, index: number) => (
+            <View key={caseData.id} style={styles.pageContainer}>
+              <View style={styles.caseContainer}>
+                <CaseCard
+                  case={caseData}
+                  onPress={() => {
+                    setSelectedCase(caseData);
+                    setShowCaseDetail(true);
+                  }}
+                  onProfilePress={(userId) => {
+                    navigation.navigate('PublicProfile', { userId });
+                  }}
+                />
+              </View>
+              
+              {/* Page Indicator */}
+              <View style={styles.pageIndicatorContainer}>
+                <View style={styles.pageIndicator}>
+                  <Text style={styles.pageIndicatorText}>
+                    {index + 1} of {casesData.length}
+                  </Text>
+                </View>
+              </View>
+              
+              {/* Pull to refresh indicator for first page */}
+              {index === 0 && refreshing && (
+                <View style={styles.refreshIndicator}>
+                  <Ionicons name="refresh" size={20} color="#007AFF" />
+                  <Text style={styles.refreshText}>Refreshing...</Text>
+                </View>
+              )}
+            </View>
+          ))}
+          
+          {/* Last page with refresh option */}
+          <View key={`refresh-page-${tabType}`} style={styles.pageContainer}>
+            <View style={styles.refreshPageContainer}>
+              <Ionicons name="refresh-circle" size={64} color="#007AFF" />
+              <Text style={styles.refreshPageTitle}>Pull to refresh</Text>
+              <Text style={styles.refreshPageSubtitle}>Get the latest cases</Text>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={onRefresh}
+                disabled={refreshing}
+              >
+                <Ionicons 
+                  name={refreshing ? "hourglass" : "refresh"} 
+                  size={20} 
+                  color="#FFFFFF" 
+                />
+                <Text style={styles.refreshButtonText}>
+                  {refreshing ? "Refreshing..." : "Refresh Now"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </PagerView>
+          </Animated.View>
+        </PanGestureHandler>
+      </View>
+    );
+  };
+
   if (!user?.isApproved) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -312,13 +597,13 @@ export default function FeedScreen() {
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'all' && styles.activeTab]}
-          onPress={() => setActiveTab('all')}
+          onPress={() => handleTabChange('all')}
         >
           <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>All</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'specialty' && styles.activeTab]}
-          onPress={() => setActiveTab('specialty')}
+          onPress={() => handleTabChange('specialty')}
         >
           <Text style={[styles.tabText, activeTab === 'specialty' && styles.activeTabText]}>
             {user?.specialty || 'Your Specialty'}
@@ -366,42 +651,106 @@ export default function FeedScreen() {
         </View>
       )}
 
-      {/* Cases List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#007AFF"
-            colors={["#007AFF"]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {casesLoading ? (
-          renderLoadingSkeleton()
-        ) : filteredCases.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <View style={styles.container}>
-            {filteredCases.map((caseData: CaseWithAuthor) => (
-              <CaseCard
-                key={caseData.id}
-                case={caseData}
-                onPress={() => {
-                  setSelectedCase(caseData);
-                  setShowCaseDetail(true);
-                }}
-                onProfilePress={(userId) => {
-                  navigation.navigate('PublicProfile', { userId });
-                }}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+      {/* Content with Gesture-Based Horizontal Tab Switching */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <PanGestureHandler
+          ref={horizontalGestureRef}
+          onGestureEvent={horizontalGestureHandler}
+          activeOffsetX={[-20, 20]}
+          failOffsetY={[-30, 30]}
+          maxPointers={1}
+        >
+          <Animated.View style={[{ flex: 1 }, animatedTabStyle]}>
+            {/* Swipe Indicators */}
+            <Animated.View style={[styles.swipeIndicatorLeft, swipeIndicatorLeftStyle]}>
+              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Text style={styles.swipeIndicatorText}>All</Text>
+            </Animated.View>
+            
+            <Animated.View style={[styles.swipeIndicatorRight, swipeIndicatorRightStyle]}>
+              <Text style={styles.swipeIndicatorText}>{user?.specialty || 'Specialty'}</Text>
+              <Ionicons name="chevron-forward" size={24} color="#007AFF" />
+            </Animated.View>
+
+            {/* Render content based on active tab */}
+            {activeTab === 'all' ? (
+              // All Tab Content
+              casesLoading ? (
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollContent}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                      tintColor="#007AFF"
+                      colors={["#007AFF"]}
+                    />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderLoadingSkeleton()}
+                </ScrollView>
+              ) : allTabCases.length === 0 ? (
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollContent}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                      tintColor="#007AFF"
+                      colors={["#007AFF"]}
+                    />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderEmptyState()}
+                </ScrollView>
+              ) : (
+                renderVerticalPager(allTabCases, 'all')
+              )
+            ) : (
+              // Specialty Tab Content
+              casesLoading ? (
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollContent}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                      tintColor="#007AFF"
+                      colors={["#007AFF"]}
+                    />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderLoadingSkeleton()}
+                </ScrollView>
+              ) : specialtyTabCases.length === 0 ? (
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollContent}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                      tintColor="#007AFF"
+                      colors={["#007AFF"]}
+                    />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderEmptyState()}
+                </ScrollView>
+              ) : (
+                renderVerticalPager(specialtyTabCases, 'specialty')
+              )
+            )}
+          </Animated.View>
+        </PanGestureHandler>
+      </GestureHandlerRootView>
 
       {/* Floating Action Button */}
       <FloatingActionButton
@@ -789,8 +1138,9 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: 100,
+    bottom: 120,
     right: 16,
+    zIndex: 20,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -980,5 +1330,150 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  // Pager View Styles
+  pagerContainer: {
+    flex: 1,
+  },
+  pagerView: {
+    flex: 1,
+  },
+  pageContainer: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  caseContainer: {
+    flex: 1,
+    paddingHorizontal: 8, // Reduced padding to make card wider
+    paddingTop: 20,
+    paddingBottom: 140, // Space for bottom navigation
+    justifyContent: 'center',
+  },
+  pageIndicatorContainer: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+  },
+  pageIndicator: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  pageIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  refreshIndicator: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
+  },
+  refreshText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  refreshPageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  refreshPageTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000000',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  refreshPageSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  refreshButton: {
+    backgroundColor: '#007AFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 8,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pagerCaseCard: {
+    marginHorizontal: 0,
+    marginVertical: 0,
+    flex: 1,
+    minHeight: screenHeight * 0.65, // Take at least 65% of screen height
+    borderRadius: 20, // Slightly larger border radius for modern look
+    shadowOpacity: 0.15, // Slightly more prominent shadow
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  // Horizontal Tab Pager Styles
+  tabPagerView: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  tabPageContainer: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  // Swipe Indicator Styles
+  swipeIndicatorLeft: {
+    position: 'absolute',
+    top: '50%',
+    left: 20,
+    zIndex: 1000,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  swipeIndicatorRight: {
+    position: 'absolute',
+    top: '50%',
+    right: 20,
+    zIndex: 1000,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  swipeIndicatorText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginHorizontal: 4,
   },
 });
