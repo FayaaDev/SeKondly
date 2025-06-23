@@ -13,7 +13,6 @@ import {
   Platform,
   FlatList,
   Keyboard,
-  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,45 +51,12 @@ export default function CaseDetailModal({
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [showImageManagement, setShowImageManagement] = useState(false);
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<TextInput>(null);
-  const bottomPadding = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const keyboardWillShow = (e: any) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      Animated.timing(bottomPadding, {
-        toValue: e.endCoordinates.height,
-        duration: e.duration,
-        useNativeDriver: false,
-      }).start();
-    };
-
-    const keyboardWillHide = (e: any) => {
-      setKeyboardHeight(0);
-      Animated.timing(bottomPadding, {
-        toValue: 0,
-        duration: e.duration,
-        useNativeDriver: false,
-      }).start();
-    };
-
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const showSubscription = Keyboard.addListener(showEvent, keyboardWillShow);
-    const hideSubscription = Keyboard.addListener(hideEvent, keyboardWillHide);
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (replyingTo) {
@@ -478,7 +444,11 @@ export default function CaseDetailModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-        <View style={styles.keyboardAvoid}>
+        <KeyboardAvoidingView 
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.authorSection} onPress={handleProfilePress}>
@@ -523,6 +493,8 @@ export default function CaseDetailModal({
             ref={scrollViewRef}
             style={styles.content}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentInsetAdjustmentBehavior="automatic"
           >
             {/* Case Details */}
             <View style={styles.caseDetails}>
@@ -612,7 +584,7 @@ export default function CaseDetailModal({
           </ScrollView>
 
           {/* Add Comment */}
-          <Animated.View style={[styles.addCommentContainer, { paddingBottom: bottomPadding }]}>
+          <View style={styles.addCommentContainer}>
             {replyingTo && (
               <View style={styles.replyIndicator}>
                 <Text style={styles.replyText}>Replying to @{replyingTo}</Text>
@@ -658,8 +630,8 @@ export default function CaseDetailModal({
                 </View>
               </View>
             </View>
-          </Animated.View>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
       
       {/* Image Gallery Modal */}

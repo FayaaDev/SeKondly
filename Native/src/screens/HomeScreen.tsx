@@ -19,7 +19,7 @@ import CaseCard from "../components/CaseCard";
 import CaseDetailModal from "../components/CaseDetailModal";
 import CommentModal from "../components/CommentModal";
 import NewCaseModal from "../components/NewCaseModal";
-import SearchModal from "../components/SearchModal";
+import { SearchModal } from "../components";
 import ProfileModal from "../components/ProfileModal";
 import FloatingActionButton from "../components/FloatingActionButton";
 import { MEDICAL_SPECIALTIES } from "../types/shared";
@@ -340,7 +340,7 @@ export default function HomeScreen() {
       <SearchModal
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
-        onSearch={(filters) => {
+        onSearch={(filters: any) => {
           setSearchFilters(filters);
           setIsSearchActive(true);
           // TODO: Implement search functionality

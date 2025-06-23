@@ -8,7 +8,6 @@
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  PendingVerification: { userEmail?: string };
   AdminPanel: undefined;
   NotificationSettings: undefined;
   EditProfile: undefined;

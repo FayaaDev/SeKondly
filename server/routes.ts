@@ -644,9 +644,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle credentials file if uploaded
       if (req.file) {
-        // Save file info to DB or storage as needed
         console.log('Received credentials file:', req.file.originalname);
-        // Example: await storage.uploadDocument({ userId, ...req.file });
+        
+        // Save document to database
+        const documentData = {
+          userId: userId,
+          fileName: req.file.originalname,
+          fileUrl: `/uploads/${req.file.filename}`,
+          fileType: req.file.mimetype,
+          isApproved: false
+        };
+        
+        const document = await storage.uploadDocument(documentData);
+        console.log('Document saved successfully:', document);
       }
 
       res.json({ success: true, user });
@@ -867,6 +877,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin stats:", error);
       res.status(500).json({ message: "Failed to fetch admin stats" });
+    }
+  });
+
+  // Get user documents for admin review
+  app.get("/api/admin/user-documents/:userId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const userDocuments = await storage.getUserDocuments(userId);
+      res.json(userDocuments);
+    } catch (error) {
+      console.error("Error fetching user documents:", error);
+      res.status(500).json({ message: "Failed to fetch user documents" });
     }
   });
 

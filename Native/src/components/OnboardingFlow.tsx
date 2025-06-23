@@ -36,7 +36,7 @@ interface OnboardingFlowProps {
   onSignIn?: () => void;
 }
 
-type OnboardingScreen = 'welcome' | 'signin' | 'signup' | 'professional' | 'credentials' | 'approval';
+type OnboardingScreen = 'welcome' | 'signin' | 'signup' | 'professional' | 'credentials';
 
 // Use centralized medical specialties for board certifications
 
@@ -117,7 +117,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       return response.json();
     },
     onSuccess: () => {
-      setCurrentScreen('approval');
+      Alert.alert(
+        'Registration Complete!', 
+        'Your account has been submitted for review. Please sign in with your credentials. You will receive an email notification once your account is approved.',
+        [{ 
+          text: 'OK', 
+          onPress: () => setCurrentScreen('signin')
+        }]
+      );
     },
     onError: (error: Error) => {
       Alert.alert('Error', error.message);
@@ -144,6 +151,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     onSuccess: async (data) => {
       try {
         if (data.user) {
+          // Check if user is approved before proceeding
+          if (!data.user.isApproved) {
+            Alert.alert(
+              'Account Under Review', 
+              'Your account is currently being reviewed by our medical verification team. This process typically takes 1-2 business days. You will receive an email notification once your account is approved.',
+              [{ text: 'OK' }]
+            );
+            return; // Don't save user data or navigate away
+          }
+          
           await StorageService.setUser(data.user);
           queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
           onComplete();
@@ -635,27 +652,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     </SafeAreaView>
   );
 
-  const renderApprovalScreen = () => (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.approvalContainer}>
-        <View style={styles.approvalIcon}>
-          <Ionicons name="time-outline" size={64} color="#FF9500" />
-        </View>
-        <Text style={styles.approvalTitle}>Account Under Review</Text>
-        <Text style={styles.approvalSubtitle}>
-          Your account is being reviewed by our medical team. You'll receive an email notification once approved.
-        </Text>
-        
-        <TouchableOpacity
-          style={[styles.button, styles.primaryButton]}
-          onPress={onComplete}
-        >
-          <Text style={styles.primaryButtonText}>Check Status</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-
   switch (currentScreen) {
     case 'welcome':
       return renderWelcomeScreen();
@@ -667,8 +663,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       return renderProfessionalScreen();
     case 'credentials':
       return renderCredentialsScreen();
-    case 'approval':
-      return renderApprovalScreen();
     default:
       return renderWelcomeScreen();
   }
@@ -929,36 +923,6 @@ const styles = {
   modalOptionText: {
     fontSize: 16,
     color: '#000',
-  },
-  approvalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  approvalIcon: {
-    width: 128,
-    height: 128,
-    backgroundColor: '#FFF3CD',
-    borderRadius: 64,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  approvalTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  approvalSubtitle: {
-    fontSize: 18,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 48,
-    paddingHorizontal: 20,
   },
 } as const;
 

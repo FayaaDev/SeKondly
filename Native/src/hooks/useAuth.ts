@@ -8,7 +8,6 @@ interface AuthResponse {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  isVerificationPending: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -117,7 +116,6 @@ export function useAuth(): AuthResponse {
     user: user || null,
     isLoading,
     isAuthenticated: !!user,
-    isVerificationPending: !!(user && !user.isApproved),
     signOut,
   };
 }

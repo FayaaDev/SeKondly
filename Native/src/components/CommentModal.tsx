@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Platform,
   ActivityIndicator,
   FlatList,
+  Keyboard,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,7 +37,24 @@ export default function CommentModal({
   caseTitle 
 }: CommentModalProps) {
   const [comment, setComment] = useState("");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      keyboardWillShowListener?.remove();
+      keyboardWillHideListener?.remove();
+    };
+  }, []);
 
   // Fetch comments
   const { data: comments = [], isLoading } = useQuery({
@@ -147,14 +166,11 @@ export default function CommentModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="formSheet"
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView 
-          style={styles.keyboardAvoid}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+        <View style={styles.keyboardAvoid}>
           {/* Header */}
           <View style={styles.header}>
             {/* Drag indicator */}
@@ -174,7 +190,10 @@ export default function CommentModal({
           </View>
 
           {/* Comments List */}
-          <View style={styles.commentsContainer}>
+          <View style={[
+            styles.commentsContainer,
+            keyboardHeight > 0 && { marginBottom: 80 } // Space for input when keyboard is shown
+          ]}>
             {isLoading ? (
               renderLoadingSkeleton()
             ) : comments.length === 0 ? (
@@ -191,7 +210,16 @@ export default function CommentModal({
           </View>
 
           {/* Comment Input */}
-          <View style={styles.inputContainer}>
+          <View style={[
+            styles.inputContainer, 
+            keyboardHeight > 0 && {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              transform: [{ translateY: -keyboardHeight }],
+            }
+          ]}>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.textInput}
@@ -223,7 +251,7 @@ export default function CommentModal({
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -383,6 +411,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingBottom: Platform.OS === "ios" ? 12 : 12,
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
     backgroundColor: "#f8f9fa",

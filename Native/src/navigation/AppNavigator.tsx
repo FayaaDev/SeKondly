@@ -4,7 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList, HomeStackParamList } from '../types/navigation';
+import { API_BASE_URL } from '../config/api';
+import StorageService from '../lib/storage';
 
 // Import components directly
 import OnboardingFlow from '../components/OnboardingFlow';
@@ -14,7 +17,6 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
-import PendingVerificationScreen from '../screens/PendingVerificationScreen';
 import AdminPanelScreen from '../screens/AdminPanelScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
@@ -148,7 +150,8 @@ const MainScreen: React.FC = () => {
  * - iOS-native tab bar styling
  */
 const RootNavigator: React.FC = () => {
-  const { user, isLoading, isVerificationPending } = useAuth();
+  const { user, isLoading } = useAuth();
+  const queryClient = useQueryClient();
   console.log('user:', user);
 
   if (isLoading) {
@@ -165,31 +168,12 @@ const RootNavigator: React.FC = () => {
         }}
       >
         {user ? (
-          isVerificationPending ? (
-            <RootStack.Screen
-              name="PendingVerification"
-              options={{
-                gestureEnabled: false,
-              }}
-            >
-              {() => (
-                <PendingVerificationScreen
-                  onCheckStatus={() => {
-                    // TODO: Implement status check
-                    console.log('Checking verification status...');
-                  }}
-                  userEmail={user.email || undefined}
-                />
-              )}
-            </RootStack.Screen>
-          ) : (
-            <>
-              <RootStack.Screen name="Main" component={MainScreen} />
-              <RootStack.Screen name="AdminPanel" component={AdminPanelScreen} />
-              <RootStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
-              <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
-            </>
-          )
+          <>
+            <RootStack.Screen name="Main" component={MainScreen} />
+            <RootStack.Screen name="AdminPanel" component={AdminPanelScreen} />
+            <RootStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+            <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
+          </>
         ) : (
           <RootStack.Screen
             name="Auth"

@@ -6,7 +6,7 @@ import { MainTabParamList, HomeStackParamList } from '../types/navigation';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
-import SearchModal from '../components/SearchModal';
+import { SearchModal } from '../components';
 import NewCaseModal from '../components/NewCaseModal';
 import ProfileModal from '../components/ProfileModal';
 
@@ -36,7 +36,7 @@ const SearchScreen: React.FC = () => {
     <SearchModal
       isOpen={isSearchOpen}
       onClose={() => setIsSearchOpen(false)}
-      onSearch={(query) => {
+      onSearch={(query: string) => {
         console.log('Search:', query);
         setIsSearchOpen(false);
       }}

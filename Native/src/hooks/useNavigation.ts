@@ -42,13 +42,4 @@ export const NavigationUtils = {
     });
   },
 
-  /**
-   * Navigate to pending verification screen
-   */
-  goToPendingVerification: (navigation: RootStackNavigationProp, userEmail?: string) => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'PendingVerification', params: { userEmail } }],
-    });
-  },
 } as const;

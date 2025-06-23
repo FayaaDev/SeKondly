@@ -15,6 +15,7 @@ import {
   Animated,
 } from 'react-native';
 import { Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Camera, Image as ImageIcon, Save } from 'lucide-react-native';
@@ -352,7 +353,12 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
           {/* Header */}
           <View style={{
             flexDirection: 'row',
@@ -701,7 +707,8 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
           
           {/* Animated bottom padding for keyboard */}
           <Animated.View style={{ height: bottomPadding }} />
-      </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }

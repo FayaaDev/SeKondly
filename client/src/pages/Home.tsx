@@ -724,7 +724,7 @@ export default function Home() {
                 <Button 
                   variant="ghost" 
                   className="w-full flex items-center justify-between p-4 ios-card rounded-xl h-auto"
-                  onClick={() => window.location.href = "/admin"}
+                  onClick={() => window.location.href = "/admin-panel"}
                 >
                   <div className="flex items-center space-x-3">
                     <FileText className="text-ios-gray w-4 h-4" />

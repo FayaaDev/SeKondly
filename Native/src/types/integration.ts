@@ -148,12 +148,16 @@ export const checkIntegrationStatus = async (): Promise<DatabaseConnection> => {
   };
 
   try {
-    // Check API connectivity
+    // Check API connectivity with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const healthResponse = await fetch(`${API_ENDPOINTS.health}`, {
       method: 'GET',
-      timeout: 5000,
+      signal: controller.signal,
     });
     
+    clearTimeout(timeoutId);
     status.apiReachable = healthResponse.ok;
     
     if (status.apiReachable) {

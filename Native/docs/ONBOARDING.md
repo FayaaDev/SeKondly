@@ -41,20 +41,19 @@ interface OnboardingFlowProps {
 
 A simple wrapper screen that provides the OnboardingFlow as a full-screen experience.
 
-### 3. PendingVerificationScreen (`src/screens/PendingVerificationScreen.tsx`)
-
-Displays when a user's account is under medical team review:
-
-**Features:**
-- Clear status messaging
-- Information cards explaining the process
-- Check status functionality
-- Support contact information
-- Professional medical theming
-
-### 4. DemoScreen (`src/screens/DemoScreen.tsx`)
+### 3. DemoScreen (`src/screens/DemoScreen.tsx`)
 
 A demonstration screen that allows switching between onboarding and the main app for testing purposes.
+
+## Account Verification Process
+
+When users complete registration, they must wait for admin approval before accessing the app. The verification process works as follows:
+
+1. **Registration Complete**: User submits credentials and account information
+2. **Sign-in Attempt**: When unverified users try to sign in, they receive an alert: "Your account is currently being reviewed by our medical verification team. This process typically takes 1-2 business days. You will receive an email notification once your account is approved."
+3. **Admin Review**: Administrators can approve/reject users through the Admin Panel
+4. **Notification**: Users receive email notification when approved
+5. **Access Granted**: Approved users can sign in and access the full app
 
 ## Form Data Structure
 
