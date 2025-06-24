@@ -36,8 +36,8 @@ const SearchScreen: React.FC = () => {
     <SearchModal
       isOpen={isSearchOpen}
       onClose={() => setIsSearchOpen(false)}
-      onSearch={(query: string) => {
-        console.log('Search:', query);
+      onSearch={(filters: { caseKeywords?: string; doctorName?: string; specialty?: string }) => {
+        console.log('Search filters:', filters);
         setIsSearchOpen(false);
       }}
     />
@@ -116,7 +116,7 @@ const MainNavigator: React.FC = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
+        tabBarActiveTintColor: '#4ECDC4',
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',

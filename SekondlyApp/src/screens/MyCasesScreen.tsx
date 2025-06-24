@@ -159,7 +159,6 @@ export default function MyCasesScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Cases</Text>
         <Text style={styles.caseCount}>{myCases.length} cases</Text>
       </View>
 
@@ -338,7 +337,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   createButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#4ECDC4",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,

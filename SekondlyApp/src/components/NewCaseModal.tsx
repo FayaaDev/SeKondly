@@ -373,7 +373,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             <TouchableOpacity onPress={handleClose}>
               <Text style={{
                 fontSize: 17,
-                color: '#007AFF',
+                color: '#4ECDC4',
               }}>
                 Cancel
               </Text>
@@ -407,7 +407,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity onPress={saveDraft}>
-                <Save size={20} color="#007AFF" />
+                <Save size={20} color="#4ECDC4" />
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -418,11 +418,11 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
               }}
             >
               {createCaseMutation.isPending ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#4ECDC4" />
               ) : (
                 <Text style={{
                   fontSize: 17,
-                  color: '#007AFF',
+                  color: '#4ECDC4',
                   fontWeight: '600',
                 }}>
                   Share
@@ -622,7 +622,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                 <TextInput
                   style={{
                     borderWidth: 1,
-                    borderColor: showSpecialtySuggestions ? '#007AFF' : '#E5E5E7',
+                    borderColor: showSpecialtySuggestions ? '#4ECDC4' : '#E5E5E7',
                     borderRadius: 12,
                     paddingHorizontal: 16,
                     paddingVertical: 16,

@@ -232,7 +232,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                 <Ionicons 
                   name={getFileIcon(file.mimeType)} 
                   size={24} 
-                  color="#007AFF" 
+                  color="#4ECDC4" 
                   style={{ marginRight: 12 }}
                 />
                 <View style={{ flex: 1 }}>
@@ -264,7 +264,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                   onPress={() => uploadFile(file, index)}
                   disabled={uploadMutation.isPending}
                   style={{
-                    backgroundColor: uploadMutation.isPending ? '#8E8E93' : '#007AFF',
+                    backgroundColor: uploadMutation.isPending ? '#8E8E93' : '#4ECDC4',
                     borderRadius: 8,
                     paddingHorizontal: 12,
                     paddingVertical: 6,
@@ -376,7 +376,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
         borderRadius: 12,
         padding: 16,
         borderWidth: 1,
-        borderColor: '#007AFF',
+        borderColor: '#4ECDC4',
       }}>
         <Text style={{
           fontSize: 16,
@@ -389,25 +389,25 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
         <View style={{ gap: 6 }}>
           <Text style={{
             fontSize: 14,
-            color: '#007AFF',
+            color: '#4ECDC4',
           }}>
             • Medical License
           </Text>
           <Text style={{
             fontSize: 14,
-            color: '#007AFF',
+            color: '#4ECDC4',
           }}>
             • Board Certification
           </Text>
           <Text style={{
             fontSize: 14,
-            color: '#007AFF',
+            color: '#4ECDC4',
           }}>
             • Professional ID or Credentials
           </Text>
           <Text style={{
             fontSize: 14,
-            color: '#007AFF',
+            color: '#4ECDC4',
           }}>
             • Institution Verification (if applicable)
           </Text>

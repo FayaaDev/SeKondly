@@ -132,7 +132,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
           <TouchableOpacity
             onPress={onClose}
             style={{
-              backgroundColor: '#007AFF',
+              backgroundColor: '#4ECDC4',
               borderRadius: 12,
               paddingHorizontal: 24,
               paddingVertical: 12,
@@ -176,7 +176,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
           <TouchableOpacity onPress={onClose}>
             <Text style={{
               fontSize: 17,
-              color: '#007AFF',
+              color: '#4ECDC4',
             }}>
               Back
             </Text>
@@ -205,7 +205,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
               alignItems: 'center',
               marginBottom: 20,
             }}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="#4ECDC4" />
               <Text style={{
                 fontSize: 16,
                 color: '#8E8E93',
@@ -229,7 +229,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
                   width: 80,
                   height: 80,
                   borderRadius: 40,
-                  backgroundColor: '#007AFF',
+                  backgroundColor: '#4ECDC4',
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginBottom: 16,
@@ -268,7 +268,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
                       <Ionicons 
                         name="checkmark-circle" 
                         size={20} 
-                        color="#007AFF" 
+                        color="#4ECDC4" 
                         style={{ marginLeft: 8 }}
                       />
                     )}
@@ -350,7 +350,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
 
                 {isLoadingCases ? (
                   <View style={{ alignItems: 'center', padding: 40 }}>
-                    <ActivityIndicator size="large" color="#007AFF" />
+                    <ActivityIndicator size="large" color="#4ECDC4" />
                     <Text style={{
                       fontSize: 16,
                       color: '#8E8E93',
@@ -430,18 +430,18 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
       <Modal visible={showFollowModal} animationType="slide" onRequestClose={() => setShowFollowModal(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-            <TouchableOpacity onPress={() => setShowFollowModal(false)}><Ionicons name="chevron-back" size={28} color="#007AFF" /></TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowFollowModal(false)}><Ionicons name="chevron-back" size={28} color="#4ECDC4" /></TouchableOpacity>
             <Text style={{ fontSize: 18, fontWeight: '600', marginLeft: 16 }}>{followModalType === 'followers' ? 'Followers' : 'Following'}</Text>
           </View>
           <ScrollView style={{ flex: 1, padding: 16 }}>
             {(followModalType === 'followers' ? followersLoading : followingLoading) ? (
-              <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 40 }} />
+              <ActivityIndicator size="large" color="#4ECDC4" style={{ marginTop: 40 }} />
             ) : (followModalType === 'followers' ? followers : following).length === 0 ? (
               <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>No users found.</Text>
             ) : (
               (followModalType === 'followers' ? followers : following).map((u: User) => (
                 <TouchableOpacity key={u.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }} onPress={() => { setShowFollowModal(false); /* Optionally navigate to user profile */ }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#007AFF', justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#4ECDC4', justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>{(u.firstName?.[0] || '') + (u.lastName?.[0] || '')}</Text>
                   </View>
                   <View style={{ marginLeft: 16 }}>

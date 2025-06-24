@@ -168,10 +168,10 @@ export default function HomeScreen() {
           style={styles.headerButton}
           onPress={() => setShowSearchModal(true)}
         >
-          <Ionicons name="search" size={24} color="#007AFF" />
+          <Ionicons name="search" size={24} color="#4ECDC4" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerButton}>
-          <Ionicons name="notifications" size={24} color="#007AFF" />
+          <Ionicons name="notifications" size={24} color="#4ECDC4" />
           {unreadCount.count > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount.count}</Text>
@@ -259,7 +259,6 @@ export default function HomeScreen() {
       case "mycases":
         return (
           <ScrollView style={styles.content}>
-            <Text style={styles.sectionTitle}>My Cases</Text>
             {myCases.map(renderCaseCard)}
           </ScrollView>
         );
@@ -267,7 +266,6 @@ export default function HomeScreen() {
       case "favorites":
         return (
           <ScrollView style={styles.content}>
-            <Text style={styles.sectionTitle}>Favorites</Text>
             {favorites.map(renderCaseCard)}
           </ScrollView>
         );
@@ -275,7 +273,6 @@ export default function HomeScreen() {
       case "notifications":
         return (
           <ScrollView style={styles.content}>
-            <Text style={styles.sectionTitle}>Notifications</Text>
             {notifications.map((notification: Notification) => (
               <View key={notification.id} style={styles.notificationCard}>
                 <Text style={styles.notificationTitle}>{notification.title}</Text>
@@ -379,7 +376,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#4ECDC4",
   },
   headerActions: {
     flexDirection: "row",
@@ -431,8 +428,8 @@ const styles = StyleSheet.create({
     borderColor: "#e9ecef",
   },
   specialtyChipActive: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: "#4ECDC4",
+    borderColor: "#4ECDC4",
   },
   specialtyText: {
     fontSize: 14,
@@ -455,7 +452,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: "#007AFF",
+    borderLeftColor: "#4ECDC4",
   },
   notificationTitle: {
     fontSize: 16,
@@ -478,7 +475,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#4ECDC4",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,

@@ -283,11 +283,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       <View style={styles.welcomeContainer}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            <Ionicons name="medical" size={48} color="#007AFF" />
+            <Ionicons name="leaf" size={48} color="#4ECDC4" />
           </View>
-          <Text style={styles.appTitle}>MedConnect</Text>
+          <Text style={styles.appTitle}>Sekondly</Text>
           <Text style={styles.appSubtitle}>
-            Connect with colleagues, share challenging cases, and advance medical knowledge together.
+            A physician-exclusive platform. Get Second opinions by sharing challenging cases with colleagues.
           </Text>
         </View>
 
@@ -319,14 +319,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#4ECDC4" />
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.formContainer}>
             <View style={styles.formHeader}>
-              <Ionicons name="log-in-outline" size={48} color="#007AFF" />
+              <Ionicons name="log-in-outline" size={48} color="#4ECDC4" />
               <Text style={styles.formTitle}>Welcome Back</Text>
               <Text style={styles.formSubtitle}>Sign in to your existing account</Text>
             </View>
@@ -384,7 +384,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#4ECDC4" />
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           </View>
@@ -398,7 +398,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
           <View style={styles.formContainer}>
             <View style={styles.formHeader}>
-              <Ionicons name="person-outline" size={48} color="#007AFF" />
+              <Ionicons name="person-outline" size={48} color="#4ECDC4" />
               <Text style={styles.formTitle}>Personal Information</Text>
               <Text style={styles.formSubtitle}>Let's start with your basic information</Text>
             </View>
@@ -486,7 +486,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#4ECDC4" />
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           </View>
@@ -500,7 +500,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
           <View style={styles.formContainer}>
             <View style={styles.formHeader}>
-              <Ionicons name="school-outline" size={48} color="#007AFF" />
+              <Ionicons name="school-outline" size={48} color="#4ECDC4" />
               <Text style={styles.formTitle}>Professional Information</Text>
               <Text style={styles.formSubtitle}>Tell us about your medical qualifications</Text>
             </View>
@@ -577,7 +577,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               >
                 <Text style={styles.modalOptionText}>{certification}</Text>
                 {formData.boardCertification === certification && (
-                  <Ionicons name="checkmark" size={20} color="#007AFF" />
+                  <Ionicons name="checkmark" size={20} color="#4ECDC4" />
                 )}
               </TouchableOpacity>
             ))}
@@ -596,7 +596,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#4ECDC4" />
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           </View>
@@ -610,7 +610,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
           <View style={styles.formContainer}>
             <View style={styles.formHeader}>
-              <Ionicons name="document-outline" size={48} color="#007AFF" />
+              <Ionicons name="document-outline" size={48} color="#4ECDC4" />
               <Text style={styles.formTitle}>Upload Credentials</Text>
               <Text style={styles.formSubtitle}>Upload your medical credentials for verification</Text>
             </View>
@@ -694,7 +694,7 @@ const styles = {
   logo: {
     width: 96,
     height: 96,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#E0F7F6',
     borderRadius: 48,
     justifyContent: 'center',
     alignItems: 'center',
@@ -723,12 +723,12 @@ const styles = {
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#4ECDC4',
   },
   fullWidthButton: {
     marginTop: 24,
@@ -739,7 +739,7 @@ const styles = {
     fontWeight: '600',
   },
   secondaryButtonText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -754,7 +754,7 @@ const styles = {
     paddingVertical: 8,
   },
   backButtonText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontSize: 18,
     marginLeft: 4,
   },
@@ -770,7 +770,7 @@ const styles = {
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     borderRadius: 2,
   },
   progressText: {
@@ -899,7 +899,7 @@ const styles = {
     backgroundColor: '#FFFFFF',
   },
   modalCancelText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontSize: 18,
   },
   modalTitle: {

@@ -32,7 +32,7 @@ export default function NotificationSettingsScreen({ navigation }: any) {
   const NotificationItem = ({ icon, title, description, prefKey }: { icon: any; title: string; description: string; prefKey: keyof typeof preferences }) => (
     <View style={styles.itemRow}>
       <View style={styles.iconBox}>
-        <Ionicons name={icon} size={22} color="#007AFF" />
+        <Ionicons name={icon} size={22} color="#4ECDC4" />
       </View>
       <View style={styles.itemTextBox}>
         <Text style={styles.itemTitle}>{title}</Text>
@@ -41,7 +41,7 @@ export default function NotificationSettingsScreen({ navigation }: any) {
       <Switch
         value={preferences[prefKey]}
         onValueChange={() => handleToggle(prefKey)}
-        trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+        trackColor={{ false: '#E5E5EA', true: '#4ECDC4' }}
         thumbColor="#FFFFFF"
       />
     </View>
@@ -52,7 +52,7 @@ export default function NotificationSettingsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackBtn}>
-          <Ionicons name="chevron-back" size={28} color="#007AFF" />
+          <Ionicons name="chevron-back" size={28} color="#4ECDC4" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 36 }} />
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#4ECDC4',
     marginTop: 24,
     marginBottom: 8,
   },
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 32,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',

@@ -114,7 +114,7 @@ export default function AdminPanelScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#4ECDC4" />
         </View>
       </SafeAreaView>
     );
@@ -151,7 +151,7 @@ export default function AdminPanelScreen() {
           <Ionicons 
             name="people" 
             size={20} 
-            color={currentTab === 'users' ? '#007AFF' : '#8E8E93'} 
+            color={currentTab === 'users' ? '#4ECDC4' : '#8E8E93'} 
             style={styles.tabIcon}
           />
           <Text style={[styles.tabText, currentTab === 'users' && styles.activeTabText]}>
@@ -166,7 +166,7 @@ export default function AdminPanelScreen() {
           <Ionicons 
             name="document-text" 
             size={20} 
-            color={currentTab === 'documents' ? '#007AFF' : '#8E8E93'} 
+            color={currentTab === 'documents' ? '#4ECDC4' : '#8E8E93'} 
             style={styles.tabIcon}
           />
           <Text style={[styles.tabText, currentTab === 'documents' && styles.activeTabText]}>
@@ -234,7 +234,7 @@ export default function AdminPanelScreen() {
                       }}
                       style={[styles.actionButton, styles.viewButton]}
                     >
-                      <Ionicons name="eye" size={16} color="#007AFF" />
+                      <Ionicons name="eye" size={16} color="#4ECDC4" />
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -294,7 +294,7 @@ export default function AdminPanelScreen() {
                 <View key={document.id} style={styles.card}>
                   <View style={styles.cardHeader}>
                     <View style={styles.docIcon}>
-                      <Ionicons name="document-text" size={24} color="#007AFF" />
+                      <Ionicons name="document-text" size={24} color="#4ECDC4" />
                     </View>
                     <View style={styles.docInfo}>
                       <Text style={styles.docName}>{document.fileName}</Text>
@@ -338,7 +338,7 @@ export default function AdminPanelScreen() {
                         }}
                         style={[styles.actionButton, styles.viewButton]}
                       >
-                        <Ionicons name="eye" size={16} color="#007AFF" />
+                        <Ionicons name="eye" size={16} color="#4ECDC4" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -383,7 +383,7 @@ export default function AdminPanelScreen() {
           <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalScrollContent}>
             {userDocumentsLoading ? (
               <View style={styles.modalLoadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
+                <ActivityIndicator size="large" color="#4ECDC4" />
                 <Text style={styles.modalLoadingText}>Loading documents...</Text>
               </View>
             ) : userDocuments.length === 0 ? (
@@ -398,7 +398,7 @@ export default function AdminPanelScreen() {
                   <View key={document.id} style={styles.documentCard}>
                     <View style={styles.documentCardHeader}>
                       <View style={styles.documentIcon}>
-                        <Ionicons name="document-text" size={24} color="#007AFF" />
+                        <Ionicons name="document-text" size={24} color="#4ECDC4" />
                       </View>
                       <View style={styles.documentInfo}>
                         <Text style={styles.documentName}>{document.fileName}</Text>
@@ -424,7 +424,7 @@ export default function AdminPanelScreen() {
                         }}
                         style={styles.documentViewButton}
                       >
-                        <Ionicons name="eye" size={16} color="#007AFF" />
+                        <Ionicons name="eye" size={16} color="#4ECDC4" />
                         <Text style={styles.documentViewButtonText}>View Document</Text>
                       </TouchableOpacity>
                     )}
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   activeTabText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontWeight: '600',
   },
   scrollView: {
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   },
   userSpecialty: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#4ECDC4',
     marginBottom: 2,
   },
   userDetail: {
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   viewButton: {
     backgroundColor: '#F2F2F7',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#4ECDC4',
     paddingHorizontal: 12,
   },
   approveButtonText: {
@@ -845,10 +845,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#4ECDC4',
   },
   documentViewButtonText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 4,

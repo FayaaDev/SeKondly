@@ -209,7 +209,7 @@ export default function ProfilePictureModal({
             <TouchableOpacity onPress={onClose}>
               <Text style={{
                 fontSize: 17,
-                color: '#007AFF',
+                color: '#4ECDC4',
               }}>
                 Cancel
               </Text>
@@ -238,7 +238,7 @@ export default function ProfilePictureModal({
               width: 200,
               height: 200,
               borderRadius: 100,
-              backgroundColor: currentImageUrl ? 'transparent' : '#007AFF',
+              backgroundColor: currentImageUrl ? 'transparent' : '#4ECDC4',
               justifyContent: 'center',
               alignItems: 'center',
               overflow: 'hidden',
@@ -300,7 +300,7 @@ export default function ProfilePictureModal({
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#007AFF',
+                  backgroundColor: '#4ECDC4',
                   borderRadius: 12,
                   padding: 16,
                   gap: 12,
@@ -329,14 +329,14 @@ export default function ProfilePictureModal({
                   borderRadius: 12,
                   padding: 16,
                   borderWidth: 1,
-                  borderColor: '#007AFF',
+                  borderColor: '#4ECDC4',
                   gap: 12,
                 }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="images" size={20} color="#007AFF" />
+                <Ionicons name="images" size={20} color="#4ECDC4" />
                 <Text style={{
-                  color: '#007AFF',
+                  color: '#4ECDC4',
                   fontSize: 16,
                   fontWeight: '600',
                 }}>

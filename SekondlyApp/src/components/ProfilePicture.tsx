@@ -91,7 +91,7 @@ export default function ProfilePicture({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 999,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',

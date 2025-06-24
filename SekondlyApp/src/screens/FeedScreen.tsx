@@ -584,12 +584,11 @@ export default function FeedScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Medical Cases</Text>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => setShowSearchModal(true)}
         >
-          <Ionicons name="search" size={24} color="#007AFF" />
+          <Ionicons name="search" size={24} color="#4ECDC4" />
         </TouchableOpacity>
       </View>
 
@@ -961,12 +960,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: "#4ECDC4",
     borderRadius: 6,
   },
   clearButtonText: {
     fontSize: 12,
-    color: "#007AFF",
+    color: "#4ECDC4",
     fontWeight: "500",
   },
   searchFiltersContainer: {
@@ -1008,7 +1007,7 @@ const styles = StyleSheet.create({
     color: "#8E8E93",
   },
   currentFilterChip: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#4ECDC4",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
@@ -1155,7 +1154,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#4ECDC4',
   },
   tabText: {
     fontSize: 16,
@@ -1163,7 +1162,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   activeTabText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
   },
   additionalFilter: {
     marginTop: 8,
@@ -1196,9 +1195,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   activeFilterChip: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#E0F7F6',
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: '#4ECDC4',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -1208,7 +1207,7 @@ const styles = StyleSheet.create({
   },
   activeFilterText: {
     fontSize: 12,
-    color: '#1976D2',
+    color: '#4ECDC4',
     fontWeight: '500',
   },
   // Modal styles
@@ -1319,7 +1318,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalApplyButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -1372,14 +1371,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
     gap: 6,
   },
   refreshText: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -1403,7 +1402,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   refreshButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4ECDC4',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -1473,7 +1472,7 @@ const styles = StyleSheet.create({
   swipeIndicatorText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#4ECDC4',
     marginHorizontal: 4,
   },
 });

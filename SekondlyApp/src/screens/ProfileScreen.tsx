@@ -138,7 +138,6 @@ export default function ProfileScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
       {/* Profile Content */}

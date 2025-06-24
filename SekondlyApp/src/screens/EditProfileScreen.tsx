@@ -85,14 +85,14 @@ export default function EditProfileScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F2F2F7" />
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E5E5EA' }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="chevron-back" size={28} color="#007AFF" />
+          <Ionicons name="chevron-back" size={28} color="#4ECDC4" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: '600', marginLeft: 16 }}>Edit Profile</Text>
       </View>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
           {/* Personal Info */}
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#007AFF', marginBottom: 16 }}>Personal Information</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#4ECDC4', marginBottom: 16 }}>Personal Information</Text>
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>First Name *</Text>
             <TextInput
@@ -127,7 +127,7 @@ export default function EditProfileScreen({ navigation }: any) {
             />
           </View>
           {/* Professional Info */}
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#007AFF', marginBottom: 16, marginTop: 16 }}>Professional Information</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#4ECDC4', marginBottom: 16, marginTop: 16 }}>Professional Information</Text>
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Board Certification *</Text>
             <TouchableOpacity
@@ -163,7 +163,7 @@ export default function EditProfileScreen({ navigation }: any) {
             />
           </View>
           <TouchableOpacity
-            style={{ marginTop: 32, backgroundColor: '#007AFF', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
+            style={{ marginTop: 32, backgroundColor: '#4ECDC4', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
             onPress={handleSave}
             disabled={isSaving}
           >
@@ -179,7 +179,7 @@ export default function EditProfileScreen({ navigation }: any) {
           <SafeAreaView style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA', backgroundColor: '#FFFFFF' }}>
               <TouchableOpacity onPress={() => setShowSpecialtyPicker(false)}>
-                <Text style={{ color: '#007AFF', fontSize: 18 }}>Cancel</Text>
+                <Text style={{ color: '#4ECDC4', fontSize: 18 }}>Cancel</Text>
               </TouchableOpacity>
               <Text style={{ fontSize: 18, fontWeight: '600', color: '#000' }}>Board Certification</Text>
               <View style={{ width: 60 }} />
@@ -196,7 +196,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 >
                   <Text style={{ fontSize: 16, color: '#000' }}>{certification}</Text>
                   {formData.boardCertification === certification && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color="#4ECDC4" />
                   )}
                 </TouchableOpacity>
               ))}

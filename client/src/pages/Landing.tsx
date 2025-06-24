@@ -87,9 +87,9 @@ export default function Landing() {
             <div className="w-24 h-24 bg-medical-blue rounded-full flex items-center justify-center mx-auto mb-8">
               <UserRound className="text-white text-3xl w-12 h-12" />
             </div>
-            <h1 className="text-3xl font-semibold text-gray-900 mb-4">MedConnect</h1>
+            <h1 className="text-3xl font-semibold text-gray-900 mb-4">Sekondly</h1>
             <p className="text-ios-gray text-lg mb-12">
-              Connect with colleagues, share challenging cases, and advance medical knowledge together.
+              A physician-exclusive platform. Get Second opinions by sharing challenging cases with colleagues.
             </p>
             
             <Button

@@ -11,7 +11,7 @@ interface FloatingActionButtonProps {
   size?: number;
   /** Color of the icon (default: '#FFFFFF') */
   color?: string;
-  /** Background color of the button (default: '#007AFF') */
+  /** Background color of the button (default: '#4ECDC4') */
   backgroundColor?: string;
   /** Distance from bottom of screen (default: 100) */
   bottom?: number;
@@ -30,7 +30,7 @@ interface FloatingActionButtonProps {
  * <FloatingActionButton
  *   onPress={() => setShowModal(true)}
  *   icon="add"
- *   backgroundColor="#007AFF"
+ *   backgroundColor="#4ECDC4"
  * />
  * ```
  */
@@ -39,7 +39,7 @@ export default function FloatingActionButton({
   icon = 'add',
   size = 28,
   color = '#FFFFFF',
-  backgroundColor = '#007AFF',
+  backgroundColor = '#4ECDC4',
   bottom = 100,
   right = 20,
   style

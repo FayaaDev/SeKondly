@@ -330,7 +330,7 @@ export default function CaseCard({
           <Ionicons
             name={caseData.isLikedByUser ? "thumbs-up" : "thumbs-up-outline"}
             size={20}
-            color={caseData.isLikedByUser ? "#007AFF" : "#666"}
+            color={caseData.isLikedByUser ? "#4ECDC4" : "#666"}
           />
           <Text style={[
             styles.actionText,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#4ECDC4",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   },
   readMoreText: {
     fontSize: 15,
-    color: "#007AFF",
+    color: "#4ECDC4",
     fontWeight: "500",
   },
   singleImageContainer: {
@@ -586,6 +586,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   actionTextActive: {
-    color: "#007AFF",
+    color: "#4ECDC4",
   },
 });

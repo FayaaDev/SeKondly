@@ -87,7 +87,7 @@ export default function BottomNavigation({
               <Ionicons
                 name={icon}
                 size={24}
-                color={isActive ? "#007AFF" : "#8E8E93"}
+                color={isActive ? "#4ECDC4" : "#8E8E93"}
               />
               <Text
                 style={[
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabLabelActive: {
-    color: '#007AFF',
+    color: '#4ECDC4',
     fontWeight: '600',
   },
   badge: {

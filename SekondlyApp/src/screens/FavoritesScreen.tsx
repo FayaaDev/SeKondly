@@ -122,7 +122,6 @@ export default function FavoritesScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favorite Cases</Text>
       </View>
 
       {/* Favorites List */}

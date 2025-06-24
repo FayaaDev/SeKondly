@@ -276,7 +276,7 @@ export default function CaseDetailModal({
               <Ionicons 
                 name={showImageManagement ? "close" : "create-outline"} 
                 size={20} 
-                color="#007AFF" 
+                color="#4ECDC4" 
               />
               <Text style={styles.manageImagesText}>
                 {showImageManagement ? "Done" : "Manage"}
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
   },
   manageImagesText: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#4ECDC4",
     fontWeight: "500",
     marginLeft: 4,
   },

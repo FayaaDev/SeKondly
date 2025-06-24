@@ -154,7 +154,6 @@ export default function NotificationsScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
         {unreadCount.count > 0 && (
           <View style={styles.unreadBadge}>
             <Text style={styles.unreadBadgeText}>
