@@ -1,6 +1,6 @@
 /**
  * Medical specialties constants for the client application
- * Keep in sync with Native/src/types/shared.ts
+ * Keep in sync with SekondlyApp/src/types/shared.ts
  */
 
 export const MEDICAL_SPECIALTIES = [
