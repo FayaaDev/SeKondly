@@ -9,10 +9,11 @@ import {
   TextInput,
   Alert,
   Dimensions,
-  KeyboardAvoidingView,
   Platform,
   FlatList,
   Keyboard,
+  KeyboardAvoidingView,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -72,19 +73,23 @@ export default function CaseDetailModal({
     retry: false,
   });
 
-  // Like/unlike mutation
-  const likeMutation = useMutation({
+  // Favorite mutation
+  const favoriteMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/cases/${caseData?.id}/like`);
+      return await apiRequest("POST", `/api/cases/${caseData?.id}/favorite`);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      Alert.alert(
+        "Success",
+        data?.favorited ? "Case added to favorites" : "Case removed from favorites"
+      );
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to like case");
+        Alert.alert("Error", error.message || "Failed to favorite case");
       }
     },
   });
@@ -202,10 +207,22 @@ export default function CaseDetailModal({
     setNewComment("");
   };
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this medical case: ${caseData?.title}`,
+        title: caseData?.title,
+      });
+    } catch (error) {
+      console.error("Share error:", error);
+    }
+  };
+
   const handleCommentInputFocus = () => {
+    // Add a longer delay to ensure keyboard is fully open
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 300);
+    }, 500);
   };
 
   const handleProfilePress = () => {
@@ -443,12 +460,12 @@ export default function CaseDetailModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView 
-          style={styles.keyboardAvoid}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
+      >
+        <SafeAreaView style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.authorSection} onPress={handleProfilePress}>
@@ -495,6 +512,7 @@ export default function CaseDetailModal({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={styles.scrollViewContent}
           >
             {/* Case Details */}
             <View style={styles.caseDetails}>
@@ -528,31 +546,37 @@ export default function CaseDetailModal({
               <View style={styles.interactions}>
                 <TouchableOpacity
                   style={styles.interactionButton}
-                  onPress={() => likeMutation.mutate()}
-                  disabled={likeMutation.isPending}
+                  onPress={() => favoriteMutation.mutate()}
+                  disabled={favoriteMutation.isPending}
                 >
                   <Ionicons
-                    name={caseData.isLikedByUser ? "heart" : "heart-outline"}
+                    name={caseData.isFavoritedByUser ? "heart" : "heart-outline"}
                     size={20}
-                    color={caseData.isLikedByUser ? "#F91880" : "#536471"}
+                    color={caseData.isFavoritedByUser ? "#FF3B30" : "#666"}
                   />
-                  <Text style={[
-                    styles.interactionText,
-                    caseData.isLikedByUser && styles.interactionTextActive
-                  ]}>
-                    {caseData.likesCount || 0}
-                  </Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.interactionButton}>
-                  <Ionicons name="chatbubble-outline" size={20} color="#536471" />
+
+                <TouchableOpacity 
+                  style={styles.interactionButton}
+                  onPress={() => {
+                    // Scroll to comments section
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                  }}
+                >
+                  <Ionicons name="chatbubble-outline" size={20} color="#666" />
                   <Text style={styles.interactionText}>
                     {caseData.commentsCount || 0}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.interactionButton}>
-                  <Ionicons name="share-outline" size={20} color="#536471" />
+                <TouchableOpacity 
+                  style={styles.interactionButton} 
+                  onPress={handleShare}
+                >
+                  <Ionicons name="share-outline" size={20} color="#666" />
+                  <Text style={styles.interactionText}>Share</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -610,29 +634,27 @@ export default function CaseDetailModal({
                   multiline
                   textAlignVertical="top"
                 />
-                
-                <View style={styles.commentInputActions}>
-                  <TouchableOpacity
-                    style={[
-                      styles.sendButton,
-                      (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonDisabled
-                    ]}
-                    onPress={handleAddComment}
-                    disabled={!newComment.trim() || addCommentMutation.isPending}
-                  >
-                    <Text style={[
-                      styles.sendButtonText,
-                      (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonTextDisabled
-                    ]}>
-                      {addCommentMutation.isPending ? "Posting..." : "Post"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
               </View>
+              
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonDisabled
+                ]}
+                onPress={handleAddComment}
+                disabled={!newComment.trim() || addCommentMutation.isPending}
+              >
+                <Text style={[
+                  styles.sendButtonText,
+                  (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonTextDisabled
+                ]}>
+                  {addCommentMutation.isPending ? "Posting..." : "Post"}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
       </SafeAreaView>
+      </KeyboardAvoidingView>
       
       {/* Image Gallery Modal */}
       <ImageGalleryModal
@@ -649,9 +671,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  keyboardAvoid: {
-    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -709,6 +728,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 20, // Add bottom padding to ensure comments are reachable
   },
   caseDetails: {
     paddingHorizontal: 16,
@@ -876,35 +898,32 @@ const styles = StyleSheet.create({
   },
   interactions: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#EFF3F4",
+    borderTopColor: "#f0f0f0",
     marginTop: 16,
-    maxWidth: 425,
   },
   interactionButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    padding: 8,
+    borderRadius: 8,
     minWidth: 60,
   },
   interactionText: {
-    fontSize: 13,
-    color: "#536471",
+    fontSize: 14,
+    color: "#666",
     marginLeft: 4,
-    fontWeight: "400",
-  },
-  interactionTextActive: {
-    color: "#F91880",
+    fontWeight: "500",
   },
   commentsSection: {
     backgroundColor: "#f8f9fa",
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 20, // Add bottom padding
+    minHeight: 200, // Ensure minimum height for visibility
   },
   commentsTitle: {
     fontSize: 20,
@@ -921,8 +940,9 @@ const styles = StyleSheet.create({
     color: "#536471",
   },
   emptyCommentsContainer: {
-    paddingVertical: 20,
+    paddingVertical: 40,
     alignItems: "center",
+    minHeight: 120, // Ensure minimum height
   },
   emptyCommentsText: {
     fontSize: 14,
@@ -1033,6 +1053,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#EFF3F4",
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 34 : 12,
+    maxHeight: Platform.OS === "ios" ? 180 : 160, // Constrain container height
   },
   replyIndicator: {
     flexDirection: "row",
@@ -1055,6 +1077,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     paddingBottom: 12,
+    maxHeight: 140, // Prevent the entire row from growing too much
   },
   currentUserAvatar: {
     width: 40,
@@ -1072,26 +1095,27 @@ const styles = StyleSheet.create({
   },
   addCommentInputContainer: {
     flex: 1,
+    maxHeight: 120, // Constrain the container height
+    marginRight: 12, // Add space between input and button
   },
   commentInput: {
-    fontSize: 20,
+    fontSize: 18,
     color: "#0F1419",
-    lineHeight: 24,
-    minHeight: 50,
-    maxHeight: 200,
-    paddingVertical: 12,
-  },
-  commentInputActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginTop: 12,
+    lineHeight: 22,
+    minHeight: 40,
+    maxHeight: 80, // Reduce max height to prevent screen takeover
+    paddingVertical: 8,
+    paddingHorizontal: 0,
   },
   sendButton: {
     backgroundColor: "#1D9BF0",
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
+    height: 40, // Match avatar height
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 70,
   },
   sendButtonDisabled: {
     backgroundColor: "#8ECDF8",

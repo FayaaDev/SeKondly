@@ -7,15 +7,13 @@ import {
   ScrollView,
   Image,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   Dimensions,
   ActivityIndicator,
-  Keyboard,
-  Animated,
 } from 'react-native';
 import { Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Camera, Image as ImageIcon, Save } from 'lucide-react-native';
@@ -45,41 +43,8 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const [specialtyInput, setSpecialtyInput] = useState('');
   const [showSpecialtySuggestions, setShowSpecialtySuggestions] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const queryClient = useQueryClient();
-  const scrollViewRef = useRef<ScrollView>(null);
-  const bottomPadding = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const keyboardWillShow = (e: any) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      Animated.timing(bottomPadding, {
-        toValue: e.endCoordinates.height,
-        duration: e.duration,
-        useNativeDriver: false,
-      }).start();
-    };
-
-    const keyboardWillHide = (e: any) => {
-      setKeyboardHeight(0);
-      Animated.timing(bottomPadding, {
-        toValue: 0,
-        duration: e.duration,
-        useNativeDriver: false,
-      }).start();
-    };
-
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const showSubscription = Keyboard.addListener(showEvent, keyboardWillShow);
-    const hideSubscription = Keyboard.addListener(hideEvent, keyboardWillHide);
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
+  const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
 
   // Load draft on modal open
   useEffect(() => {
@@ -335,7 +300,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const handleSpecialtyInputFocus = () => {
     setShowSpecialtySuggestions(specialtyInput.length > 0);
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      scrollViewRef.current?.scrollToEnd();
     }, 300);
   };
 
@@ -343,7 +308,6 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     setSelectedSpecialty(specialty);
     setSpecialtyInput(specialty);
     setShowSpecialtySuggestions(false);
-    Keyboard.dismiss();
   };
 
   return (
@@ -354,11 +318,6 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
           {/* Header */}
           <View style={{
             flexDirection: 'row',
@@ -432,11 +391,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             </View>
           </View>
 
-          <ScrollView
+          <KeyboardAwareScrollView
             ref={scrollViewRef}
             style={{ flex: 1 }}
             contentContainerStyle={{ padding: 20 }}
             keyboardShouldPersistTaps="handled"
+            enableOnAndroid={true}
+            extraScrollHeight={20}
             onTouchStart={() => {
               if (!showSpecialtySuggestions) {
                 setShowSpecialtySuggestions(false);
@@ -703,11 +664,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                 )}
               </View>
             </View>
-          </ScrollView>
-          
-          {/* Animated bottom padding for keyboard */}
-          <Animated.View style={{ height: bottomPadding }} />
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
       </SafeAreaView>
     </Modal>
   );
