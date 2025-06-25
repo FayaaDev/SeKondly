@@ -20,9 +20,9 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:5001';
   }
   
-  // For iOS/Android development - update this IP address if your network changes
-  // This should match the IP address where your backend server is running
-  return 'http://192.168.0.205:5001';
+  // For iOS/Android - connect to InterServer deployment
+  // Using your deployed server instead of local development
+  return 'http://174.138.183.153:5001';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
