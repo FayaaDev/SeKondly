@@ -31,6 +31,7 @@ interface UserProfile {
   specialty: string;
   institution: string;
   bio?: string;
+  experience?: number;
   profilePicture?: string;
   joinedAt: string;
   verified: boolean;
@@ -262,7 +263,7 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
                       fontWeight: 'bold',
                       color: '#000000',
                     }}>
-                      {profileUser.firstName} {profileUser.lastName}
+                      Dr. {profileUser.firstName} {profileUser.lastName}
                     </Text>
                     {profileUser.verified && (
                       <Ionicons 
@@ -330,9 +331,20 @@ export default function ProfileModal({ visible, onClose, userId }: ProfileModalP
                       color: '#000000',
                       textAlign: 'center',
                       lineHeight: 22,
+                      marginBottom: 8,
                     }}>
                       {profileUser.bio}
                     </Text>
+                    {profileUser.experience && (
+                      <Text style={{
+                        fontSize: 14,
+                        color: '#666666',
+                        textAlign: 'center',
+                        lineHeight: 20,
+                      }}>
+                        Career experience: {profileUser.experience} years
+                      </Text>
+                    )}
                   </View>
                 )}
               </View>

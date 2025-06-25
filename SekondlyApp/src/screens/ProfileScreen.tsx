@@ -168,11 +168,16 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           
           <Text style={styles.userName}>
-            {user?.firstName} {user?.lastName}
+            Dr. {user?.firstName} {user?.lastName}
           </Text>
-          <Text style={styles.userDetails}>
-            {user?.specialty} • {user?.experience}
+          <Text style={styles.userSpecialty}>
+            {user?.specialty}
           </Text>
+          {user?.experience && (
+            <Text style={styles.userExperience}>
+              Career experience: {user?.experience} years
+            </Text>
+          )}
           <Text style={styles.userInstitution}>{user?.institution}</Text>
         </View>
 
@@ -317,8 +322,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#000000",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  userSpecialty: {
+    fontSize: 14,
+    color: "#8E8E93",
     marginBottom: 4,
     textAlign: "center",
+  },
+  userExperience: {
+    fontSize: 13,
+    color: "#666666",
+    marginBottom: 8,
+    textAlign: "center",
+    fontStyle: "italic",
   },
   userDetails: {
     fontSize: 14,

@@ -5,13 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { 
   X, 
   Heart, 
   MessageCircle, 
-  Send, 
-  User, 
   Calendar,
   Eye,
   ChevronLeft,
@@ -251,65 +248,104 @@ export default function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetai
             </div>
           </div>
 
-          {/* Comments Section */}
-          <div className="border-t bg-gray-50">
-            <div className="p-6 space-y-4">
-              <h3 className="font-semibold">Medical Discussion</h3>
-              
-              {/* Add Comment */}
+          {/* Comments Section - Twitter-inspired */}
+          <div className="border-t bg-white">
+            {/* Comment Input */}
+            <div className="px-6 py-4 border-b border-gray-100">
               <div className="flex space-x-3">
-                <Textarea
-                  placeholder="Share your medical insights, differential diagnosis, or treatment suggestions..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 min-h-[80px] resize-none"
-                />
-                <Button
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim() || addCommentMutation.isPending}
-                  className="self-end"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+                <Avatar className="w-10 h-10">
+                  <AvatarFallback className="bg-gradient-to-br from-medical-blue to-ios-blue text-white font-semibold text-sm">
+                    {getInitials(caseData.author?.firstName || undefined, caseData.author?.lastName || undefined)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Textarea
+                    placeholder="Post your medical insights..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="min-h-[60px] border-0 resize-none text-lg placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
+                  />
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="text-sm text-gray-500">
+                      {newComment.length}/280 characters
+                    </div>
+                    <Button
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim() || addCommentMutation.isPending || newComment.length > 280}
+                      className="bg-ios-blue hover:bg-ios-blue/90 text-white px-6 py-2 rounded-full font-semibold disabled:opacity-50"
+                    >
+                      {addCommentMutation.isPending ? "Posting..." : "Post"}
+                    </Button>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Comments List */}
-              <div className="space-y-4 max-h-60 overflow-y-auto">
-                {commentsLoading ? (
-                  <div className="text-center py-4 text-gray-500">Loading comments...</div>
-                ) : comments && comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <Card key={comment.id} className="p-4">
-                      <div className="flex items-start space-x-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={comment.author?.profileImageUrl || undefined} />
-                          <AvatarFallback>
-                            <User className="w-4 h-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <p className="font-semibold text-sm">
-                              Dr. {comment.author?.firstName} {comment.author?.lastName}
-                            </p>
-                            <Badge variant="outline" className="text-xs">
-                              {comment.author?.specialty}
-                            </Badge>
-                            <span className="text-xs text-gray-500">
-                              {formatDistanceToNow(new Date(comment.createdAt || new Date()))} ago
-                            </span>
-                          </div>
-                          <p className="text-sm leading-relaxed">{comment.content}</p>
+            {/* Comments List */}
+            <div className="max-h-80 overflow-y-auto">
+              {commentsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ios-blue"></div>
+                </div>
+              ) : comments && comments.length > 0 ? (
+                comments.map((comment, index) => (
+                  <div 
+                    key={comment.id} 
+                    className={`px-6 py-4 hover:bg-gray-50/50 transition-colors ${
+                      index !== comments.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <div className="flex space-x-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={comment.author?.profileImageUrl || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white font-semibold text-sm">
+                          {getInitials(comment.author?.firstName || undefined, comment.author?.lastName || undefined)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-bold text-sm truncate">
+                            Dr. {comment.author?.firstName} {comment.author?.lastName}
+                          </h4>
+                          <Badge 
+                            variant="secondary" 
+                            className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-100"
+                          >
+                            {comment.author?.specialty}
+                          </Badge>
+                          <span className="text-gray-500 text-sm">·</span>
+                          <span className="text-gray-500 text-sm">
+                            {formatDistanceToNow(new Date(comment.createdAt || new Date()))}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-gray-900 break-words">
+                          {comment.content}
+                        </p>
+                        <div className="flex items-center space-x-6 mt-3">
+                          <button className="flex items-center space-x-2 text-gray-500 hover:text-ios-blue transition-colors group">
+                            <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
+                              <MessageCircle className="w-4 h-4" />
+                            </div>
+                          </button>
+                          <button className="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors group">
+                            <div className="p-2 rounded-full group-hover:bg-red-50 transition-colors">
+                              <Heart className="w-4 h-4" />
+                            </div>
+                          </button>
                         </div>
                       </div>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    No comments yet. Be the first to share your medical insights!
+                    </div>
                   </div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <MessageCircle className="w-12 h-12 text-gray-300 mb-3" />
+                  <h3 className="font-semibold text-gray-900 mb-1">No comments yet</h3>
+                  <p className="text-gray-500 text-sm">
+                    Be the first to share your medical insights!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

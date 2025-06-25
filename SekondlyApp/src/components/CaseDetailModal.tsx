@@ -14,6 +14,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Share,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -382,7 +383,7 @@ export default function CaseDetailModal({
     );
   };
 
-  // Render comment item
+  // Render comment item - Twitter-inspired
   const renderComment = ({ item }: { item: CommentWithAuthor }) => (
     <View style={styles.commentCard}>
       <View style={styles.commentHeader}>
@@ -401,49 +402,56 @@ export default function CaseDetailModal({
         </TouchableOpacity>
         
         <View style={styles.commentMainContent}>
-          <View style={styles.commentInfo}>
-            <View style={styles.commentNameRow}>
-              <Text style={styles.commentAuthorName}>
-                Dr. {item.author.firstName} {item.author.lastName}
-              </Text>
-              <Text style={styles.commentHandle}>
-                @{((item.author.firstName || '') + (item.author.lastName || '')).toLowerCase()}
-              </Text>
-              <Text style={styles.commentTime}>·</Text>
-              <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt!)}</Text>
-            </View>
-            <View style={styles.commentSpecialtyBadge}>
-              <Text style={styles.commentSpecialtyText}>{item.author.specialty}</Text>
-            </View>
+          <View style={styles.commentNameRow}>
+            <Text style={styles.commentAuthorName}>
+              Dr. {item.author.firstName} {item.author.lastName}
+            </Text>
+            <Text style={styles.commentHandle}>
+              @{((item.author.firstName || '') + (item.author.lastName || '')).toLowerCase()}
+            </Text>
+            <Text style={styles.commentDot}>·</Text>
+            <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt!)}</Text>
+          </View>
+          
+          <View style={styles.commentSpecialtyBadge}>
+            <Text style={styles.commentSpecialtyText}>{item.author.specialty}</Text>
           </View>
           
           <Text style={styles.commentContent}>{item.content}</Text>
           
-          {/* Comment Actions */}
+          {/* Twitter-style Comment Actions */}
           <View style={styles.commentActions}>
             <TouchableOpacity 
               style={styles.commentActionButton}
               onPress={() => handleReply(`${item.author.firstName || ''}${item.author.lastName || ''}`)}
             >
-              <Ionicons name="chatbubble-outline" size={16} color="#536471" />
-              <Text style={styles.commentActionText}>Reply</Text>
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="chatbubble-outline" size={16} color="#536471" />
+              </View>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.commentActionButton}
               onPress={() => likeCommentMutation.mutate(item.id.toString())}
             >
-              <Ionicons 
-                name={(item as any).isLikedByUser ? "heart" : "heart-outline"} 
-                size={16} 
-                color={(item as any).isLikedByUser ? "#F91880" : "#536471"} 
-              />
-              <Text style={[
-                styles.commentActionText,
-                (item as any).isLikedByUser && styles.commentActionTextLiked
+              <View style={[
+                styles.actionIconContainer,
+                (item as any).isLikedByUser && styles.actionIconContainerLiked
               ]}>
-                {(item as any).likesCount || 0}
-              </Text>
+                <Ionicons 
+                  name={(item as any).isLikedByUser ? "heart" : "heart-outline"} 
+                  size={16} 
+                  color={(item as any).isLikedByUser ? "#F91880" : "#536471"} 
+                />
+              </View>
+              {((item as any).likesCount || 0) > 0 && (
+                <Text style={[
+                  styles.commentActionCount,
+                  (item as any).isLikedByUser && styles.commentActionCountLiked
+                ]}>
+                  {(item as any).likesCount}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -581,12 +589,13 @@ export default function CaseDetailModal({
               </View>
             </View>
 
-            {/* Comments Section */}
+            {/* Comments Section - Twitter-inspired */}
             <View style={styles.commentsSection}>
               <Text style={styles.commentsTitle}>Medical Discussion</Text>
               
               {commentsLoading ? (
                 <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#1D9BF0" />
                   <Text style={styles.loadingText}>Loading comments...</Text>
                 </View>
               ) : comments.length > 0 ? (
@@ -599,15 +608,17 @@ export default function CaseDetailModal({
                 />
               ) : (
                 <View style={styles.emptyCommentsContainer}>
+                  <Ionicons name="chatbubble-outline" size={48} color="#E1E8ED" />
+                  <Text style={styles.emptyCommentsTitle}>No comments yet</Text>
                   <Text style={styles.emptyCommentsText}>
-                    No comments yet. Be the first to share your medical insights!
+                    Be the first to share your medical insights!
                   </Text>
                 </View>
               )}
             </View>
           </ScrollView>
 
-          {/* Add Comment */}
+          {/* Twitter-inspired Add Comment */}
           <View style={styles.addCommentContainer}>
             {replyingTo && (
               <View style={styles.replyIndicator}>
@@ -620,33 +631,42 @@ export default function CaseDetailModal({
             
             <View style={styles.commentInputRow}>
               <View style={styles.currentUserAvatar}>
-                <Text style={styles.currentUserAvatarText}>ME</Text>
+                <Text style={styles.currentUserAvatarText}>
+                  {getInitials(currentUser?.firstName, currentUser?.lastName)}
+                </Text>
               </View>
               
               <View style={styles.addCommentInputContainer}>
                 <TextInput
                   ref={commentInputRef}
                   style={styles.commentInput}
-                  placeholder={replyingTo ? "Tweet your reply" : "Share your medical insights..."}
+                  placeholder={replyingTo ? "Post your reply" : "Post your medical insights..."}
+                  placeholderTextColor="#536471"
                   value={newComment}
                   onChangeText={setNewComment}
                   onFocus={handleCommentInputFocus}
                   multiline
                   textAlignVertical="top"
+                  maxLength={280}
                 />
+                <View style={styles.commentInputFooter}>
+                  <Text style={styles.characterCount}>
+                    {newComment.length}/280
+                  </Text>
+                </View>
               </View>
               
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonDisabled
+                  (!newComment.trim() || addCommentMutation.isPending || newComment.length > 280) && styles.sendButtonDisabled
                 ]}
                 onPress={handleAddComment}
-                disabled={!newComment.trim() || addCommentMutation.isPending}
+                disabled={!newComment.trim() || addCommentMutation.isPending || newComment.length > 280}
               >
                 <Text style={[
                   styles.sendButtonText,
-                  (!newComment.trim() || addCommentMutation.isPending) && styles.sendButtonTextDisabled
+                  (!newComment.trim() || addCommentMutation.isPending || newComment.length > 280) && styles.sendButtonTextDisabled
                 ]}>
                   {addCommentMutation.isPending ? "Posting..." : "Post"}
                 </Text>
@@ -934,15 +954,25 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingVertical: 20,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   loadingText: {
     fontSize: 14,
     color: "#536471",
+    marginLeft: 8,
   },
   emptyCommentsContainer: {
     paddingVertical: 40,
     alignItems: "center",
     minHeight: 120, // Ensure minimum height
+  },
+  emptyCommentsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F1419",
+    marginTop: 16,
+    marginBottom: 4,
   },
   emptyCommentsText: {
     fontSize: 14,
@@ -983,9 +1013,6 @@ const styles = StyleSheet.create({
   commentMainContent: {
     flex: 1,
   },
-  commentInfo: {
-    marginBottom: 4,
-  },
   commentNameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1002,21 +1029,27 @@ const styles = StyleSheet.create({
     color: "#536471",
     marginRight: 4,
   },
+  commentDot: {
+    fontSize: 15,
+    color: "#536471",
+    marginHorizontal: 2,
+  },
+  commentTime: {
+    fontSize: 15,
+    color: "#536471",
+  },
   commentSpecialtyBadge: {
     backgroundColor: "#EBF4FF",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     alignSelf: "flex-start",
+    marginBottom: 8,
   },
   commentSpecialtyText: {
     fontSize: 11,
     color: "#1D9BF0",
     fontWeight: "500",
-  },
-  commentTime: {
-    fontSize: 15,
-    color: "#536471",
   },
   commentContent: {
     fontSize: 15,
@@ -1027,24 +1060,32 @@ const styles = StyleSheet.create({
   commentActions: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     maxWidth: 425,
   },
   commentActionButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
+    marginRight: 60,
   },
-  commentActionText: {
+  actionIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  actionIconContainerLiked: {
+    backgroundColor: "#FDF2F8",
+  },
+  commentActionCount: {
     fontSize: 13,
     color: "#536471",
     marginLeft: 4,
     fontWeight: "400",
   },
-  commentActionTextLiked: {
+  commentActionCountLiked: {
     color: "#F91880",
   },
   addCommentContainer: {
@@ -1107,8 +1148,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 0,
   },
+  commentInputFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 4,
+  },
+  characterCount: {
+    fontSize: 13,
+    color: "#536471",
+  },
   sendButton: {
-    backgroundColor: "#1D9BF0",
+    backgroundColor: "#4ECDC4",
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -1118,7 +1168,7 @@ const styles = StyleSheet.create({
     minWidth: 70,
   },
   sendButtonDisabled: {
-    backgroundColor: "#8ECDF8",
+    backgroundColor: "#A8E6E0",
   },
   sendButtonText: {
     color: "#fff",
