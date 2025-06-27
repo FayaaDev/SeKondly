@@ -14,7 +14,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/sekondly-icon.png"
+      "icon": "./assets/sekondly-icon.png",
+      "bundleIdentifier": "com.sekondly.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to capture medical images and documents for case discussions.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload medical images and documents.",
+        "NSDocumentPickerUsageDescription": "This app needs to access documents for uploading medical files and credentials.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,6 +33,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "59188267-3b91-4fec-a72a-0b5f38f47cb7"
+      }
     }
   }
 }
