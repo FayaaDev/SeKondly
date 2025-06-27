@@ -17,7 +17,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config/api';
 import StorageService from '../lib/storage';
-import { MEDICAL_SPECIALTIES } from '../types/shared';
+import { MEDICAL_SPECIALTIES, FELLOWSHIPS } from '../types/shared';
 
 interface OnboardingData {
   firstName: string;
@@ -66,6 +66,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const queryClient = useQueryClient();
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>('welcome');
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
   const [signInData, setSignInData] = useState({
     username: '',
     password: '',
@@ -520,14 +521,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Fellowship (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.fellowship}
-                onChangeText={(text) => updateFormData('fellowship', text)}
-                placeholder="Enter your fellowship specialty"
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
+              <TouchableOpacity
+                style={styles.pickerButton}
+                onPress={() => setShowFellowshipPicker(true)}
+              >
+                <Text style={[styles.pickerButtonText, !formData.fellowship && styles.placeholderText]}>
+                  {formData.fellowship || 'Select your fellowship specialty'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#999" />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.inputContainer}>
@@ -577,6 +579,39 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               >
                 <Text style={styles.modalOptionText}>{certification}</Text>
                 {formData.boardCertification === certification && (
+                  <Ionicons name="checkmark" size={20} color="#4ECDC4" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showFellowshipPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowFellowshipPicker(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Fellowship</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <ScrollView style={styles.modalContent}>
+            {FELLOWSHIPS.map((fellowship: string) => (
+              <TouchableOpacity
+                key={fellowship}
+                style={styles.modalOption}
+                onPress={() => {
+                  updateFormData('fellowship', fellowship);
+                  setShowFellowshipPicker(false);
+                }}
+              >
+                <Text style={styles.modalOptionText}>{fellowship}</Text>
+                {formData.fellowship === fellowship && (
                   <Ionicons name="checkmark" size={20} color="#4ECDC4" />
                 )}
               </TouchableOpacity>

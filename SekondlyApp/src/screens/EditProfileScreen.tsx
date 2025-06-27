@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { useAuth } from '../hooks/useAuth';
-import { MEDICAL_SPECIALTIES } from '../types/shared';
+import { MEDICAL_SPECIALTIES, FELLOWSHIPS } from '../types/shared';
 
 // Use centralized medical specialties for board certifications
 
@@ -20,6 +20,7 @@ export default function EditProfileScreen({ navigation }: any) {
     yearsOfExperience: '',
   });
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Prefill form with user data
@@ -142,14 +143,15 @@ export default function EditProfileScreen({ navigation }: any) {
           </View>
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Fellowship (Optional)</Text>
-            <TextInput
-              style={{ borderWidth: 1, borderColor: '#D1D1D6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, backgroundColor: '#FFFFFF' }}
-              value={formData.fellowship}
-              onChangeText={(text) => updateFormData('fellowship', text)}
-              placeholder="Enter your fellowship specialty"
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
+            <TouchableOpacity
+              style={{ borderWidth: 1, borderColor: '#D1D1D6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#FFFFFF', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              onPress={() => setShowFellowshipPicker(true)}
+            >
+              <Text style={{ fontSize: 16, color: formData.fellowship ? '#000' : '#8E8E93' }}>
+                {formData.fellowship || 'Select your fellowship specialty'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#999" />
+            </TouchableOpacity>
           </View>
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Years of Experience *</Text>
@@ -196,6 +198,39 @@ export default function EditProfileScreen({ navigation }: any) {
                 >
                   <Text style={{ fontSize: 16, color: '#000' }}>{certification}</Text>
                   {formData.boardCertification === certification && (
+                    <Ionicons name="checkmark" size={20} color="#4ECDC4" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+        {/* Fellowship Picker Modal */}
+        <Modal
+          visible={showFellowshipPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA', backgroundColor: '#FFFFFF' }}>
+              <TouchableOpacity onPress={() => setShowFellowshipPicker(false)}>
+                <Text style={{ color: '#4ECDC4', fontSize: 18 }}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: '#000' }}>Fellowship</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+              {FELLOWSHIPS.map((fellowship: string) => (
+                <TouchableOpacity
+                  key={fellowship}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' }}
+                  onPress={() => {
+                    updateFormData('fellowship', fellowship);
+                    setShowFellowshipPicker(false);
+                  }}
+                >
+                  <Text style={{ fontSize: 16, color: '#000' }}>{fellowship}</Text>
+                  {formData.fellowship === fellowship && (
                     <Ionicons name="checkmark" size={20} color="#4ECDC4" />
                   )}
                 </TouchableOpacity>
