@@ -173,12 +173,24 @@ export default function ProfileScreen() {
           <Text style={styles.userSpecialty}>
             {user?.specialty}
           </Text>
-          {user?.experience && (
-            <Text style={styles.userExperience}>
-              Career experience: {user?.experience} years
+          {user?.fellowship && (
+            <Text style={styles.userFellowship}>
+              {user?.fellowship}
             </Text>
           )}
-          <Text style={styles.userInstitution}>{user?.institution}</Text>
+          <Text style={styles.userExperienceInstitution}>
+            {user?.experience && (
+              <>
+                {user?.experience.toString().includes('experience') 
+                  ? user?.experience 
+                  : user?.experience.toString().includes('years')
+                    ? `${user?.experience} experience`
+                    : `${user?.experience} years experience`}
+                {user?.institution && '\n'}
+              </>
+            )}
+            {user?.institution}
+          </Text>
         </View>
 
         {/* Stats */}
@@ -327,13 +339,29 @@ const styles = StyleSheet.create({
   },
   userSpecialty: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#000000",
     marginBottom: 4,
     textAlign: "center",
+    fontWeight: "600",
   },
   userExperience: {
     fontSize: 13,
-    color: "#666666",
+    color: "#000000",
+    marginBottom: 8,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  userExperienceInstitution: {
+    fontSize: 13,
+    color: "#000000",
+    marginBottom: 8,
+    textAlign: "center",
+    fontStyle: "italic",
+    lineHeight: 18,
+  },
+  userFellowship: {
+    fontSize: 13,
+    color: "#000000",
     marginBottom: 8,
     textAlign: "center",
     fontStyle: "italic",
@@ -346,7 +374,7 @@ const styles = StyleSheet.create({
   },
   userInstitution: {
     fontSize: 12,
-    color: "#8E8E93",
+    color: "#000000",
     textAlign: "center",
   },
   statsContainer: {

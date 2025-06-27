@@ -28,6 +28,7 @@ interface OnboardingData {
   boardCertification: string;
   fellowship: string;
   yearsOfExperience: string;
+  workplace: string;
   credentialsFile?: DocumentPicker.DocumentPickerAsset;
 }
 
@@ -67,6 +68,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>('welcome');
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
   const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
+  const [specialtySearch, setSpecialtySearch] = useState('');
+  const [fellowshipSearch, setFellowshipSearch] = useState('');
   const [signInData, setSignInData] = useState({
     username: '',
     password: '',
@@ -80,6 +83,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     boardCertification: '',
     fellowship: '',
     yearsOfExperience: '',
+    workplace: '',
   });
 
   const submitMutation = useMutation({
@@ -94,6 +98,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       formData.append('boardCertification', data.boardCertification);
       formData.append('fellowship', data.fellowship || '');
       formData.append('yearsOfExperience', data.yearsOfExperience);
+      formData.append('workplace', data.workplace || '');
       formData.append('email', `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@example.com`);
       
       // Add credentials file if uploaded
@@ -193,8 +198,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   };
 
   const validateProfessionalInfo = (): boolean => {
-    if (!formData.boardCertification || !formData.yearsOfExperience) {
-      Alert.alert('Required Fields Missing', 'Please fill in board certification and years of experience.');
+    if (!formData.boardCertification || !formData.yearsOfExperience || !formData.workplace) {
+      Alert.alert('Required Fields Missing', 'Please fill in board certification, years of experience, and workplace.');
       return false;
     }
     return true;
@@ -264,6 +269,36 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
   const updateFormData = (key: keyof OnboardingData, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Filter specialties based on search
+  const filteredSpecialties = MEDICAL_SPECIALTIES.filter((specialty: string) =>
+    specialty.toLowerCase().includes(specialtySearch.toLowerCase())
+  );
+
+  // Filter fellowships based on search
+  const filteredFellowships = FELLOWSHIPS.filter((fellowship: string) =>
+    fellowship.toLowerCase().includes(fellowshipSearch.toLowerCase())
+  );
+
+  const handleSpecialtySearch = (text: string) => {
+    setSpecialtySearch(text);
+  };
+
+  const handleFellowshipSearch = (text: string) => {
+    setFellowshipSearch(text);
+  };
+
+  const selectSpecialty = (specialty: string) => {
+    updateFormData('boardCertification', specialty);
+    setSpecialtySearch(specialty);
+    setShowSpecialtyPicker(false);
+  };
+
+  const selectFellowship = (fellowship: string) => {
+    updateFormData('fellowship', fellowship);
+    setFellowshipSearch(fellowship);
+    setShowFellowshipPicker(false);
   };
 
   const getProgressPercentage = (): number => {
@@ -510,12 +545,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               <Text style={styles.inputLabel}>Board Certification *</Text>
               <TouchableOpacity
                 style={styles.pickerButton}
-                onPress={() => setShowSpecialtyPicker(true)}
+                onPress={() => {
+                  setSpecialtySearch(formData.boardCertification);
+                  setShowSpecialtyPicker(true);
+                }}
               >
                 <Text style={[styles.pickerButtonText, !formData.boardCertification && styles.placeholderText]}>
-                  {formData.boardCertification || 'Select your board certification'}
+                  {formData.boardCertification || 'Search or select your board certification'}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#999" />
+                <Ionicons name="search" size={20} color="#999" />
               </TouchableOpacity>
             </View>
 
@@ -523,12 +561,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               <Text style={styles.inputLabel}>Fellowship (Optional)</Text>
               <TouchableOpacity
                 style={styles.pickerButton}
-                onPress={() => setShowFellowshipPicker(true)}
+                onPress={() => {
+                  setFellowshipSearch(formData.fellowship);
+                  setShowFellowshipPicker(true);
+                }}
               >
                 <Text style={[styles.pickerButtonText, !formData.fellowship && styles.placeholderText]}>
-                  {formData.fellowship || 'Select your fellowship specialty'}
+                  {formData.fellowship || 'Search or select your fellowship specialty'}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#999" />
+                <Ionicons name="search" size={20} color="#999" />
               </TouchableOpacity>
             </View>
 
@@ -540,6 +581,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 onChangeText={(text) => updateFormData('yearsOfExperience', text)}
                 placeholder="Enter years of experience"
                 keyboardType="numeric"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Workplace *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.workplace}
+                onChangeText={(text) => updateFormData('workplace', text)}
+                placeholder="Enter your workplace/institution"
+                autoCapitalize="words"
                 autoCorrect={false}
               />
             </View>
@@ -567,15 +620,32 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             <Text style={styles.modalTitle}>Board Certification</Text>
             <View style={{ width: 60 }} />
           </View>
-          <ScrollView style={styles.modalContent}>
-            {MEDICAL_SPECIALTIES.map((certification: string) => (
+          <View style={styles.modalSearchContainer}>
+            <View style={styles.modalSearchInputContainer}>
+              <Ionicons name="search" size={20} color="#8E8E93" style={styles.modalSearchIcon} />
+              <TextInput
+                style={styles.modalSearchInput}
+                value={specialtySearch}
+                onChangeText={handleSpecialtySearch}
+                placeholder="Search board certifications..."
+                placeholderTextColor="#8E8E93"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus={true}
+              />
+              {specialtySearch.length > 0 && (
+                <TouchableOpacity onPress={() => setSpecialtySearch('')} style={styles.modalSearchClear}>
+                  <Ionicons name="close-circle" size={20} color="#8E8E93" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
+            {filteredSpecialties.map((certification: string) => (
               <TouchableOpacity
                 key={certification}
                 style={styles.modalOption}
-                onPress={() => {
-                  updateFormData('boardCertification', certification);
-                  setShowSpecialtyPicker(false);
-                }}
+                onPress={() => selectSpecialty(certification)}
               >
                 <Text style={styles.modalOptionText}>{certification}</Text>
                 {formData.boardCertification === certification && (
@@ -583,6 +653,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 )}
               </TouchableOpacity>
             ))}
+            {filteredSpecialties.length === 0 && (
+              <View style={styles.modalNoResults}>
+                <Text style={styles.modalNoResultsText}>No specialties found</Text>
+                <Text style={styles.modalNoResultsSubtext}>Try adjusting your search terms</Text>
+              </View>
+            )}
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -600,15 +676,32 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             <Text style={styles.modalTitle}>Fellowship</Text>
             <View style={{ width: 60 }} />
           </View>
-          <ScrollView style={styles.modalContent}>
-            {FELLOWSHIPS.map((fellowship: string) => (
+          <View style={styles.modalSearchContainer}>
+            <View style={styles.modalSearchInputContainer}>
+              <Ionicons name="search" size={20} color="#8E8E93" style={styles.modalSearchIcon} />
+              <TextInput
+                style={styles.modalSearchInput}
+                value={fellowshipSearch}
+                onChangeText={handleFellowshipSearch}
+                placeholder="Search fellowships..."
+                placeholderTextColor="#8E8E93"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus={true}
+              />
+              {fellowshipSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setFellowshipSearch('')} style={styles.modalSearchClear}>
+                  <Ionicons name="close-circle" size={20} color="#8E8E93" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
+            {filteredFellowships.map((fellowship: string) => (
               <TouchableOpacity
                 key={fellowship}
                 style={styles.modalOption}
-                onPress={() => {
-                  updateFormData('fellowship', fellowship);
-                  setShowFellowshipPicker(false);
-                }}
+                onPress={() => selectFellowship(fellowship)}
               >
                 <Text style={styles.modalOptionText}>{fellowship}</Text>
                 {formData.fellowship === fellowship && (
@@ -616,6 +709,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 )}
               </TouchableOpacity>
             ))}
+            {filteredFellowships.length === 0 && (
+              <View style={styles.modalNoResults}>
+                <Text style={styles.modalNoResultsText}>No fellowships found</Text>
+                <Text style={styles.modalNoResultsSubtext}>Try adjusting your search terms</Text>
+              </View>
+            )}
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -942,6 +1041,16 @@ const styles = {
     fontWeight: '600',
     color: '#000',
   },
+  modalSearchContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  modalSearchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 12,
+    color: '#000',
+  },
   modalContent: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -958,6 +1067,37 @@ const styles = {
   modalOptionText: {
     fontSize: 16,
     color: '#000',
+  },
+  modalSearchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  modalSearchIcon: {
+    marginRight: 8,
+  },
+  modalSearchClear: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  modalNoResults: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  modalNoResultsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginBottom: 8,
+  },
+  modalNoResultsSubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
   },
 } as const;
 

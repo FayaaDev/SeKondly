@@ -224,11 +224,27 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
             {profileUser.firstName} {profileUser.lastName}
           </Text>
           
-          <Text style={styles.userInfo}>
-            {profileUser.specialty} • {profileUser.experience}
+          <Text style={styles.userSpecialty}>
+            {profileUser.specialty}
           </Text>
           
-          <Text style={styles.institution}>
+          {profileUser.fellowship && (
+            <Text style={styles.userFellowship}>
+              {profileUser.fellowship}
+            </Text>
+          )}
+          
+          <Text style={styles.userExperienceInstitution}>
+            {profileUser.experience && (
+              <>
+                {profileUser.experience.toString().includes('experience') 
+                  ? profileUser.experience 
+                  : profileUser.experience.toString().includes('years')
+                    ? `${profileUser.experience} experience`
+                    : `${profileUser.experience} years experience`}
+                {profileUser.institution && '\n'}
+              </>
+            )}
             {profileUser.institution}
           </Text>
 
@@ -434,15 +450,45 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 4,
   },
+  userSpecialty: {
+    fontSize: 16,
+    color: "#000000",
+    marginBottom: 4,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
   userInfo: {
     fontSize: 16,
     color: '#8E8E93',
     marginBottom: 4,
   },
+  userFellowship: {
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  userExperience: {
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  userExperienceInstitution: {
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
   institution: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#000000',
     marginBottom: 20,
+    textAlign: 'center',
   },
   followButton: {
     backgroundColor: '#007AFF',
