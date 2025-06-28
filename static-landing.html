@@ -37,37 +37,16 @@
             width: 120px;
             height: 120px;
             margin: 0 auto 2rem;
-            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
             border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             box-shadow: 0 10px 30px rgba(78, 205, 196, 0.3);
-        }
-        
-        .logo::before {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50% 0 50% 0;
-            transform: rotate(-45deg);
-            left: 15px;
-            top: 15px;
-        }
-        
-        .logo::after {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 0 50% 0 50%;
-            transform: rotate(-45deg);
-            right: 15px;
-            bottom: 15px;
+            background-image: url('/uploads/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
         
         h1 {
