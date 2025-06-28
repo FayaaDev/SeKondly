@@ -37,23 +37,44 @@
             width: 120px;
             height: 120px;
             margin: 0 auto 2rem;
-            background: #4ECDC4;
+            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
             border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            color: white;
-            font-weight: bold;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(78, 205, 196, 0.3);
+        }
+        
+        .logo::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50% 0 50% 0;
+            transform: rotate(-45deg);
+            left: 15px;
+            top: 15px;
+        }
+        
+        .logo::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 0 50% 0 50%;
+            transform: rotate(-45deg);
+            right: 15px;
+            bottom: 15px;
         }
         
         h1 {
             font-size: 3rem;
             margin-bottom: 1rem;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #4ECDC4;
+            font-weight: bold;
         }
         
         .tagline {
@@ -187,7 +208,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">S</div>
+        <div class="logo"></div>
         
         <h1>SeKondly</h1>
         <p class="tagline">Medical Case Consultation Platform</p>
