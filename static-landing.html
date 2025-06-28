@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeKondly - Medical Case Consultation App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: #4ECDC4;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tagline {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .download-section {
+            margin: 3rem 0;
+        }
+        
+        .download-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            min-width: 200px;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .download-btn.ios {
+            background: linear-gradient(45deg, #007AFF, #5856D6);
+        }
+        
+        .download-btn.android {
+            background: linear-gradient(45deg, #34A853, #4285F4);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .feature {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .feature p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .coming-soon {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            margin: 2rem 0;
+            display: inline-block;
+        }
+        
+        footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .tagline {
+                font-size: 1.2rem;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">S</div>
+        
+        <h1>SeKondly</h1>
+        <p class="tagline">Medical Case Consultation Platform</p>
+        
+        <p class="description">
+            Connect with medical professionals worldwide. Share complex cases, get expert opinions, 
+            and collaborate on challenging diagnoses. Join a community of healthcare providers 
+            dedicated to improving patient outcomes through knowledge sharing.
+        </p>
+        
+        <div class="coming-soon">
+            📱 Mobile App Coming Soon
+        </div>
+        
+        <div class="download-section">
+            <h3 class="download-title">Download SeKondly Mobile App</h3>
+            <div class="download-buttons">
+                <a href="#" class="download-btn ios" onclick="alert('iOS app will be available soon on the App Store!')">
+                    <span>📱</span>
+                    <div>
+                        <div style="font-size: 0.8rem;">Download for</div>
+                        <div>iOS</div>
+                    </div>
+                </a>
+                <a href="#" class="download-btn android" onclick="alert('Android app will be available soon on Google Play!')">
+                    <span>🤖</span>
+                    <div>
+                        <div style="font-size: 0.8rem;">Download for</div>
+                        <div>Android</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🏥</div>
+                <h3>Medical Cases</h3>
+                <p>Share and discuss complex medical cases with healthcare professionals worldwide</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">👨‍⚕️</div>
+                <h3>Expert Consultation</h3>
+                <p>Get second opinions from specialists across different medical fields</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <h3>Secure & Private</h3>
+                <p>HIPAA-compliant platform ensuring patient privacy and data security</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>&copy; 2025 SeKondly. All rights reserved. | Empowering healthcare through collaboration</p>
+        </footer>
+    </div>
+</body>
+</html>

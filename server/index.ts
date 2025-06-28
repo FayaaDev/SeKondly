@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
@@ -237,7 +238,15 @@ app.get('/api/users/:userId/follow-status', async (req, res) => {
     // setting up all the other routes so the catch-all route
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
-      await setupVite(app, server);
+      // Serve static landing page instead of Vite development server
+      app.get('*', (req, res, next) => {
+        // Skip API routes
+        if (req.path.startsWith('/api/')) {
+          return next();
+        }
+        // Serve the static landing page
+        res.sendFile(path.resolve(process.cwd(), 'static-landing.html'));
+      });
     } else {
       serveStatic(app);
     }
