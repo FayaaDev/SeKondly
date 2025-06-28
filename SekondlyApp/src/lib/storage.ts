@@ -33,6 +33,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS_CACHE: '@MedConnect:notifications_cache',
   DRAFT_CASE: '@MedConnect:draft_case',
   ONBOARDING_COMPLETED: '@MedConnect:onboarding_completed',
+  LOGOUT_TIMESTAMP: '@MedConnect:logout_timestamp',
 } as const;
 
 interface AppSettings {
@@ -128,6 +129,19 @@ export class StorageService {
 
   static async removeUser(): Promise<void> {
     return this.removeItem(STORAGE_KEYS.USER_DATA);
+  }
+
+  // Logout Timestamp Methods
+  static async setLogoutTimestamp(timestamp: number): Promise<void> {
+    return this.setItem(STORAGE_KEYS.LOGOUT_TIMESTAMP, timestamp);
+  }
+
+  static async getLogoutTimestamp(): Promise<number | null> {
+    return this.getItem<number>(STORAGE_KEYS.LOGOUT_TIMESTAMP);
+  }
+
+  static async removeLogoutTimestamp(): Promise<void> {
+    return this.removeItem(STORAGE_KEYS.LOGOUT_TIMESTAMP);
   }
 
   // App Settings Methods
@@ -307,6 +321,7 @@ export class StorageService {
         STORAGE_KEYS.FAVORITES_CACHE,
         STORAGE_KEYS.NOTIFICATIONS_CACHE,
         STORAGE_KEYS.SEARCH_HISTORY,
+        // Note: Don't clear LOGOUT_TIMESTAMP here - we need it for protection
       ];
       
       // Use batch removal for performance
