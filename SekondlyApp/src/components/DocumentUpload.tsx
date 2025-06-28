@@ -11,6 +11,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config/api';
 
 interface DocumentUploadProps {
   onUploadComplete: () => void;
@@ -36,7 +37,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
         name: file.name,
       } as any);
 
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/documents`, {
+      const response = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
         headers: {

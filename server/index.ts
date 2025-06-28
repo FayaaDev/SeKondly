@@ -15,6 +15,8 @@ app.use(cors({
     'http://localhost:8081',    // Expo web
     'http://192.168.0.205:8081', // Expo web on network
     'http://172.20.10.3:8081', // Expo web on network
+    'https://sekondly.app',     // Production domain
+    'http://sekondly.app',      // Production domain (HTTP fallback)
     // Allow Expo Go app and other development origins
     /^exp:\/\/.*$/,
     /^http:\/\/192\.168\.0\.\d+:8081$/,

@@ -20,9 +20,9 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:5001';
   }
   
-  // For iOS/Android - connect to InterServer deployment
-  // Using your deployed server instead of local development
-  return 'http://174.138.183.153:5001';
+  // For iOS/Android - connect to production deployment
+  // Using HTTPS with SSL certificates
+  return 'https://sekondly.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
