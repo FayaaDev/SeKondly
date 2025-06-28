@@ -31,19 +31,25 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      // First set user to null to prevent UI showing stale data
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Make logout request to server
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
       
-      // Clear query cache and redirect
+      // Clear all cached data
       queryClient.clear();
-      window.location.href = "/";
+      
+      // Force reload to ensure clean state
+      window.location.replace("/");
     } catch (error) {
       console.error("Sign out error:", error);
       // Even if logout fails, clear cache and redirect
       queryClient.clear();
-      window.location.href = "/";
+      window.location.replace("/");
     }
   };
 

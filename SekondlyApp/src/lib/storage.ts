@@ -301,17 +301,31 @@ export class StorageService {
   // Complete logout method
   static async clearAllAuthData(): Promise<void> {
     try {
-      await Promise.all([
-        this.removeAuthToken(),
-        this.removeUser(),
-        this.clearSearchHistory(),
-        this.setFavoritesCache([]),
-        this.setNotificationsCache([]),
-      ]);
+      const authKeys = [
+        STORAGE_KEYS.AUTH_TOKEN,
+        STORAGE_KEYS.USER_DATA,
+        STORAGE_KEYS.FAVORITES_CACHE,
+        STORAGE_KEYS.NOTIFICATIONS_CACHE,
+        STORAGE_KEYS.SEARCH_HISTORY,
+      ];
+      
+      // Use batch removal for performance
+      await AsyncStorage.multiRemove(authKeys);
       console.log('All authentication data cleared');
     } catch (error) {
       console.error('Error clearing auth data:', error);
-      throw error;
+      // Fallback to individual removals
+      try {
+        await Promise.all([
+          this.removeAuthToken(),
+          this.removeUser(),
+          this.clearSearchHistory(),
+          this.setFavoritesCache([]),
+          this.setNotificationsCache([]),
+        ]);
+      } catch (fallbackError) {
+        console.error('Fallback clear failed:', fallbackError);
+      }
     }
   }
 }

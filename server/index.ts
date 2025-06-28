@@ -36,11 +36,14 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-here',
   resave: false,
   saveUninitialized: false,
+  name: 'sekondly.sid', // Custom session name
   cookie: {
     secure: false, // Set to true in production with HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Better security
+  },
+  rolling: true // Reset session timeout on each request
 }));
 
 app.use((req, res, next) => {

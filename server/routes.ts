@@ -204,21 +204,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('POST /api/auth/logout - Session before destroy:', req.session?.user ? 'exists' : 'null');
       
       if (req.session) {
+        // Store session ID before destroying
+        const sessionId = req.sessionID;
+        
         req.session.destroy((err) => {
           if (err) {
             console.error("Error destroying session:", err);
             return res.status(500).json({ message: "Logout failed" });
           }
           console.log('Session destroyed successfully');
-          res.clearCookie('connect.sid'); // Clear session cookie
-          res.clearCookie('session'); // Clear any additional session cookies
+          
+          // Clear session cookies with explicit options
+          res.clearCookie('sekondly.sid', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax'
+          });
+          res.clearCookie('connect.sid', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax'
+          });
+          res.clearCookie('session', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax'
+          });
+          
           res.json({ message: "Logout successful" });
         });
       } else {
         // Even if no session, clear cookies and return success
         console.log('No session to destroy');
-        res.clearCookie('connect.sid');
-        res.clearCookie('session');
+        res.clearCookie('sekondly.sid', {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax'
+        });
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax'
+        });
+        res.clearCookie('session', {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax'
+        });
         res.json({ message: "Logout successful" });
       }
     } catch (error) {
@@ -240,6 +272,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error checking auth:", error);
       res.status(500).json({ authenticated: false });
     }
+  });
+
+  // Debug endpoint to check session status (development only)
+  app.get("/api/auth/debug-session", async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ message: "Not found" });
+    }
+    
+    res.json({
+      hasSession: !!req.session,
+      hasUser: !!req.session?.user,
+      sessionID: req.sessionID,
+      cookies: req.headers.cookie,
+      userAgent: req.headers['user-agent'],
+      timestamp: new Date().toISOString()
+    });
   });
 
   // Get all cases

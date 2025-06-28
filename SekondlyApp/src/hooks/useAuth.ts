@@ -37,10 +37,13 @@ export function useAuth(): AuthResponse {
         });
         
         if (!response.ok) {
-          // If API call fails, remove cached data
-          console.log('Auth API call failed, clearing cached data');
-          await StorageService.removeAuthToken();
-          await StorageService.removeUser();
+          // If API call fails, clear cached data and don't retry
+          console.log('Auth API call failed with status:', response.status);
+          if (response.status === 401) {
+            console.log('401 Unauthorized - clearing cached data');
+            await StorageService.removeAuthToken();
+            await StorageService.removeUser();
+          }
           return null;
         }
         
@@ -76,39 +79,42 @@ export function useAuth(): AuthResponse {
       console.log('useAuth: Starting signout process');
       setIsSigningOut(true);
       
-      // First, set user to null immediately to prevent race conditions
+      // 1. Immediately set user to null to prevent UI issues
       queryClient.setQueryData(["/api/auth/user"], null);
       
-      // Clear all local storage first
+      // 2. Clear all local storage and cache immediately  
       await StorageService.clearAllAuthData();
+      await queryClient.clear();
       
-      // Then attempt server logout
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      // 3. Then attempt server logout (don't wait for it)
+      fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+      }).catch(error => {
+        console.log('Server logout failed (continuing anyway):', error);
       });
       
-      // Clear all query cache to prevent any stale data
-      await queryClient.clear();
+      console.log('Sign out completed - all local data cleared');
       
-      // Wait a bit before allowing refetch
+      // 4. Reset sign out state after a brief delay
       setTimeout(() => {
         setIsSigningOut(false);
-      }, 1000);
+      }, 500);
       
-      console.log('Sign out successful, cache cleared');
     } catch (error) {
       console.error("Sign out error:", error);
-      // Even if server logout fails, ensure local state is cleared
-      await StorageService.clearAllAuthData();
-      queryClient.setQueryData(["/api/auth/user"], null);
-      await queryClient.clear();
+      // Ensure local state is always cleared even if something fails
+      try {
+        await StorageService.clearAllAuthData();
+        queryClient.setQueryData(["/api/auth/user"], null);
+        await queryClient.clear();
+      } catch (clearError) {
+        console.error("Error clearing local data:", clearError);
+      }
       
       setTimeout(() => {
         setIsSigningOut(false);
-      }, 1000);
-      
-      console.log('Sign out completed (local cleanup), cache cleared');
+      }, 500);
     }
   };
 
