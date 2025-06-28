@@ -14,12 +14,15 @@ interface AuthResponse {
 export function useAuth(): AuthResponse {
   const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [logoutTimestamp, setLogoutTimestamp] = useState<number | null>(null);
   
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async (): Promise<User | null> => {
-      if (isSigningOut) {
-        console.log('useAuth: Skipping fetch during signout');
+      // Prevent any fetches during signout or for 3 seconds after logout
+      const now = Date.now();
+      if (isSigningOut || (logoutTimestamp && (now - logoutTimestamp) < 3000)) {
+        console.log('useAuth: Skipping fetch - recent logout or signing out');
         return null;
       }
       
@@ -61,32 +64,41 @@ export function useAuth(): AuthResponse {
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !isSigningOut, // Don't refetch during signout
+    enabled: !isSigningOut && (!logoutTimestamp || (Date.now() - logoutTimestamp) >= 3000),
+    refetchOnMount: !isSigningOut && (!logoutTimestamp || (Date.now() - logoutTimestamp) >= 3000),
+    refetchOnWindowFocus: false, // Disable focus refetch entirely
   });
 
-  // Cache user data whenever it changes
+  // Cache user data whenever it changes (but not during signout or recent logout)
   useEffect(() => {
-    if (user) {
+    const now = Date.now();
+    const recentLogout = logoutTimestamp && (now - logoutTimestamp) < 3000;
+    
+    if (user && !isSigningOut && !recentLogout) {
       console.log('useAuth: User data changed, caching:', { id: user.id, email: user.email });
       StorageService.setUser(user);
-    } else {
+    } else if (!user) {
       console.log('useAuth: User is null');
+    } else if (recentLogout) {
+      console.log('useAuth: Skipping cache - recent logout');
     }
-  }, [user]);
+  }, [user, isSigningOut, logoutTimestamp]);
 
   const signOut = async () => {
     try {
       console.log('useAuth: Starting signout process');
       setIsSigningOut(true);
+      setLogoutTimestamp(Date.now());
       
-      // 1. Immediately set user to null to prevent UI issues
+      // 1. Immediately set user to null and disable all queries
       queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
       
       // 2. Clear all local storage and cache immediately  
       await StorageService.clearAllAuthData();
       await queryClient.clear();
       
-      // 3. Then attempt server logout (don't wait for it)
+      // 3. Then attempt server logout (don't wait for it since server may still be broken)
       fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
@@ -96,17 +108,19 @@ export function useAuth(): AuthResponse {
       
       console.log('Sign out completed - all local data cleared');
       
-      // 4. Reset sign out state after a brief delay
+      // 4. Reset signing out state but keep logout timestamp for longer protection
       setTimeout(() => {
         setIsSigningOut(false);
-      }, 500);
+      }, 1000);
       
     } catch (error) {
       console.error("Sign out error:", error);
       // Ensure local state is always cleared even if something fails
       try {
-        await StorageService.clearAllAuthData();
+        setLogoutTimestamp(Date.now());
         queryClient.setQueryData(["/api/auth/user"], null);
+        queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
+        await StorageService.clearAllAuthData();
         await queryClient.clear();
       } catch (clearError) {
         console.error("Error clearing local data:", clearError);
@@ -114,7 +128,7 @@ export function useAuth(): AuthResponse {
       
       setTimeout(() => {
         setIsSigningOut(false);
-      }, 500);
+      }, 1000);
     }
   };
 
