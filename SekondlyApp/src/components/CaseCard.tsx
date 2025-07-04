@@ -118,7 +118,7 @@ export default function CaseCard({
     return past.toLocaleDateString();
   };
 
-  const truncateHistory = (text: string, maxLength: number = 350) => {
+  const truncateHistory = (text: string, maxLength: number = 200) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + "...";
   };
@@ -305,7 +305,7 @@ export default function CaseCard({
         <Text style={styles.history}>
           {showFullHistory ? caseData.history : truncateHistory(caseData.history)}
         </Text>
-        {caseData.history.length > 350 && (
+        {caseData.history.length > 200 && (
           <TouchableOpacity 
             style={styles.readMoreButton}
             onPress={() => setShowFullHistory(!showFullHistory)}
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   },
   singleImage: {
     width: imageWidth,
-    height: 200,
+    height: 150,
   },
   imageGrid: {
     flexDirection: "row",

@@ -1344,7 +1344,7 @@ const styles = StyleSheet.create({
   caseContainer: {
     flex: 1,
     paddingHorizontal: 8, // Reduced padding to make card wider
-    paddingTop: 20,
+    paddingTop: 40,
     paddingBottom: 140, // Space for bottom navigation
     justifyContent: 'center',
   },

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Modal, Linking } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from '../lib/queryClient';
+import { API_BASE_URL } from '../config/api';
 
 // Types
 interface User {
@@ -235,6 +236,7 @@ export default function AdminPanelScreen() {
                       style={[styles.actionButton, styles.viewButton]}
                     >
                       <Ionicons name="eye" size={16} color="#4ECDC4" />
+                      <Text style={styles.viewButtonText}>View Docs</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -333,8 +335,10 @@ export default function AdminPanelScreen() {
                     {document.fileUrl && (
                       <TouchableOpacity
                         onPress={() => {
-                          // In a real app, you'd open the document viewer
-                          Alert.alert('Document View', 'Would open document viewer');
+                          if (document.fileUrl) {
+                            const fullUrl = `${API_BASE_URL}${document.fileUrl}`;
+                            Linking.openURL(fullUrl).catch(err => Alert.alert('Error', 'Could not open document.'));
+                          }
                         }}
                         style={[styles.actionButton, styles.viewButton]}
                       >
@@ -420,7 +424,10 @@ export default function AdminPanelScreen() {
                     {document.fileUrl && (
                       <TouchableOpacity
                         onPress={() => {
-                          Alert.alert('Document View', 'Would open document viewer for: ' + document.fileName);
+                          if (document.fileUrl) {
+                            const fullUrl = `${API_BASE_URL}${document.fileUrl}`;
+                            Linking.openURL(fullUrl).catch(err => Alert.alert('Error', 'Could not open document.'));
+                          }
                         }}
                         style={styles.documentViewButton}
                       >
@@ -716,6 +723,12 @@ const styles = StyleSheet.create({
   },
   rejectButtonText: {
     color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  viewButtonText: {
+    color: '#4ECDC4',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
