@@ -341,11 +341,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as Express.Multer.File[];
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
-      const caseData = insertCaseSchema.parse({
+      const { format } = req.body;
+
+      // Format-specific validation
+      if (format === 'short' && !req.body.history) {
+        return res.status(400).json({
+          message: "Failed to create case",
+          error: "History is required for short format cases"
+        });
+      }
+      
+      if (format === 'long' && (!req.body.chiefComplaint || !req.body.historyOfPresentIllness)) {
+        return res.status(400).json({
+          message: "Failed to create case",
+          error: "Chief complaint and history of present illness are required for long format cases"
+        });
+      }
+
+      const caseData = {
         ...req.body,
-        imageUrls: imageUrls, // Changed from 'images' to 'imageUrls'
+        imageUrls,
         authorId: req.user?.id || "mock-user-1",
-      });
+        history: format === 'short' ? req.body.history : null,
+      };
       
       console.log('POST /api/cases - Parsed case data:', caseData);
       

@@ -48,6 +48,16 @@ export type CaseWithAuthor = Case & {
   isLikedByUser?: boolean;
   userLikeId?: number;
   isFavoritedByUser?: boolean;
+  // Long case format fields
+  format?: 'short' | 'long';
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  systemicReview?: string;
+  examination?: string;
+  management?: string;
 };
 
 export type CommentWithAuthor = CaseComment & {

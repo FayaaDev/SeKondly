@@ -29,6 +29,14 @@ interface CaseCardProps {
 
 const { width: screenWidth } = Dimensions.get("window");
 const imageWidth = screenWidth - 64; // Account for padding
+const MAX_WORDS = 200;
+
+// Helper function to truncate text to word limit
+const truncateText = (text: string): string => {
+  const words = text.split(/\s+/);
+  if (words.length <= MAX_WORDS) return text;
+  return words.slice(0, MAX_WORDS).join(' ') + '...';
+};
 
 // Helper function to get full image URL
 const getFullImageUrl = (imageUrl: string): string => {
@@ -47,6 +55,19 @@ export default function CaseCard({
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const queryClient = useQueryClient();
+
+  // Extract format-specific fields
+  const isLongCase = caseData.format === 'long';
+  const longCaseFields = isLongCase ? {
+    chiefComplaint: caseData.chiefComplaint,
+    historyOfPresentIllness: caseData.historyOfPresentIllness,
+    pastMedicalHistory: caseData.pastMedicalHistory,
+    familyHistory: caseData.familyHistory,
+    drugHistory: caseData.drugHistory,
+    systemicReview: caseData.systemicReview,
+    examination: caseData.examination,
+    management: caseData.management
+  } : null;
 
   // Like mutation
   const likeMutation = useMutation({
@@ -257,15 +278,85 @@ export default function CaseCard({
     );
   };
 
+  // Render case content based on format
+  const renderCaseContent = () => {
+    if (isLongCase && longCaseFields) {
+      return (
+        <View style={styles.longCaseContainer}>
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Chief Complaint</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.chiefComplaint || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>History of Present Illness</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.historyOfPresentIllness || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Past Medical & Surgical History</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.pastMedicalHistory || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Family History</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.familyHistory || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Drug History</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.drugHistory || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Systemic Review</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.systemicReview || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Examination</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.examination || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Management</Text>
+            <Text style={styles.sectionContent}>{longCaseFields.management || 'N/A'}</Text>
+          </View>
+        </View>
+      );
+    } else {
+      // Original short case rendering
+      return (
+        <View style={styles.historyContainer}>
+          <Text style={styles.history} numberOfLines={6}>
+            {truncateText(caseData.history)}
+          </Text>
+          {caseData.history.length > MAX_WORDS && (
+            <TouchableOpacity 
+              style={styles.readMoreButton}
+              onPress={onPress}
+            >
+              <Text style={styles.readMoreText}>Read more</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+  };
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.95}>
-      {/* Header */}
+    <TouchableOpacity 
+      style={[styles.container, isLongCase && styles.longCaseContainer]} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.authorInfo} onPress={handleProfilePress}>
           <View style={styles.avatar}>
             {caseData.author?.profileImageUrl ? (
               <ExpoImage
-                source={{ uri: getFullImageUrl(caseData.author?.profileImageUrl) }}
+                source={{ uri: getFullImageUrl(caseData.author.profileImageUrl) }}
                 style={styles.avatarImage}
                 contentFit="cover"
               />
@@ -278,20 +369,19 @@ export default function CaseCard({
           <View style={styles.authorDetails}>
             <View style={styles.authorNameRow}>
               <Text style={styles.authorName}>
-                Dr. {caseData.author?.firstName || "Unknown"} {caseData.author?.lastName || "User"}
+                {caseData.author?.firstName} {caseData.author?.lastName}
               </Text>
               <View style={styles.specialtyBadge}>
                 <Text style={styles.specialtyBadgeText}>{caseData.specialty}</Text>
               </View>
             </View>
             <View style={styles.metaRow}>
-              <Text style={styles.timeAgo}>{formatTimeAgo(caseData.createdAt!)}</Text>
+              <Text style={styles.timeAgo}>{formatTimeAgo(caseData.createdAt || new Date())}</Text>
               <Text style={styles.metaSeparator}>•</Text>
-              <Text style={styles.viewCount}>{caseData.viewsCount || 0} views</Text>
+              <Text style={styles.viewCount}>{caseData.viewsCount} views</Text>
             </View>
           </View>
         </TouchableOpacity>
-        
         <TouchableOpacity style={styles.moreButton} onPress={handleMoreOptions}>
           <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
         </TouchableOpacity>
@@ -300,22 +390,8 @@ export default function CaseCard({
       {/* Title */}
       <Text style={styles.title}>{caseData.title}</Text>
 
-      {/* History/Description */}
-      <View style={styles.historyContainer}>
-        <Text style={styles.history}>
-          {showFullHistory ? caseData.history : truncateHistory(caseData.history)}
-        </Text>
-        {caseData.history.length > 200 && (
-          <TouchableOpacity 
-            style={styles.readMoreButton}
-            onPress={() => setShowFullHistory(!showFullHistory)}
-          >
-            <Text style={styles.readMoreText}>
-              {showFullHistory ? "Show less" : "Read more"}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      {/* Case Content (Short or Long format) */}
+      {renderCaseContent()}
 
       {/* Images */}
       {renderImages()}
@@ -325,51 +401,50 @@ export default function CaseCard({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => likeMutation.mutate()}
-          disabled={likeMutation.isPending}
         >
           <Ionicons
-            name={caseData.isLikedByUser ? "thumbs-up" : "thumbs-up-outline"}
+            name={caseData.isLikedByUser ? "heart" : "heart-outline"}
             size={20}
             color={caseData.isLikedByUser ? "#4ECDC4" : "#666"}
           />
-          <Text style={[
-            styles.actionText,
-            caseData.isLikedByUser && styles.actionTextActive
-          ]}>
+          <Text
+            style={[
+              styles.actionText,
+              caseData.isLikedByUser && styles.actionTextActive,
+            ]}
+          >
             {caseData.likesCount || 0}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.actionButton} 
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={onPress}
         >
           <Ionicons name="chatbubble-outline" size={20} color="#666" />
           <Text style={styles.actionText}>{caseData.commentsCount || 0}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Ionicons name="share-outline" size={20} color="#666" />
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => favoriteMutation.mutate()}
-          disabled={favoriteMutation.isPending}
         >
           <Ionicons
-            name={caseData.isFavoritedByUser ? "heart" : "heart-outline"}
+            name={caseData.isFavoritedByUser ? "bookmark" : "bookmark-outline"}
             size={20}
-            color={caseData.isFavoritedByUser ? "#FF3B30" : "#666"}
+            color={caseData.isFavoritedByUser ? "#4ECDC4" : "#666"}
           />
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <Ionicons name="share-outline" size={20} color="#666" />
+        </TouchableOpacity>
       </View>
-      
+
       {/* Image Gallery Modal */}
       <ImageGalleryModal
         visible={showImageGallery}
-        images={caseData.imageUrls?.slice(0, 3).map(url => getFullImageUrl(url)) || []}
+        images={caseData.imageUrls?.map(getFullImageUrl) || []}
         initialIndex={currentImageIndex}
         onClose={() => setShowImageGallery(false)}
       />
@@ -474,20 +549,21 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   historyContainer: {
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 12,
   },
   history: {
     fontSize: 15,
-    color: "#444",
-    lineHeight: 24, // Increased from 22 for better readability
+    lineHeight: 20,
+    color: "#333",
   },
   readMoreButton: {
     marginTop: 4,
   },
   readMoreText: {
-    fontSize: 15,
     color: "#4ECDC4",
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
   },
   singleImageContainer: {
     marginBottom: 16,
@@ -587,5 +663,46 @@ const styles = StyleSheet.create({
   },
   actionTextActive: {
     color: "#4ECDC4",
+  },
+  imageContainer: {
+    marginBottom: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
+  moreImagesOverlay: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 8,
+    borderTopLeftRadius: 8,
+  },
+  moreImagesText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Long case format styles
+  longCaseContainer: {
+    marginTop: 12,
+  },
+  contentSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sectionContent: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#333',
   },
 });

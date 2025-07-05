@@ -47,8 +47,8 @@ const LAST_NAMES = [
   "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White",
   "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young",
   "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores",
-  "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell",
-  "Carter", "Roberts", "Gomez", "Phillips", "Evans", "Turner", "Diaz", "Parker",
+  "Green", "AdAMS", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell",
+  "Carter", "Roberts", "Gomez", "Phillips", "EvANS", "Turner", "Diaz", "Parker",
   "Cruz", "Edwards", "Collins", "Reyes", "Stewart", "Morris", "Morales", "Murphy",
   "Cook", "Rogers", "Gutierrez", "Ortiz", "Morgan", "Cooper", "Peterson", "Bailey"
 ];
@@ -88,6 +88,28 @@ const MEDICAL_BOARDS = [
   "American Board of Orthopedic Surgery",
   "American Board of Obstetrics and Gynecology"
 ];
+
+// Sample medical imaging URLs for test data
+const MEDICAL_IMAGES = {
+  "Cardiology": [
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_13ox1i13ox1i13ox.png",
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_8p7z2e8p7z2e8p7z.png",
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_k77vjpk77vjpk77v.png",
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_l4wp2ql4wp2ql4wp.png"
+  ],
+  "Neurology": [
+    "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_2d32c763-0091-4293-a44f-91161a64f94e.png",
+    "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_4dcc12d0-4baf-46ec-8d2b-651466cf9641.png",
+    "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_626933dc-ace5-42ad-833a-28d9178d9648.png",
+    "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_a1316a25-8f6e-49c4-8ed1-23df555fe329.png"
+  ],
+  "Default": [
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_ut62r5ut62r5ut62.png",
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_uwpz5zuwpz5zuwpz.png",
+    "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_zi0lt8zi0lt8zi0l.png",
+    "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_cb9366f1-bea2-47e0-bbd9-01b3ef03ee6b.png"
+  ]
+};
 
 // Case title templates for different specialties
 const CASE_TEMPLATES = {
@@ -206,12 +228,30 @@ function getRandomElement<T>(array: readonly T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
+const PROFILE_IMAGES = [
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_13ox1i13ox1i13ox.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_8p7z2e8p7z2e8p7z.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_k77vjpk77vjpk77v.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_l4wp2ql4wp2ql4wp.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_ut62r5ut62r5ut62.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_uwpz5zuwpz5zuwpz.png",
+  "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_zi0lt8zi0lt8zi0l.png",
+  "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_2d32c763-0091-4293-a44f-91161a64f94e.png",
+  "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_4dcc12d0-4baf-46ec-8d2b-651466cf9641.png",
+  "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_626933dc-ace5-42ad-833a-28d9178d9648.png",
+  "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_a1316a25-8f6e-49c4-8ed1-23df555fe329.png",
+  "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_cb9366f1-bea2-47e0-bbd9-01b3ef03ee6b.png",
+  "/Users/fayaa/SeKondly/uploads/1.png",
+  "/Users/fayaa/SeKondly/uploads/2.png"
+];
+
 function generateRandomUser() {
   const firstName = getRandomElement(FIRST_NAMES);
   const lastName = getRandomElement(LAST_NAMES);
   const specialty = getRandomElement(MEDICAL_SPECIALTIES);
   const institution = getRandomElement(INSTITUTIONS);
   const medicalBoard = getRandomElement(MEDICAL_BOARDS);
+  const profileImage = getRandomElement(PROFILE_IMAGES);
   
   return {
     id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -229,7 +269,8 @@ function generateRandomUser() {
     isApproved: true,
     isAdmin: false,
     approvedAt: new Date(),
-    approvedBy: "admin_system"
+    approvedBy: "admin_system",
+    profileImage
   };
 }
 
@@ -237,6 +278,11 @@ function generateRandomCase(authorId: string, specialty: string) {
   const templates = CASE_TEMPLATES[specialty as keyof typeof CASE_TEMPLATES] || CASE_TEMPLATES["Internal Medicine"];
   const title = getRandomElement(templates);
   const history = generateCaseHistory(specialty, title);
+  
+  // Get specialty-specific images or default ones
+  const availableImages = MEDICAL_IMAGES[specialty as keyof typeof MEDICAL_IMAGES] || MEDICAL_IMAGES["Default"];
+  const numImages = Math.floor(Math.random() * 2) + 2; // 2-3 images per case
+  const imageUrls = Array.from({ length: numImages }, () => getRandomElement(availableImages));
   
   return {
     title,
@@ -246,7 +292,7 @@ function generateRandomCase(authorId: string, specialty: string) {
     isApproved: true,
     approvedAt: new Date(),
     approvedBy: "admin_system",
-    imageUrls: [], // No images for test data
+    imageUrls,
     likesCount: Math.floor(Math.random() * 50),
     commentsCount: Math.floor(Math.random() * 20),
     viewsCount: Math.floor(Math.random() * 200) + 50
@@ -257,11 +303,11 @@ async function generateTestData() {
   try {
     console.log("🚀 Starting test data generation...");
     
-    // Generate 20 random users
-    const userCount = 20;
+    // Generate 14 random users
+    const userCount = 14;
     const casesPerUser = 3; // Each user will have 2-4 cases
     
-    console.log(`📝 Generating ${userCount} users...`);
+    console.log(`📝 Generating ${userCount} users with profile images...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
     
     for (let i = 0; i < userCount; i++) {

@@ -22,9 +22,45 @@ import StorageService from '../lib/storage';
 import { API_BASE_URL } from '../config/api';
 import { MEDICAL_SPECIALTIES } from '../types/shared';
 
+interface DraftCase {
+  title: string;
+  description: string;
+  format?: CaseFormat;
+  history?: string;
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  systemicReview?: string;
+  examination?: string;
+  management?: string;
+  specialty: string;
+  images: any[];
+  timestamp: number;
+}
+
 interface NewCaseModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+type CaseFormat = 'short' | 'long';
+
+interface CaseData {
+  title: string;
+  format: CaseFormat;
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  systemicReview?: string;
+  examination?: string;
+  management?: string;
+  history?: string; // for short format
+  specialty: string;
+  images: ImageAsset[];
 }
 
 interface ImageAsset {
@@ -36,8 +72,17 @@ interface ImageAsset {
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
+  const [caseFormat, setCaseFormat] = useState<CaseFormat>('short');
   const [title, setTitle] = useState('');
   const [history, setHistory] = useState('');
+  const [chiefComplaint, setChiefComplaint] = useState('');
+  const [historyOfPresentIllness, setHistoryOfPresentIllness] = useState('');
+  const [pastMedicalHistory, setPastMedicalHistory] = useState('');
+  const [familyHistory, setFamilyHistory] = useState('');
+  const [drugHistory, setDrugHistory] = useState('');
+  const [systemicReview, setSystemicReview] = useState('');
+  const [examination, setExamination] = useState('');
+  const [management, setManagement] = useState('');
   const [selectedImages, setSelectedImages] = useState<ImageAsset[]>([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [specialtyInput, setSpecialtyInput] = useState('');
@@ -57,11 +102,19 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     try {
       const draft = await StorageService.getDraftCase();
       if (draft) {
+        setCaseFormat(draft.format || 'short');
         setTitle(draft.title);
-        setHistory(draft.description);
+        setHistory(draft.history || '');
+        setChiefComplaint(draft.chiefComplaint || '');
+        setHistoryOfPresentIllness(draft.historyOfPresentIllness || '');
+        setPastMedicalHistory(draft.pastMedicalHistory || '');
+        setFamilyHistory(draft.familyHistory || '');
+        setDrugHistory(draft.drugHistory || '');
+        setSystemicReview(draft.systemicReview || '');
+        setExamination(draft.examination || '');
+        setManagement(draft.management || '');
         setSelectedSpecialty(draft.specialty);
         setSpecialtyInput(draft.specialty);
-        // Note: We can't restore images from draft due to security restrictions
         setHasDraft(true);
       }
     } catch (error) {
@@ -71,19 +124,38 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
 
   const saveDraft = async () => {
     try {
-      if (!title.trim() && !history.trim()) {
+      if (!title.trim() && !history.trim() && !chiefComplaint.trim()) {
         Alert.alert('Info', 'Nothing to save as draft');
         return;
       }
 
-      await StorageService.setDraftCase({
+      const draftData: DraftCase = {
         title: title.trim(),
-        description: history.trim(),
         specialty: selectedSpecialty,
-        images: [], // Can't save image URIs due to security
+        format: caseFormat,
+        images: [],
         timestamp: Date.now(),
-      });
+        description: caseFormat === 'short' 
+          ? history.trim()
+          : `${chiefComplaint.trim()}\n${historyOfPresentIllness.trim()}`,
+        ...(caseFormat === 'short' 
+          ? { 
+              history: history.trim(),
+            }
+          : {
+              chiefComplaint: chiefComplaint.trim(),
+              historyOfPresentIllness: historyOfPresentIllness.trim(),
+              pastMedicalHistory: pastMedicalHistory.trim(),
+              familyHistory: familyHistory.trim(),
+              drugHistory: drugHistory.trim(),
+              systemicReview: systemicReview.trim(),
+              examination: examination.trim(),
+              management: management.trim(),
+            }
+        ),
+      };
 
+      await StorageService.setDraftCase(draftData);
       Alert.alert('Success', 'Draft saved successfully');
       setHasDraft(true);
     } catch (error) {
@@ -166,8 +238,17 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   });
 
   const resetForm = () => {
+    setCaseFormat('short');
     setTitle('');
     setHistory('');
+    setChiefComplaint('');
+    setHistoryOfPresentIllness('');
+    setPastMedicalHistory('');
+    setFamilyHistory('');
+    setDrugHistory('');
+    setSystemicReview('');
+    setExamination('');
+    setManagement('');
     setSelectedImages([]);
     setSelectedSpecialty('');
     setSpecialtyInput('');
@@ -185,7 +266,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   };
 
   const handleImagePicker = async () => {
-    if (selectedImages.length >= 5) {
+    if (selectedImages.length >= 3) {
       Alert.alert('Maximum images', 'You can upload up to 3 images per case.');
       return;
     }
@@ -224,7 +305,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   };
 
   const openImageLibrary = async () => {
-    const remainingSlots = 5 - selectedImages.length;
+    const remainingSlots = 3 - selectedImages.length;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsMultipleSelection: true,
@@ -252,9 +333,20 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       return;
     }
     
-    if (!history.trim()) {
+    if (caseFormat === 'short' && !history.trim()) {
       Alert.alert('Missing history', 'Please enter the case history.');
       return;
+    }
+
+    if (caseFormat === 'long') {
+      if (!chiefComplaint.trim()) {
+        Alert.alert('Missing information', 'Please enter the chief complaint.');
+        return;
+      }
+      if (!historyOfPresentIllness.trim()) {
+        Alert.alert('Missing information', 'Please enter the history of present illness.');
+        return;
+      }
     }
     
     if (!selectedSpecialty) {
@@ -264,15 +356,28 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
 
     console.log('Preparing case submission:', {
       title: title.trim(),
-      history: history.trim(),
+      format: caseFormat,
       specialty: selectedSpecialty,
       imageCount: selectedImages.length,
     });
 
     const formData = new FormData();
     formData.append('title', title.trim());
-    formData.append('history', history.trim());
+    formData.append('format', caseFormat);
     formData.append('specialty', selectedSpecialty);
+
+    if (caseFormat === 'short') {
+      formData.append('history', history.trim());
+    } else {
+      formData.append('chiefComplaint', chiefComplaint.trim());
+      formData.append('historyOfPresentIllness', historyOfPresentIllness.trim());
+      formData.append('pastMedicalHistory', pastMedicalHistory.trim());
+      formData.append('familyHistory', familyHistory.trim());
+      formData.append('drugHistory', drugHistory.trim());
+      formData.append('systemicReview', systemicReview.trim());
+      formData.append('examination', examination.trim());
+      formData.append('management', management.trim());
+    }
 
     selectedImages.forEach((image, index) => {
       console.log(`Adding image ${index}:`, image.name);
@@ -394,7 +499,10 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
           <KeyboardAwareScrollView
             ref={scrollViewRef}
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 20 }}
+            contentContainerStyle={{ 
+              padding: 20,
+              paddingBottom: caseFormat === 'long' ? 100 : 20 
+            }}
             keyboardShouldPersistTaps="handled"
             enableOnAndroid={true}
             extraScrollHeight={20}
@@ -405,6 +513,63 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             }}
             scrollEnabled={!showSpecialtySuggestions}
           >
+            {/* Case Format Selection */}
+            <View style={{ marginBottom: 24 }}>
+              <Text style={{
+                fontSize: 17,
+                fontWeight: '600',
+                color: '#000000',
+                marginBottom: 8,
+              }}>
+                Case Format
+              </Text>
+              <View style={{
+                flexDirection: 'row',
+                gap: 12,
+              }}>
+                <TouchableOpacity
+                  onPress={() => setCaseFormat('short')}
+                  style={{
+                    flex: 1,
+                    padding: 16,
+                    borderRadius: 12,
+                    backgroundColor: caseFormat === 'short' ? '#4ECDC4' : '#F9F9F9',
+                    borderWidth: 1,
+                    borderColor: caseFormat === 'short' ? '#4ECDC4' : '#E5E5E7',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: caseFormat === 'short' ? '#FFFFFF' : '#1C1C1E',
+                    textAlign: 'center',
+                  }}>
+                    Short Case
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setCaseFormat('long')}
+                  style={{
+                    flex: 1,
+                    padding: 16,
+                    borderRadius: 12,
+                    backgroundColor: caseFormat === 'long' ? '#4ECDC4' : '#F9F9F9',
+                    borderWidth: 1,
+                    borderColor: caseFormat === 'long' ? '#4ECDC4' : '#E5E5E7',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: caseFormat === 'long' ? '#FFFFFF' : '#1C1C1E',
+                    textAlign: 'center',
+                  }}>
+                    Long Case
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Case Title */}
             <View style={{ marginBottom: 24 }}>
               <Text style={{
@@ -431,35 +596,80 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
               />
             </View>
 
-            {/* Brief History */}
-            <View style={{ marginBottom: 24 }}>
-              <Text style={{
-                fontSize: 17,
-                fontWeight: '600',
-                color: '#000000',
-                marginBottom: 8,
-              }}>
-                Brief History
-              </Text>
-              <TextInput
-                value={history}
-                onChangeText={setHistory}
-                placeholder="Describe the case background, symptoms, and relevant history..."
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#E5E5E7',
-                  borderRadius: 12,
-                  padding: 16,
-                  fontSize: 16,
-                  backgroundColor: '#FFFFFF',
-                  height: 120,
-                }}
-                placeholderTextColor="#8E8E93"
-              />
-            </View>
+            {caseFormat === 'short' ? (
+              /* Brief History */
+              <View style={{ marginBottom: 24 }}>
+                <Text style={{
+                  fontSize: 17,
+                  fontWeight: '600',
+                  color: '#000000',
+                  marginBottom: 8,
+                }}>
+                  Brief History
+                </Text>
+                <TextInput
+                  value={history}
+                  onChangeText={setHistory}
+                  placeholder="Describe the case background, symptoms, and relevant history..."
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#E5E5E7',
+                    borderRadius: 12,
+                    padding: 16,
+                    fontSize: 16,
+                    backgroundColor: '#FFFFFF',
+                    height: 120,
+                  }}
+                  placeholderTextColor="#8E8E93"
+                />
+              </View>
+            ) : (
+              /* Long Case Fields */
+              <>
+                {[
+                  { label: 'Chief Complaint', value: chiefComplaint, setter: setChiefComplaint, placeholder: 'Enter the main complaint...' },
+                  { label: 'History of Present Illness', value: historyOfPresentIllness, setter: setHistoryOfPresentIllness, placeholder: 'Describe the timeline and progression...' },
+                  { label: 'Past Medical & Surgical History', value: pastMedicalHistory, setter: setPastMedicalHistory, placeholder: 'List relevant medical history...' },
+                  { label: 'Family History', value: familyHistory, setter: setFamilyHistory, placeholder: 'Note relevant family conditions...' },
+                  { label: 'Drug History', value: drugHistory, setter: setDrugHistory, placeholder: 'List current medications and allergies...' },
+                  { label: 'Systemic Review', value: systemicReview, setter: setSystemicReview, placeholder: 'Document review of systems...' },
+                  { label: 'Examination', value: examination, setter: setExamination, placeholder: 'Record physical examination findings...' },
+                  { label: 'Management', value: management, setter: setManagement, placeholder: 'Detail treatment plan and recommendations...' },
+                ].map((field, index) => (
+                  <View key={field.label} style={{ marginBottom: 24 }}>
+                    <Text style={{
+                      fontSize: 17,
+                      fontWeight: '600',
+                      color: '#000000',
+                      marginBottom: 8,
+                    }}>
+                      {field.label}
+                    </Text>
+                    <TextInput
+                      value={field.value}
+                      onChangeText={field.setter}
+                      placeholder={field.placeholder}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: '#E5E5E7',
+                        borderRadius: 12,
+                        padding: 16,
+                        fontSize: 16,
+                        backgroundColor: '#FFFFFF',
+                        height: 100,
+                      }}
+                      placeholderTextColor="#8E8E93"
+                    />
+                  </View>
+                ))}
+              </>
+            )}
 
             {/* Medical Images */}
             <View style={{ marginBottom: 24 }}>

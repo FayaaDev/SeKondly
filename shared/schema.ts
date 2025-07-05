@@ -52,7 +52,7 @@ export const users = pgTable("users", {
 export const cases = pgTable("cases", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  history: text("history").notNull(),
+  history: text("history"), // Made optional for long format cases
   specialty: varchar("specialty").notNull(),
   authorId: varchar("author_id").notNull(),
   isApproved: boolean("is_approved").default(true),
@@ -64,6 +64,16 @@ export const cases = pgTable("cases", {
   likesCount: integer("likes_count").default(0),
   commentsCount: integer("comments_count").default(0),
   viewsCount: integer("views_count").default(0),
+  // Long case format fields
+  format: varchar("format", { enum: ['short', 'long'] }).default('short').notNull(),
+  chiefComplaint: text("chief_complaint"),
+  historyOfPresentIllness: text("history_of_present_illness"),
+  pastMedicalHistory: text("past_medical_history"),
+  familyHistory: text("family_history"),
+  drugHistory: text("drug_history"),
+  systemicReview: text("systemic_review"),
+  examination: text("examination"),
+  management: text("management"),
 });
 
 // Case likes table
@@ -238,19 +248,42 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-export const insertCaseSchema = createInsertSchema(cases).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isApproved: true,
-  approvedAt: true,
-  approvedBy: true,
-  likesCount: true,
-  commentsCount: true,
-  viewsCount: true,
-}).extend({
-  imageUrls: z.array(z.string()).max(3, "Maximum of 3 images allowed").optional(),
-});
+export const insertCaseSchema = z.discriminatedUnion('format', [
+  // Short format schema
+  z.object({
+    format: z.literal('short'),
+    title: z.string().min(1, "Title is required"),
+    history: z.string().min(1, "History is required for short format cases"),
+    specialty: z.string().min(1, "Specialty is required"),
+    authorId: z.string(),
+    imageUrls: z.array(z.string()).max(3, "Maximum of 3 images allowed").optional(),
+    chiefComplaint: z.string().optional(),
+    historyOfPresentIllness: z.string().optional(),
+    pastMedicalHistory: z.string().optional(),
+    familyHistory: z.string().optional(),
+    drugHistory: z.string().optional(),
+    systemicReview: z.string().optional(),
+    examination: z.string().optional(),
+    management: z.string().optional(),
+  }),
+  // Long format schema
+  z.object({
+    format: z.literal('long'),
+    title: z.string().min(1, "Title is required"),
+    specialty: z.string().min(1, "Specialty is required"),
+    authorId: z.string(),
+    history: z.string().optional(),  // Explicitly optional for long format
+    chiefComplaint: z.string().min(1, "Chief complaint is required for long format cases"),
+    historyOfPresentIllness: z.string().min(1, "History of present illness is required for long format cases"),
+    pastMedicalHistory: z.string().optional(),
+    familyHistory: z.string().optional(),
+    drugHistory: z.string().optional(),
+    systemicReview: z.string().optional(),
+    examination: z.string().optional(),
+    management: z.string().optional(),
+    imageUrls: z.array(z.string()).max(3, "Maximum of 3 images allowed").optional(),
+  })
+]);
 
 export const insertCommentSchema = createInsertSchema(caseComments).omit({
   id: true,
