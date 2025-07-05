@@ -241,7 +241,6 @@ const LongCaseDetailModal = ({
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 50}
         >
           <SafeAreaView style={styles.container}>
             {/* Header */}
@@ -505,7 +504,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
 
   // Author Section Styles
@@ -789,6 +788,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: Platform.OS === "ios" ? 34 : 12,
+    minHeight: 80, // Ensure minimum visible height
   },
   replyIndicator: {
     flexDirection: "row",
@@ -832,13 +832,17 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   commentInput: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#0F1419",
     lineHeight: 22,
-    minHeight: 40,
+    minHeight: 44,
     maxHeight: 80,
-    paddingVertical: 8,
-    paddingHorizontal: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#E1E8ED",
+    borderRadius: 22,
+    backgroundColor: "#F7F9FA",
   },
   sendButton: {
     backgroundColor: "#4ECDC4",

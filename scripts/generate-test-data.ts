@@ -274,7 +274,7 @@ function generateRandomUser() {
   };
 }
 
-function generateRandomCase(authorId: string, specialty: string) {
+function generateRandomCase(authorId: string, specialty: string, format: 'short' | 'long' = 'short') {
   const templates = CASE_TEMPLATES[specialty as keyof typeof CASE_TEMPLATES] || CASE_TEMPLATES["Internal Medicine"];
   const title = getRandomElement(templates);
   const history = generateCaseHistory(specialty, title);
@@ -284,7 +284,7 @@ function generateRandomCase(authorId: string, specialty: string) {
   const numImages = Math.floor(Math.random() * 2) + 2; // 2-3 images per case
   const imageUrls = Array.from({ length: numImages }, () => getRandomElement(availableImages));
   
-  return {
+  const baseCase = {
     title,
     history,
     specialty,
@@ -295,8 +295,170 @@ function generateRandomCase(authorId: string, specialty: string) {
     imageUrls,
     likesCount: Math.floor(Math.random() * 50),
     commentsCount: Math.floor(Math.random() * 20),
-    viewsCount: Math.floor(Math.random() * 200) + 50
+    viewsCount: Math.floor(Math.random() * 200) + 50,
+    format
   };
+
+  // Add long case specific fields
+  if (format === 'long') {
+    return {
+      ...baseCase,
+      chiefComplaint: generateChiefComplaint(specialty),
+      pastMedicalHistory: generatePastMedicalHistory(),
+      familyHistory: generateFamilyHistory(),
+      drugHistory: generateDrugHistory(),
+      physicalExam: generatePhysicalExam(specialty),
+      assessment: generateAssessment(specialty),
+      plan: generatePlan(specialty)
+    };
+  }
+
+  return baseCase;
+}
+
+// Generate long case specific content
+function generateChiefComplaint(specialty: string): string {
+  const complaints = {
+    "Cardiology": [
+      "Chest pain for 2 hours",
+      "Shortness of breath and palpitations",
+      "Syncope while exercising",
+      "Lower extremity swelling for 1 week"
+    ],
+    "Neurology": [
+      "Sudden onset left-sided weakness",
+      "Severe headache with visual changes",
+      "Seizure-like episodes",
+      "Progressive memory loss"
+    ],
+    "Emergency Medicine": [
+      "Multiple trauma after MVA",
+      "Severe abdominal pain",
+      "Difficulty breathing after fall",
+      "Altered mental status"
+    ],
+    "Default": [
+      "Chief complaint varies by presentation",
+      "Patient presents with concerning symptoms",
+      "Acute onset of symptoms",
+      "Progressive worsening of condition"
+    ]
+  };
+  
+  const specialtyComplaints = complaints[specialty as keyof typeof complaints] || complaints["Default"];
+  return getRandomElement(specialtyComplaints);
+}
+
+function generatePastMedicalHistory(): string {
+  const histories = [
+    "Hypertension for 10 years, well controlled on ACE inhibitor. Type 2 diabetes mellitus diagnosed 5 years ago, managed with metformin. No known allergies.",
+    "History of myocardial infarction 3 years ago, status post PCI. Current medications include dual antiplatelet therapy and statin. Former smoker, quit 2 years ago.",
+    "Chronic kidney disease stage 3, baseline creatinine 1.8 mg/dL. History of gout, well controlled. Takes allopurinol daily.",
+    "No significant past medical history. Appendectomy at age 25. No regular medications. Non-smoker, occasional alcohol use.",
+    "Atrial fibrillation on warfarin therapy. History of stroke 2 years ago with minimal residual deficit. Regular cardiology follow-up.",
+    "COPD, home oxygen therapy at night. Multiple hospitalizations for exacerbations. Current smoker, 40 pack-year history."
+  ];
+  return getRandomElement(histories);
+}
+
+function generateFamilyHistory(): string {
+  const histories = [
+    "Father died of myocardial infarction at age 65. Mother alive with diabetes and hypertension. One sibling with history of stroke.",
+    "Strong family history of cardiovascular disease. Both parents deceased from cardiac causes. Multiple siblings with hypertension.",
+    "Mother with breast cancer, currently in remission. Father with Alzheimer's disease. No known cardiac history in family.",
+    "No significant family history. Parents alive and well in their 80s. Two healthy siblings.",
+    "Maternal grandfather with diabetes. Paternal side has history of kidney disease. No known cancer history.",
+    "Family history significant for autoimmune diseases. Mother with rheumatoid arthritis, sister with lupus."
+  ];
+  return getRandomElement(histories);
+}
+
+function generateDrugHistory(): string {
+  const histories = [
+    "Lisinopril 10mg daily, Metformin 1000mg twice daily, Atorvastatin 40mg nightly. No known drug allergies.",
+    "Warfarin 5mg daily with regular INR monitoring. Metoprolol 50mg twice daily. Allergic to penicillin - causes rash.",
+    "Aspirin 81mg daily, Amlodipine 5mg daily. Takes multivitamin and fish oil supplements. No known allergies.",
+    "No regular medications. Takes ibuprofen occasionally for headaches. No known drug allergies.",
+    "Insulin glargine 30 units nightly, Insulin lispro with meals. Metformin 1000mg twice daily. NKDA.",
+    "Multiple medications for chronic conditions. Recently started on new antihypertensive. History of adverse reaction to sulfa drugs."
+  ];
+  return getRandomElement(histories);
+}
+
+function generatePhysicalExam(specialty: string): string {
+  const exams = {
+    "Cardiology": `Vital signs: BP 140/90, HR 88, RR 18, O2 sat 96% on room air. General appearance: Alert, well-developed, in mild distress.
+HEENT: Normocephalic, atraumatic. PERRLA. No JVD appreciated.
+Cardiovascular: Regular rate and rhythm, 2/6 systolic murmur at apex. No rubs or gallops. Peripheral pulses 2+ bilaterally.
+Pulmonary: Clear to auscultation bilaterally. No wheezes, rales, or rhonchi.
+Abdomen: Soft, non-tender, non-distended. Normal bowel sounds.
+Extremities: No cyanosis, clubbing, or edema. Good capillary refill.
+Neurological: Alert and oriented x3. Cranial nerves II-XII intact. Motor and sensory exam normal.`,
+
+    "Neurology": `Vital signs: BP 160/95, HR 75, RR 16, O2 sat 98% on room air. General: Alert but with obvious speech difficulty.
+HEENT: Normocephalic, no trauma. Pupils equal and reactive to light.
+Neurological: Alert, follows commands. Expressive aphasia present. Left facial droop noted. Left upper and lower extremity weakness 3/5. Reflexes hyperactive on left side. Positive Babinski on left.
+Cardiovascular: Irregular rhythm, no murmurs. 
+Pulmonary: Clear bilaterally.
+Abdomen: Benign.
+Extremities: No edema or cyanosis.`,
+
+    "Default": `Vital signs stable. General appearance: Well-appearing, alert and oriented.
+HEENT: Within normal limits.
+Cardiovascular: Regular rate and rhythm, no murmurs.
+Pulmonary: Clear to auscultation bilaterally.
+Abdomen: Soft, non-tender, normal bowel sounds.
+Extremities: No significant abnormalities.
+Neurological: Non-focal examination.`
+  };
+
+  const specialtyExam = exams[specialty as keyof typeof exams] || exams["Default"];
+  return specialtyExam;
+}
+
+function generateAssessment(specialty: string): string {
+  const assessments = {
+    "Cardiology": [
+      "Acute ST-elevation myocardial infarction, likely RCA territory. Cardiogenic shock. Will need emergent cardiac catheterization and primary PCI.",
+      "Heart failure with reduced ejection fraction, acute exacerbation. Likely precipitated by medication non-compliance. NYHA Class III symptoms.",
+      "Atrial fibrillation with rapid ventricular response. New onset vs. previously undiagnosed. Requires rate control and anticoagulation consideration."
+    ],
+    "Neurology": [
+      "Acute ischemic stroke, right MCA territory with left hemiparesis and aphasia. NIHSS score 15. Candidate for thrombolytic therapy.",
+      "New onset seizures, likely partial complex. Requires further workup with EEG and MRI. Consider metabolic vs. structural causes.",
+      "Multiple sclerosis relapse with new neurological deficits. Will need high-dose corticosteroids and MRI to assess disease progression."
+    ],
+    "Default": [
+      "Working diagnosis based on clinical presentation and examination findings. Requires further diagnostic workup to confirm.",
+      "Multiple differential diagnoses considered. Additional testing needed to narrow the diagnosis and guide treatment.",
+      "Clinical presentation consistent with suspected diagnosis. Treatment plan tailored to patient's specific needs and comorbidities."
+    ]
+  };
+
+  const specialtyAssessments = assessments[specialty as keyof typeof assessments] || assessments["Default"];
+  return getRandomElement(specialtyAssessments);
+}
+
+function generatePlan(specialty: string): string {
+  const plans = {
+    "Cardiology": [
+      "1. Emergent cardiac catheterization for primary PCI\n2. Dual antiplatelet therapy (aspirin + clopidogrel)\n3. High-intensity statin therapy\n4. ACE inhibitor once hemodynamically stable\n5. Beta-blocker when appropriate\n6. Cardiac rehabilitation referral\n7. Lifestyle counseling and smoking cessation",
+      "1. Optimize heart failure medications (ACE inhibitor, beta-blocker, diuretics)\n2. Daily weights and fluid restriction\n3. Echocardiogram to assess ejection fraction\n4. BNP trending\n5. Cardiology follow-up in 1-2 weeks\n6. Patient education on heart failure management",
+      "1. Rate control with beta-blocker or calcium channel blocker\n2. Anticoagulation with warfarin or DOAC based on CHA2DS2-VASc score\n3. TEE if duration of AF unclear\n4. Electrophysiology consultation for rhythm control options\n5. Monitor for hemodynamic stability"
+    ],
+    "Neurology": [
+      "1. Immediate IV tPA if within therapeutic window\n2. Neurology consultation stat\n3. CT perfusion study to assess salvageable tissue\n4. Blood pressure management per stroke protocol\n5. Aspirin after 24 hours if no hemorrhage on repeat CT\n6. Swallow evaluation before oral intake\n7. Physical and occupational therapy evaluation",
+      "1. Levetiracetam 500mg BID for seizure prophylaxis\n2. EEG monitoring for 24-48 hours\n3. MRI brain with and without contrast\n4. Basic metabolic panel, magnesium, phosphorus\n5. Neurology consultation\n6. Avoid potential seizure triggers\n7. Safety precautions and seizure education",
+      "1. High-dose methylprednisolone 1g IV daily x 3-5 days\n2. MRI brain and spine with gadolinium\n3. Neurology follow-up in 2-4 weeks\n4. Monitor for steroid side effects\n5. Patient education on MS management\n6. Consider disease-modifying therapy adjustment"
+    ],
+    "Default": [
+      "1. Continue current management\n2. Monitor clinical response\n3. Appropriate specialist consultation\n4. Follow-up as clinically indicated\n5. Patient education and counseling\n6. Adjust treatment plan based on response",
+      "1. Diagnostic workup as outlined\n2. Symptomatic management\n3. Close monitoring and reassessment\n4. Multidisciplinary team approach\n5. Patient and family education\n6. Coordinate care with primary care physician"
+    ]
+  };
+
+  const specialtyPlans = plans[specialty as keyof typeof plans] || plans["Default"];
+  return getRandomElement(specialtyPlans);
 }
 
 async function generateTestData() {
@@ -306,6 +468,7 @@ async function generateTestData() {
     // Generate 14 random users
     const userCount = 14;
     const casesPerUser = 3; // Each user will have 2-4 cases
+    const longCasesToGenerate = 10; // Generate 10 long cases
     
     console.log(`📝 Generating ${userCount} users with profile images...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
@@ -321,14 +484,14 @@ async function generateTestData() {
       }
     }
     
-    console.log(`📋 Generating cases for each user...`);
+    console.log(`📋 Generating regular cases for each user...`);
     let totalCases = 0;
     
     for (const user of generatedUsers) {
       const numCases = Math.floor(Math.random() * casesPerUser) + 2; // 2-4 cases per user
       
       for (let j = 0; j < numCases; j++) {
-        const caseData = generateRandomCase(user.id, user.specialty!);
+        const caseData = generateRandomCase(user.id, user.specialty!, 'short');
         try {
           await db.insert(cases).values(caseData);
           totalCases++;
@@ -339,10 +502,29 @@ async function generateTestData() {
       }
     }
     
+    console.log(`\n🔬 Generating ${longCasesToGenerate} long cases...`);
+    let longCasesCreated = 0;
+    
+    for (let i = 0; i < longCasesToGenerate; i++) {
+      const randomUser = getRandomElement(generatedUsers);
+      const longCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'long');
+      
+      try {
+        await db.insert(cases).values(longCaseData);
+        longCasesCreated++;
+        totalCases++;
+        console.log(`  🔬 Created LONG case: "${longCaseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
+      } catch (error) {
+        console.error(`  ❌ Failed to create long case for Dr. ${randomUser.firstName} ${randomUser.lastName}`, error);
+      }
+    }
+    
     console.log(`\n🎉 Test data generation complete!`);
     console.log(`📊 Summary:`);
     console.log(`   - Users created: ${userCount}`);
-    console.log(`   - Cases created: ${totalCases}`);
+    console.log(`   - Short cases created: ${totalCases - longCasesCreated}`);
+    console.log(`   - Long cases created: ${longCasesCreated}`);
+    console.log(`   - Total cases created: ${totalCases}`);
     console.log(`   - Specialties covered: ${[...new Set(generatedUsers.map(u => u.specialty))].length}`);
     
     console.log(`\n🔍 Specialty breakdown:`);

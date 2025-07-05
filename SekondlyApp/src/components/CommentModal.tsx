@@ -37,24 +37,7 @@ export default function CommentModal({
   caseTitle 
 }: CommentModalProps) {
   const [comment, setComment] = useState("");
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => setKeyboardHeight(e.endCoordinates.height)
-    );
-    const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardHeight(0)
-    );
-
-    return () => {
-      keyboardWillShowListener?.remove();
-      keyboardWillHideListener?.remove();
-    };
-  }, []);
 
   // Fetch comments
   const { data: comments = [], isLoading } = useQuery({
@@ -170,7 +153,11 @@ export default function CommentModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-        <View style={styles.keyboardAvoid}>
+        <KeyboardAvoidingView 
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
           {/* Header */}
           <View style={styles.header}>
             {/* Drag indicator */}
@@ -190,10 +177,7 @@ export default function CommentModal({
           </View>
 
           {/* Comments List */}
-          <View style={[
-            styles.commentsContainer,
-            keyboardHeight > 0 && { marginBottom: 80 } // Space for input when keyboard is shown
-          ]}>
+          <View style={styles.commentsContainer}>
             {isLoading ? (
               renderLoadingSkeleton()
             ) : comments.length === 0 ? (
@@ -210,16 +194,7 @@ export default function CommentModal({
           </View>
 
           {/* Comment Input */}
-          <View style={[
-            styles.inputContainer, 
-            keyboardHeight > 0 && {
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              transform: [{ translateY: -keyboardHeight }],
-            }
-          ]}>
+          <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.textInput}
@@ -251,7 +226,7 @@ export default function CommentModal({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
@@ -304,12 +279,13 @@ const styles = StyleSheet.create({
   },
   commentsContainer: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   commentsList: {
-    padding: 16,
+    paddingBottom: 16,
   },
   loadingContainer: {
-    padding: 16,
+    paddingVertical: 16,
   },
   skeletonItem: {
     flexDirection: "row",
@@ -415,6 +391,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
     backgroundColor: "#f8f9fa",
+    minHeight: 80, // Ensure minimum visible height
   },
   inputWrapper: {
     flexDirection: "row",

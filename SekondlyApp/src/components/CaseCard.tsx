@@ -28,8 +28,9 @@ interface CaseCardProps {
 }
 
 const { width: screenWidth } = Dimensions.get("window");
-const imageWidth = screenWidth - 64; // Account for padding
-const MAX_WORDS = 200;
+const imageWidth = screenWidth - 60; // Updated to account for new padding (32 + 28 margins)
+const MAX_WORDS = 150; // Reduced from 200 to save space
+const UNIFIED_IMAGE_HEIGHT = 120; // Unified smaller height for all images
 
 // Helper function to truncate text to word limit
 const truncateText = (text: string): string => {
@@ -274,7 +275,7 @@ export default function CaseCard({
     // All detailed fields will be shown when the case is clicked (in modal)
     return (
       <View style={styles.historyContainer}>
-        <Text style={styles.history} numberOfLines={6}>
+        <Text style={styles.history} numberOfLines={4}>
           {truncateText(caseData.history)}
         </Text>
         {caseData.history.length > MAX_WORDS && (
@@ -406,9 +407,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 6, // Reduced from 8 to save vertical space
     borderRadius: 16,
-    padding: 16,
+    padding: 14, // Reduced from 16 to save space
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 10, // Reduced from 12
   },
   authorInfo: {
     flexDirection: "row",
@@ -492,15 +493,15 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17, // Reduced from 18 to save space
     fontWeight: "600",
     color: "#333",
-    marginBottom: 12,
-    lineHeight: 24,
+    marginBottom: 10, // Reduced from 12
+    lineHeight: 22, // Reduced from 24
   },
   historyContainer: {
     marginTop: 8,
-    marginBottom: 16, // Increased margin to ensure proper spacing before images
+    marginBottom: 12, // Reduced from 16 to make more compact
   },
   history: {
     fontSize: 15,
@@ -516,19 +517,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   singleImageContainer: {
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
     marginTop: 8, // Add top margin to ensure spacing
     borderRadius: 12,
     overflow: "hidden",
   },
   singleImage: {
     width: imageWidth,
-    height: 150,
+    height: UNIFIED_IMAGE_HEIGHT,
   },
   imageGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
     marginTop: 8, // Add top margin to ensure spacing
     gap: 4,
   },
@@ -540,26 +541,26 @@ const styles = StyleSheet.create({
     // 2 images: half width each
     // 3 images: first image full width, second and third half width
     flex: 1,
-    minHeight: 120,
-    maxHeight: (imageWidth - 4) / 2,
+    minHeight: UNIFIED_IMAGE_HEIGHT,
+    maxHeight: UNIFIED_IMAGE_HEIGHT,
   },
   twoImageContainer: {
     width: (imageWidth - 4) / 2,
-    height: 150,
+    height: UNIFIED_IMAGE_HEIGHT,
     borderRadius: 12,
     overflow: "hidden",
     position: "relative",
   },
   threeImageGrid: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
     marginTop: 8, // Add top margin to ensure spacing
     gap: 4,
-    height: 200,
+    height: UNIFIED_IMAGE_HEIGHT,
   },
   largeImageContainer: {
     width: (imageWidth * 2) / 3,
-    height: 200,
+    height: UNIFIED_IMAGE_HEIGHT,
     borderRadius: 12,
     overflow: "hidden",
     position: "relative",
