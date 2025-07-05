@@ -290,11 +290,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createCase(caseData: InsertCase): Promise<Case> {
+  async createCase(caseData: InsertCase): Promise<CaseWithAuthor> {
     console.log('storage.createCase - Input data:', caseData);
     const [newCase] = await db.insert(cases).values(caseData).returning();
     console.log('storage.createCase - Created case:', newCase);
-    return newCase;
+    
+    // Fetch full case with author info
+    const fullCase = await this.getCase(newCase.id);
+    if (!fullCase) {
+      throw new Error('Failed to fetch created case with author info');
+    }
+    
+    return fullCase;
   }
 
   async updateCase(id: number, updates: Partial<Case>): Promise<Case> {

@@ -395,8 +395,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('POST /api/cases - Parsed case data:', caseData);
       
       const newCase = await storage.createCase(caseData);
-      console.log('POST /api/cases - Created case:', newCase);
-      res.json(newCase);
+      
+      // Fetch full case details with author info
+      const caseWithDetails = await storage.getCase(newCase.id);
+      console.log('POST /api/cases - Created case:', caseWithDetails);
+      res.json(caseWithDetails);
     } catch (error) {
       console.error("Error creating case:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
