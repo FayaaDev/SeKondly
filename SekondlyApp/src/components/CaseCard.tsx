@@ -56,18 +56,8 @@ export default function CaseCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const queryClient = useQueryClient();
 
-  // Extract format-specific fields
+  // Extract format info
   const isLongCase = caseData.format === 'long';
-  const longCaseFields = isLongCase ? {
-    chiefComplaint: caseData.chiefComplaint,
-    historyOfPresentIllness: caseData.historyOfPresentIllness,
-    pastMedicalHistory: caseData.pastMedicalHistory,
-    familyHistory: caseData.familyHistory,
-    drugHistory: caseData.drugHistory,
-    systemicReview: caseData.systemicReview,
-    examination: caseData.examination,
-    management: caseData.management
-  } : null;
 
   // Like mutation
   const likeMutation = useMutation({
@@ -280,73 +270,33 @@ export default function CaseCard({
 
   // Render case content based on format
   const renderCaseContent = () => {
-    if (isLongCase && longCaseFields) {
-      return (
-        <View style={styles.longCaseContainer}>
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Chief Complaint</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.chiefComplaint || 'N/A'}</Text>
+    // For both long and short cases, show only history in feed view
+    // All detailed fields will be shown when the case is clicked (in modal)
+    return (
+      <View style={styles.historyContainer}>
+        <Text style={styles.history} numberOfLines={6}>
+          {truncateText(caseData.history)}
+        </Text>
+        {caseData.history.length > MAX_WORDS && (
+          <TouchableOpacity 
+            style={styles.readMoreButton}
+            onPress={onPress}
+          >
+            <Text style={styles.readMoreText}>Read more</Text>
+          </TouchableOpacity>
+        )}
+        {isLongCase && (
+          <View style={styles.longCaseBadge}>
+            <Text style={styles.longCaseBadgeText}>Long Case</Text>
           </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>History of Present Illness</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.historyOfPresentIllness || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Past Medical & Surgical History</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.pastMedicalHistory || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Family History</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.familyHistory || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Drug History</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.drugHistory || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Systemic Review</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.systemicReview || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Examination</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.examination || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.contentSection}>
-            <Text style={styles.sectionTitle}>Management</Text>
-            <Text style={styles.sectionContent}>{longCaseFields.management || 'N/A'}</Text>
-          </View>
-        </View>
-      );
-    } else {
-      // Original short case rendering
-      return (
-        <View style={styles.historyContainer}>
-          <Text style={styles.history} numberOfLines={6}>
-            {truncateText(caseData.history)}
-          </Text>
-          {caseData.history.length > MAX_WORDS && (
-            <TouchableOpacity 
-              style={styles.readMoreButton}
-              onPress={onPress}
-            >
-              <Text style={styles.readMoreText}>Read more</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      );
-    }
+        )}
+      </View>
+    );
   };
 
   return (
     <TouchableOpacity 
-      style={[styles.container, isLongCase && styles.longCaseContainer]} 
+      style={styles.container} 
       onPress={onPress}
       activeOpacity={0.8}
     >
@@ -393,7 +343,7 @@ export default function CaseCard({
       {/* Case Content (Short or Long format) */}
       {renderCaseContent()}
 
-      {/* Images */}
+      {/* Images - Make sure they have proper spacing */}
       {renderImages()}
 
       {/* Actions */}
@@ -550,7 +500,7 @@ const styles = StyleSheet.create({
   },
   historyContainer: {
     marginTop: 8,
-    marginBottom: 12,
+    marginBottom: 16, // Increased margin to ensure proper spacing before images
   },
   history: {
     fontSize: 15,
@@ -567,6 +517,7 @@ const styles = StyleSheet.create({
   },
   singleImageContainer: {
     marginBottom: 16,
+    marginTop: 8, // Add top margin to ensure spacing
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -578,6 +529,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 16,
+    marginTop: 8, // Add top margin to ensure spacing
     gap: 4,
   },
   gridImageContainer: {
@@ -601,6 +553,7 @@ const styles = StyleSheet.create({
   threeImageGrid: {
     flexDirection: "row",
     marginBottom: 16,
+    marginTop: 8, // Add top margin to ensure spacing
     gap: 4,
     height: 200,
   },
@@ -704,5 +657,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     color: '#333',
+  },
+  longCaseBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+    marginBottom: 4, // Add bottom margin to ensure spacing before images
+  },
+  longCaseBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
