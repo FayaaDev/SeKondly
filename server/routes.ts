@@ -372,6 +372,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Log all relevant fields from the request
+      console.log('POST /api/cases - Raw request body:', {
+        title: req.body.title,
+        format: req.body.format,
+        history: req.body.history,
+        specialty: req.body.specialty,
+        chiefComplaint: req.body.chiefComplaint,
+        historyOfPresentIllness: req.body.historyOfPresentIllness,
+        pastMedicalHistory: req.body.pastMedicalHistory,
+        familyHistory: req.body.familyHistory,
+        drugHistory: req.body.drugHistory,
+        systemicReview: req.body.systemicReview,
+        examination: req.body.examination,
+        management: req.body.management
+      });
+
       const caseData = {
         title: req.body.title,
         format,  // Use the validated format
@@ -379,17 +395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         specialty: req.body.specialty,
         imageUrls,
         authorId: req.user?.id || "mock-user-1",
-        // For long format, include all long case fields
-        ...(format === 'long' && {
-          chiefComplaint: req.body.chiefComplaint,
-          historyOfPresentIllness: req.body.historyOfPresentIllness,
-          pastMedicalHistory: req.body.pastMedicalHistory || null,
-          familyHistory: req.body.familyHistory || null,
-          drugHistory: req.body.drugHistory || null,
-          systemicReview: req.body.systemicReview || null,
-          examination: req.body.examination || null,
-          management: req.body.management || null,
-        })
+        // For long format, include all long case fields even if null
+        chiefComplaint: format === 'long' ? (req.body.chiefComplaint || null) : null,
+        historyOfPresentIllness: format === 'long' ? (req.body.historyOfPresentIllness || null) : null,
+        pastMedicalHistory: format === 'long' ? (req.body.pastMedicalHistory || null) : null,
+        familyHistory: format === 'long' ? (req.body.familyHistory || null) : null,
+        drugHistory: format === 'long' ? (req.body.drugHistory || null) : null,
+        systemicReview: format === 'long' ? (req.body.systemicReview || null) : null,
+        examination: format === 'long' ? (req.body.examination || null) : null,
+        management: format === 'long' ? (req.body.management || null) : null,
       };
       
       console.log('POST /api/cases - Parsed case data:', caseData);

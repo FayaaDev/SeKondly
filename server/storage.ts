@@ -39,7 +39,7 @@ export interface IStorage {
   getCases(userId?: string, approvedOnly?: boolean): Promise<CaseWithAuthor[]>;
   getCase(id: number): Promise<CaseWithAuthor | undefined>;
   getUserCases(userId: string): Promise<CaseWithAuthor[]>;
-  createCase(caseData: InsertCase): Promise<Case>;
+  createCase(caseData: InsertCase): Promise<CaseWithAuthor>;
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
   deleteCase(id: number): Promise<void>;
   incrementCaseViews(id: number): Promise<void>;
@@ -292,16 +292,66 @@ export class DatabaseStorage implements IStorage {
 
   async createCase(caseData: InsertCase): Promise<CaseWithAuthor> {
     console.log('storage.createCase - Input data:', caseData);
-    const [newCase] = await db.insert(cases).values(caseData).returning();
+    
+    // Insert the case with all fields specified
+    const [newCase] = await db
+      .insert(cases)
+      .values({
+        ...caseData,
+        format: caseData.format || 'short',
+        chiefComplaint: caseData.chiefComplaint || null,
+        historyOfPresentIllness: caseData.historyOfPresentIllness || null,
+        pastMedicalHistory: caseData.pastMedicalHistory || null,
+        familyHistory: caseData.familyHistory || null,
+        drugHistory: caseData.drugHistory || null,
+        systemicReview: caseData.systemicReview || null,
+        examination: caseData.examination || null,
+        management: caseData.management || null,
+      })
+      .returning();
+    
     console.log('storage.createCase - Created case:', newCase);
     
-    // Fetch full case with author info
-    const fullCase = await this.getCase(newCase.id);
-    if (!fullCase) {
+    // Fetch full case with author info using an explicit SELECT
+    const fullCase = await db
+      .select({
+        id: cases.id,
+        title: cases.title,
+        format: cases.format,
+        history: cases.history,
+        specialty: cases.specialty,
+        authorId: cases.authorId,
+        isApproved: cases.isApproved,
+        createdAt: cases.createdAt,
+        updatedAt: cases.updatedAt,
+        approvedAt: cases.approvedAt,
+        approvedBy: cases.approvedBy,
+        imageUrls: cases.imageUrls,
+        likesCount: cases.likesCount,
+        commentsCount: cases.commentsCount,
+        viewsCount: cases.viewsCount,
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
+        author: users,
+      })
+      .from(cases)
+      .innerJoin(users, eq(cases.authorId, users.id))
+      .where(eq(cases.id, newCase.id))
+      .limit(1);
+      
+    const case_data = fullCase[0];
+    if (!case_data) {
       throw new Error('Failed to fetch created case with author info');
     }
     
-    return fullCase;
+    console.log('storage.createCase - Fetched full case:', case_data);
+    return case_data;
   }
 
   async updateCase(id: number, updates: Partial<Case>): Promise<Case> {
