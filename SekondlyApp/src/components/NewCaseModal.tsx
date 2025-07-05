@@ -377,22 +377,25 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     });
 
     const formData = new FormData();
+    // Always add required fields
     formData.append('title', title.trim());
     formData.append('format', caseFormat);
     formData.append('specialty', selectedSpecialty);
+    formData.append('history', history.trim());
 
-    if (caseFormat === 'short') {
-      formData.append('history', history.trim());
-    } else {
-      formData.append('history', history.trim());  // Add history for long format too
+    // For long format, add all required and optional fields
+    if (caseFormat === 'long') {
+      // Required fields for long format
       formData.append('chiefComplaint', chiefComplaint.trim());
       formData.append('historyOfPresentIllness', historyOfPresentIllness.trim());
-      formData.append('pastMedicalHistory', pastMedicalHistory.trim());
-      formData.append('familyHistory', familyHistory.trim());
-      formData.append('drugHistory', drugHistory.trim());
-      formData.append('systemicReview', systemicReview.trim());
-      formData.append('examination', examination.trim());
-      formData.append('management', management.trim());
+      
+      // Optional fields for long format - only add if they have content
+      if (pastMedicalHistory.trim()) formData.append('pastMedicalHistory', pastMedicalHistory.trim());
+      if (familyHistory.trim()) formData.append('familyHistory', familyHistory.trim());
+      if (drugHistory.trim()) formData.append('drugHistory', drugHistory.trim());
+      if (systemicReview.trim()) formData.append('systemicReview', systemicReview.trim());
+      if (examination.trim()) formData.append('examination', examination.trim());
+      if (management.trim()) formData.append('management', management.trim());
     }
 
     selectedImages.forEach((image, index) => {

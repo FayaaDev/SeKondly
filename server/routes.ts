@@ -341,24 +341,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as Express.Multer.File[];
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
-      // Parse and validate format
-      const rawFormat = req.body.format;
-      const format = (rawFormat === 'short' || rawFormat === 'long') ? rawFormat : 'short';
+      // Validate format - explicitly check for 'long' or default to 'short'
+      const format = req.body.format === 'long' ? 'long' : 'short';
       console.log('POST /api/cases - Format:', format);
-
-      // Validate required fields based on format
-      if (!req.body.title || !req.body.specialty) {
+      
+      // Validate common required fields
+      if (!req.body.title || !req.body.specialty || !req.body.history) {
         return res.status(400).json({
           message: "Failed to create case",
-          error: "Title and specialty are required"
-        });
-      }
-
-      // History is required for both formats
-      if (!req.body.history) {
-        return res.status(400).json({
-          message: "Failed to create case",
-          error: "History is required for all cases"
+          error: "Title, specialty, and history are required for all cases"
         });
       }
 
@@ -367,9 +358,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!req.body.chiefComplaint || !req.body.historyOfPresentIllness) {
           return res.status(400).json({
             message: "Failed to create case",
-            error: "Chief complaint and history of present illness are required for long format cases"
+            error: "For long cases, chief complaint and history of present illness are required"
           });
         }
+        // Log long case fields for debugging
+        console.log('POST /api/cases - Long case fields:', {
+          chiefComplaint: req.body.chiefComplaint,
+          historyOfPresentIllness: req.body.historyOfPresentIllness,
+          format: format
+        });
       }
 
       // Log all relevant fields from the request
@@ -388,23 +385,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         management: req.body.management
       });
 
-      const caseData = {
+      // Prepare case data based on format
+      const baseCaseData = {
         title: req.body.title,
-        format,  // Use the validated format
         history: req.body.history,
         specialty: req.body.specialty,
         imageUrls,
+        format, // Always include the validated format
         authorId: req.user?.id || "mock-user-1",
-        // For long format, include all long case fields even if null
-        chiefComplaint: format === 'long' ? (req.body.chiefComplaint || null) : null,
-        historyOfPresentIllness: format === 'long' ? (req.body.historyOfPresentIllness || null) : null,
-        pastMedicalHistory: format === 'long' ? (req.body.pastMedicalHistory || null) : null,
-        familyHistory: format === 'long' ? (req.body.familyHistory || null) : null,
-        drugHistory: format === 'long' ? (req.body.drugHistory || null) : null,
-        systemicReview: format === 'long' ? (req.body.systemicReview || null) : null,
-        examination: format === 'long' ? (req.body.examination || null) : null,
-        management: format === 'long' ? (req.body.management || null) : null,
       };
+
+      // Create type-safe case data
+      const caseData = format === 'long' 
+        ? {
+            ...baseCaseData,
+            format: 'long' as const,
+            chiefComplaint: req.body.chiefComplaint,
+            historyOfPresentIllness: req.body.historyOfPresentIllness,
+            pastMedicalHistory: req.body.pastMedicalHistory || null,
+            familyHistory: req.body.familyHistory || null,
+            drugHistory: req.body.drugHistory || null,
+            systemicReview: req.body.systemicReview || null,
+            examination: req.body.examination || null,
+            management: req.body.management || null,
+          }
+        : {
+            ...baseCaseData,
+            format: 'short' as const,
+          };
       
       console.log('POST /api/cases - Parsed case data:', caseData);
       

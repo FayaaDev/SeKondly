@@ -294,11 +294,15 @@ export class DatabaseStorage implements IStorage {
     console.log('storage.createCase - Input data:', caseData);
     
     // Insert the case with all fields specified
+    // Ensure format is set to a valid literal type
+    const format = caseData.format === 'long' ? 'long' as const : 'short' as const;
+    console.log('storage.createCase - Format:', format);
+    
     const [newCase] = await db
       .insert(cases)
       .values({
         ...caseData,
-        format: caseData.format || 'short',
+        format, // Use the validated format
         chiefComplaint: caseData.chiefComplaint || null,
         historyOfPresentIllness: caseData.historyOfPresentIllness || null,
         pastMedicalHistory: caseData.pastMedicalHistory || null,

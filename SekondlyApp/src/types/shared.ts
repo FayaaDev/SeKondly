@@ -49,9 +49,9 @@ export type CaseWithAuthor = Case & {
   userLikeId?: number;
   isFavoritedByUser?: boolean;
   // Long case format fields
-  format?: 'short' | 'long';
+  format: 'short' | 'long';
+  history: string; // Required for all cases
   chiefComplaint?: string;
-  history?: string;
   physicalExam?: string;
   assessment?: string;
   plan?: string;
