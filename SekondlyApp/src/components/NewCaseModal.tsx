@@ -234,6 +234,14 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     },
     onSuccess: async (data) => {
       console.log('Case created successfully:', data);
+      
+      // If the server response is missing the format field, add it manually
+      // This is a temporary fix until server-side changes are deployed
+      if (data && !data.format) {
+        data.format = caseFormat;
+        console.log('Added missing format field to case response:', caseFormat);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my-cases'] });
       Alert.alert('Success', 'Your case has been submitted successfully!');
