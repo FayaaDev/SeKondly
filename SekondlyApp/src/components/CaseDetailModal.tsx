@@ -25,7 +25,8 @@ import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
 import { useAuth } from "../hooks/useAuth";
-import type { CaseWithAuthor, CommentWithAuthor } from "../types/schema";
+import type { CaseWithAuthor, CommentWithAuthor, CaseFormat } from "../types/schema";
+import LongCaseDetailModal from "./LongCaseDetailModal";
 
 interface CaseDetailModalProps {
   visible: boolean;
@@ -49,7 +50,19 @@ export default function CaseDetailModal({
   onClose, 
   caseData,
   onProfilePress 
-}: CaseDetailModalProps) {
+}: CaseDetailModalProps): React.ReactElement | null {
+  // Early return for long cases
+  if (caseData?.format === 'long') {
+    return (
+      <LongCaseDetailModal
+        visible={visible}
+        onClose={onClose}
+        caseData={caseData}
+        onProfilePress={onProfilePress}
+      />
+    );
+  }
+
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -525,8 +538,21 @@ export default function CaseDetailModal({
             {/* Case Details */}
             <View style={styles.caseDetails}>
               <View style={styles.caseMetaRow}>
-                <View style={styles.specialtyBadge}>
-                  <Text style={styles.specialtyBadgeText}>{caseData.specialty}</Text>
+                <View style={styles.metaBadges}>
+                  <View style={[
+                    styles.formatBadge,
+                    styles.shortFormatBadge
+                  ]}>
+                    <Text style={[
+                      styles.formatBadgeText,
+                      styles.shortFormatText
+                    ]}>
+                      Short Case
+                    </Text>
+                  </View>
+                  <View style={styles.specialtyBadge}>
+                    <Text style={styles.specialtyBadgeText}>{caseData.specialty}</Text>
+                  </View>
                 </View>
                 <View style={styles.metaInfo}>
                   <View style={styles.metaItem}>
@@ -692,6 +718,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  formatBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  shortFormatBadge: {
+    backgroundColor: "#718096",
+  },
+  formatBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  shortFormatText: {
+    color: "#FFFFFF",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -761,6 +803,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  metaBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   specialtyBadge: {
     backgroundColor: "#EBF4FF",

@@ -51,17 +51,20 @@ export type CaseWithAuthor = Case & {
   // Long case format fields
   format?: 'short' | 'long';
   chiefComplaint?: string;
-  historyOfPresentIllness?: string;
-  pastMedicalHistory?: string;
-  familyHistory?: string;
-  drugHistory?: string;
-  systemicReview?: string;
-  examination?: string;
-  management?: string;
+  history?: string;
+  physicalExam?: string;
+  assessment?: string;
+  plan?: string;
+  imageUrls?: string[];
+  viewsCount?: number;
+  createdAt?: string | Date;
 };
 
 export type CommentWithAuthor = CaseComment & {
   author: User;
+  liked?: boolean;
+  likesCount?: number;
+  authorId: string;
 };
 
 export type NotificationWithRelated = Notification & {
@@ -256,3 +259,6 @@ export type PaginatedResponse<T> = {
   limit: number;
   hasMore: boolean;
 };
+
+// Add before the User type export
+export type CaseFormat = 'short' | 'long';

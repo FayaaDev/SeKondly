@@ -23,9 +23,12 @@ import { API_BASE_URL } from '../config/api';
 import { MEDICAL_SPECIALTIES } from '../types/shared';
 
 interface DraftCase {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   format?: CaseFormat;
+  specialty?: string;
+  images?: any[];
+  timestamp: number;
   history?: string;
   chiefComplaint?: string;
   historyOfPresentIllness?: string;
@@ -35,9 +38,6 @@ interface DraftCase {
   systemicReview?: string;
   examination?: string;
   management?: string;
-  specialty: string;
-  images: any[];
-  timestamp: number;
 }
 
 interface NewCaseModalProps {
@@ -102,9 +102,18 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     try {
       const draft = await StorageService.getDraftCase();
       if (draft) {
+        // Set the format first
         setCaseFormat(draft.format || 'short');
-        setTitle(draft.title);
+        
+        // Set basic fields
+        setTitle(draft.title || '');
+        setSelectedSpecialty(draft.specialty || '');
+        setSpecialtyInput(draft.specialty || '');
+        
+        // Set history for both formats
         setHistory(draft.history || '');
+        
+        // Set all long format fields
         setChiefComplaint(draft.chiefComplaint || '');
         setHistoryOfPresentIllness(draft.historyOfPresentIllness || '');
         setPastMedicalHistory(draft.pastMedicalHistory || '');
@@ -113,8 +122,16 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
         setSystemicReview(draft.systemicReview || '');
         setExamination(draft.examination || '');
         setManagement(draft.management || '');
-        setSelectedSpecialty(draft.specialty);
-        setSpecialtyInput(draft.specialty);
+        
+        // Set images if they exist
+        if (draft.images && draft.images.length > 0) {
+          setSelectedImages(draft.images.map(uri => ({
+            uri,
+            type: 'image/jpeg', // Default type
+            name: uri.split('/').pop() || 'image.jpg'
+          })));
+        }
+        
         setHasDraft(true);
       }
     } catch (error) {
@@ -130,29 +147,25 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       }
 
       const draftData: DraftCase = {
-        title: title.trim(),
-        specialty: selectedSpecialty,
+        title: title.trim() || undefined,
+        specialty: selectedSpecialty || undefined,
         format: caseFormat,
-        images: [],
+        images: selectedImages.length > 0 ? selectedImages.map(img => img.uri) : undefined,
         timestamp: Date.now(),
-        description: caseFormat === 'short' 
+        description: caseFormat === 'short'
           ? history.trim()
           : `${chiefComplaint.trim()}\n${historyOfPresentIllness.trim()}`,
-        ...(caseFormat === 'short' 
-          ? { 
-              history: history.trim(),
-            }
-          : {
-              chiefComplaint: chiefComplaint.trim(),
-              historyOfPresentIllness: historyOfPresentIllness.trim(),
-              pastMedicalHistory: pastMedicalHistory.trim(),
-              familyHistory: familyHistory.trim(),
-              drugHistory: drugHistory.trim(),
-              systemicReview: systemicReview.trim(),
-              examination: examination.trim(),
-              management: management.trim(),
-            }
-        ),
+        // Save history field for both formats
+        history: history.trim() || undefined,
+        // Always include all long format fields, but only if they have content
+        chiefComplaint: chiefComplaint.trim() || undefined,
+        historyOfPresentIllness: historyOfPresentIllness.trim() || undefined,
+        pastMedicalHistory: pastMedicalHistory.trim() || undefined,
+        familyHistory: familyHistory.trim() || undefined,
+        drugHistory: drugHistory.trim() || undefined,
+        systemicReview: systemicReview.trim() || undefined,
+        examination: examination.trim() || undefined,
+        management: management.trim() || undefined,
       };
 
       await StorageService.setDraftCase(draftData);
@@ -333,11 +346,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       return;
     }
     
-    if (caseFormat === 'short' && !history.trim()) {
-      Alert.alert('Missing history', 'Please enter the case history.');
+    // History is required for both formats
+    if (!history.trim()) {
+      Alert.alert('Missing history', 'Please enter a case history.');
       return;
     }
 
+    // Additional required fields for long format
     if (caseFormat === 'long') {
       if (!chiefComplaint.trim()) {
         Alert.alert('Missing information', 'Please enter the chief complaint.');
@@ -369,6 +384,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     if (caseFormat === 'short') {
       formData.append('history', history.trim());
     } else {
+      formData.append('history', history.trim());  // Add history for long format too
       formData.append('chiefComplaint', chiefComplaint.trim());
       formData.append('historyOfPresentIllness', historyOfPresentIllness.trim());
       formData.append('pastMedicalHistory', pastMedicalHistory.trim());
@@ -630,6 +646,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
               /* Long Case Fields */
               <>
                 {[
+                  { label: 'History', value: history, setter: setHistory, placeholder: 'Provide a brief overview of the case...' },
                   { label: 'Chief Complaint', value: chiefComplaint, setter: setChiefComplaint, placeholder: 'Enter the main complaint...' },
                   { label: 'History of Present Illness', value: historyOfPresentIllness, setter: setHistoryOfPresentIllness, placeholder: 'Describe the timeline and progression...' },
                   { label: 'Past Medical & Surgical History', value: pastMedicalHistory, setter: setPastMedicalHistory, placeholder: 'List relevant medical history...' },

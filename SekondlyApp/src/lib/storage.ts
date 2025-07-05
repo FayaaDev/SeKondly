@@ -59,11 +59,21 @@ interface SearchHistoryItem {
 }
 
 interface DraftCase {
-  title: string;
-  description: string;
-  specialty: string;
-  images: string[];
+  title?: string;
+  description?: string;
+  format?: 'short' | 'long';
+  specialty?: string;
+  images?: string[];
   timestamp: number;
+  history?: string;
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  systemicReview?: string;
+  examination?: string;
+  management?: string;
 }
 
 export class StorageService {
