@@ -178,6 +178,7 @@ export class DatabaseStorage implements IStorage {
         id: cases.id,
         title: cases.title,
         history: cases.history,
+        format: cases.format,
         specialty: cases.specialty,
         authorId: cases.authorId,
         isApproved: cases.isApproved,
@@ -189,27 +190,15 @@ export class DatabaseStorage implements IStorage {
         likesCount: cases.likesCount,
         commentsCount: cases.commentsCount,
         viewsCount: cases.viewsCount,
-        author: {
-          id: users.id,
-          email: users.email,
-          username: users.username,
-          password: users.password,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          profileImageUrl: users.profileImageUrl,
-          createdAt: users.createdAt,
-          updatedAt: users.updatedAt,
-          phone: users.phone,
-          medicalBoard: users.medicalBoard,
-          fellowship: users.fellowship,
-          experience: users.experience,
-          institution: users.institution,
-          specialty: users.specialty,
-          isApproved: users.isApproved,
-          isAdmin: users.isAdmin,
-          approvedAt: users.approvedAt,
-          approvedBy: users.approvedBy,
-        },
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
+        author: users,
         isLikedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseLikes} WHERE ${caseLikes.caseId} = ${cases.id} AND ${caseLikes.userId} = ${userId})` : sql<boolean>`false`,
         isFavoritedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseFavorites} WHERE ${caseFavorites.caseId} = ${cases.id} AND ${caseFavorites.userId} = ${userId})` : sql<boolean>`false`,
       })
@@ -230,6 +219,7 @@ export class DatabaseStorage implements IStorage {
         id: cases.id,
         title: cases.title,
         history: cases.history,
+        format: cases.format,
         specialty: cases.specialty,
         authorId: cases.authorId,
         isApproved: cases.isApproved,
@@ -241,6 +231,14 @@ export class DatabaseStorage implements IStorage {
         likesCount: cases.likesCount,
         commentsCount: cases.commentsCount,
         viewsCount: cases.viewsCount,
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
         author: users,
       })
       .from(cases)
@@ -254,34 +252,38 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use join query to get cases with author data
       const results = await db
-        .select()
+        .select({
+          id: cases.id,
+          title: cases.title,
+          history: cases.history,
+          format: cases.format,
+          specialty: cases.specialty,
+          authorId: cases.authorId,
+          isApproved: cases.isApproved,
+          createdAt: cases.createdAt,
+          updatedAt: cases.updatedAt,
+          approvedAt: cases.approvedAt,
+          approvedBy: cases.approvedBy,
+          imageUrls: cases.imageUrls,
+          likesCount: cases.likesCount,
+          commentsCount: cases.commentsCount,
+          viewsCount: cases.viewsCount,
+          chiefComplaint: cases.chiefComplaint,
+          historyOfPresentIllness: cases.historyOfPresentIllness,
+          pastMedicalHistory: cases.pastMedicalHistory,
+          familyHistory: cases.familyHistory,
+          drugHistory: cases.drugHistory,
+          systemicReview: cases.systemicReview,
+          examination: cases.examination,
+          management: cases.management,
+          author: users,
+        })
         .from(cases)
         .innerJoin(users, eq(cases.authorId, users.id))
         .where(eq(cases.authorId, userId))
         .orderBy(desc(cases.createdAt));
 
-      // Transform the results to match CaseWithAuthor structure
-      const transformedResults = results.map((row: any) => {
-        return {
-          id: row.cases.id,
-          title: row.cases.title,
-          history: row.cases.history,
-          specialty: row.cases.specialty,
-          authorId: row.cases.authorId,
-          isApproved: row.cases.isApproved,
-          createdAt: row.cases.createdAt,
-          updatedAt: row.cases.updatedAt,
-          approvedAt: row.cases.approvedAt,
-          approvedBy: row.cases.approvedBy,
-          imageUrls: row.cases.imageUrls,
-          likesCount: row.cases.likesCount,
-          commentsCount: row.cases.commentsCount,
-          viewsCount: row.cases.viewsCount,
-          author: row.users,
-        };
-      });
-
-      return transformedResults as CaseWithAuthor[];
+      return results as CaseWithAuthor[];
     } catch (error) {
       console.error("Error in getUserCases:", error);
       throw error;
@@ -427,6 +429,7 @@ export class DatabaseStorage implements IStorage {
         id: cases.id,
         title: cases.title,
         history: cases.history,
+        format: cases.format,
         specialty: cases.specialty,
         authorId: cases.authorId,
         isApproved: cases.isApproved,
@@ -438,27 +441,15 @@ export class DatabaseStorage implements IStorage {
         likesCount: cases.likesCount,
         commentsCount: cases.commentsCount,
         viewsCount: cases.viewsCount,
-        author: {
-          id: users.id,
-          email: users.email,
-          username: users.username,
-          password: users.password,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          profileImageUrl: users.profileImageUrl,
-          specialty: users.specialty,
-          institution: users.institution,
-          experience: users.experience,
-          isApproved: users.isApproved,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          updatedAt: users.updatedAt,
-          phone: users.phone,
-          medicalBoard: users.medicalBoard,
-          fellowship: users.fellowship,
-          approvedAt: users.approvedAt,
-          approvedBy: users.approvedBy,
-        },
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
+        author: users,
       })
       .from(caseFavorites)
       .innerJoin(cases, eq(caseFavorites.caseId, cases.id))
@@ -466,7 +457,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(caseFavorites.userId, userId))
       .orderBy(desc(caseFavorites.createdAt));
 
-    return favoriteCases;
+    return favoriteCases as CaseWithAuthor[];
   }
 
   // Document operations
@@ -523,7 +514,27 @@ export class DatabaseStorage implements IStorage {
   // Admin operations
   async getAllUsers(): Promise<User[]> {
     return await db
-      .select()
+      .select({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        specialty: users.specialty,
+        experience: users.experience,
+        institution: users.institution,
+        isApproved: users.isApproved,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        phone: users.phone,
+        medicalBoard: users.medicalBoard,
+        fellowship: users.fellowship,
+        approvedAt: users.approvedAt,
+        approvedBy: users.approvedBy,
+      })
       .from(users)
       .orderBy(desc(users.createdAt));
   }
@@ -559,6 +570,7 @@ export class DatabaseStorage implements IStorage {
         id: cases.id,
         title: cases.title,
         history: cases.history,
+        format: cases.format,
         specialty: cases.specialty,
         authorId: cases.authorId,
         isApproved: cases.isApproved,
@@ -570,6 +582,14 @@ export class DatabaseStorage implements IStorage {
         likesCount: cases.likesCount,
         commentsCount: cases.commentsCount,
         viewsCount: cases.viewsCount,
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
         author: users,
       })
       .from(cases)

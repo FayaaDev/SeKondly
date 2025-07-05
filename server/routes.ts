@@ -341,28 +341,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as Express.Multer.File[];
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
-      const { format } = req.body;
+      // Parse and validate format
+      const rawFormat = req.body.format;
+      const format = (rawFormat === 'short' || rawFormat === 'long') ? rawFormat : 'short';
+      console.log('POST /api/cases - Format:', format);
 
-      // Format-specific validation
-      if (format === 'short' && !req.body.history) {
+      // Validate required fields based on format
+      if (!req.body.title || !req.body.specialty) {
         return res.status(400).json({
           message: "Failed to create case",
-          error: "History is required for short format cases"
+          error: "Title and specialty are required"
         });
       }
-      
-      if (format === 'long' && (!req.body.chiefComplaint || !req.body.historyOfPresentIllness)) {
+
+      // History is required for both formats
+      if (!req.body.history) {
         return res.status(400).json({
           message: "Failed to create case",
-          error: "Chief complaint and history of present illness are required for long format cases"
+          error: "History is required for all cases"
         });
+      }
+
+      // Additional validation for long format
+      if (format === 'long') {
+        if (!req.body.chiefComplaint || !req.body.historyOfPresentIllness) {
+          return res.status(400).json({
+            message: "Failed to create case",
+            error: "Chief complaint and history of present illness are required for long format cases"
+          });
+        }
       }
 
       const caseData = {
-        ...req.body,
+        title: req.body.title,
+        format,  // Use the validated format
+        history: req.body.history,
+        specialty: req.body.specialty,
         imageUrls,
         authorId: req.user?.id || "mock-user-1",
-        history: format === 'short' ? req.body.history : null,
+        // For long format, include all long case fields
+        ...(format === 'long' && {
+          chiefComplaint: req.body.chiefComplaint,
+          historyOfPresentIllness: req.body.historyOfPresentIllness,
+          pastMedicalHistory: req.body.pastMedicalHistory || null,
+          familyHistory: req.body.familyHistory || null,
+          drugHistory: req.body.drugHistory || null,
+          systemicReview: req.body.systemicReview || null,
+          examination: req.body.examination || null,
+          management: req.body.management || null,
+        })
       };
       
       console.log('POST /api/cases - Parsed case data:', caseData);

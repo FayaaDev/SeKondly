@@ -35,37 +35,38 @@ export async function apiRequest(
 ): Promise<any> {
   try {
     const authToken = await StorageService.getAuthToken();
+    const isFormData = data instanceof FormData;
     
     const config: RequestInit = {
       method,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(authToken && { Authorization: `Bearer ${authToken}` }),
       },
       credentials: "include",
     };
 
     if (data && method !== "GET") {
-      config.body = JSON.stringify(data);
+      config.body = isFormData ? data : JSON.stringify(data);
     }
 
     const response = await fetch(`${API_BASE_URL}${url}`, config);
 
     if (!response.ok) {
       // Handle auth errors
-      if (response.status === 401) {
-        await StorageService.removeAuthToken();
-        await StorageService.removeUser();
+      if (response.status === 401 || response.status === 403) {
         throw new Error("Authentication failed");
       }
-      
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `${response.status}: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    return response.json();
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return await response.json();
+    }
+    return await response.text();
   } catch (error) {
-    console.error(`API Error (${method} ${url}):`, error);
+    console.error("API request error:", error);
     throw error;
   }
 }
