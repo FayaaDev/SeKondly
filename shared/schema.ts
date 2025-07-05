@@ -52,7 +52,7 @@ export const users = pgTable("users", {
 export const cases = pgTable("cases", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  history: text("history"), // Made optional for long format cases
+  history: text("history").notNull(), // Made mandatory for all cases
   specialty: varchar("specialty").notNull(),
   authorId: varchar("author_id").notNull(),
   isApproved: boolean("is_approved").default(true),
@@ -272,7 +272,7 @@ export const insertCaseSchema = z.discriminatedUnion('format', [
     title: z.string().min(1, "Title is required"),
     specialty: z.string().min(1, "Specialty is required"),
     authorId: z.string(),
-    history: z.string().optional(),  // Explicitly optional for long format
+    history: z.string().min(1, "History is required"),  // Made mandatory for both formats
     chiefComplaint: z.string().min(1, "Chief complaint is required for long format cases"),
     historyOfPresentIllness: z.string().min(1, "History of present illness is required for long format cases"),
     pastMedicalHistory: z.string().optional(),
