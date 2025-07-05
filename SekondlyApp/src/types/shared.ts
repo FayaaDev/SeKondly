@@ -48,13 +48,17 @@ export type CaseWithAuthor = Case & {
   isLikedByUser?: boolean;
   userLikeId?: number;
   isFavoritedByUser?: boolean;
-  // Long case format fields
+  // Long case format fields - matching database schema
   format: 'short' | 'long';
   history: string; // Required for all cases
   chiefComplaint?: string;
-  physicalExam?: string;
-  assessment?: string;
-  plan?: string;
+  historyOfPresentIllness?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  systemicReview?: string;
+  examination?: string;
+  management?: string;
   imageUrls?: string[];
   viewsCount?: number;
   createdAt?: string | Date;

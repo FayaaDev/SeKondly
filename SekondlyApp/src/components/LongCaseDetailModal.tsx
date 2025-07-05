@@ -307,13 +307,14 @@ const LongCaseDetailModal = ({
               <View style={styles.longCaseFields}>
                 {[
                   { label: "Chief Complaint", value: caseData.chiefComplaint },
-                  { label: "History of Present Illness", value: caseData.history },
+                  { label: "History of Present Illness", value: caseData.historyOfPresentIllness },
                   { label: "Past Medical History", value: caseData.pastMedicalHistory },
                   { label: "Family History", value: caseData.familyHistory },
                   { label: "Drug History", value: caseData.drugHistory },
-                  { label: "Physical Examination", value: caseData.physicalExam },
-                  { label: "Assessment", value: caseData.assessment },
-                  { label: "Plan", value: caseData.plan },
+                  { label: "Systemic Review", value: caseData.systemicReview },
+                  { label: "Physical Examination", value: caseData.examination },
+                  { label: "Management", value: caseData.management },
+                  { label: "General History", value: caseData.history },
                 ].map((field, index) => field.value && (
                   <View
                     key={field.label}
