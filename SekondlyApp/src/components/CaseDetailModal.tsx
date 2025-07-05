@@ -51,8 +51,11 @@ export default function CaseDetailModal({
   caseData,
   onProfilePress 
 }: CaseDetailModalProps): React.ReactElement | null {
+  // Determine case format with fallback - if format is undefined/null, default to 'short'
+  const caseFormat = caseData?.format || 'short';
+  
   // Early return for long cases
-  if (caseData?.format === 'long') {
+  if (caseFormat === 'long') {
     return (
       <LongCaseDetailModal
         visible={visible}
