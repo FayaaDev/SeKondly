@@ -274,15 +274,18 @@ function generateRandomUser() {
   };
 }
 
-function generateRandomCase(authorId: string, specialty: string, format: 'short' | 'long' = 'short') {
+function generateRandomCase(authorId: string, specialty: string, format: 'short' | 'long' = 'short', includeImages: boolean = true) {
   const templates = CASE_TEMPLATES[specialty as keyof typeof CASE_TEMPLATES] || CASE_TEMPLATES["Internal Medicine"];
   const title = getRandomElement(templates);
   const history = generateCaseHistory(specialty, title);
   
-  // Get specialty-specific images or default ones
-  const availableImages = MEDICAL_IMAGES[specialty as keyof typeof MEDICAL_IMAGES] || MEDICAL_IMAGES["Default"];
-  const numImages = Math.floor(Math.random() * 2) + 2; // 2-3 images per case
-  const imageUrls = Array.from({ length: numImages }, () => getRandomElement(availableImages));
+  // Get specialty-specific images or default ones (only if includeImages is true)
+  let imageUrls: string[] = [];
+  if (includeImages) {
+    const availableImages = MEDICAL_IMAGES[specialty as keyof typeof MEDICAL_IMAGES] || MEDICAL_IMAGES["Default"];
+    const numImages = Math.floor(Math.random() * 2) + 2; // 2-3 images per case
+    imageUrls = Array.from({ length: numImages }, () => getRandomElement(availableImages));
+  }
   
   const baseCase = {
     title,
@@ -469,6 +472,7 @@ async function generateTestData() {
     const userCount = 14;
     const casesPerUser = 3; // Each user will have 2-4 cases
     const longCasesToGenerate = 10; // Generate 10 long cases
+    const shortCasesWithoutImages = 10; // Generate 10 short cases without images
     
     console.log(`📝 Generating ${userCount} users with profile images...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
@@ -519,10 +523,28 @@ async function generateTestData() {
       }
     }
     
+    console.log(`\n📄 Generating ${shortCasesWithoutImages} short cases without images...`);
+    let shortCasesWithoutImagesCreated = 0;
+    
+    for (let i = 0; i < shortCasesWithoutImages; i++) {
+      const randomUser = getRandomElement(generatedUsers);
+      const shortCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'short', false);
+      
+      try {
+        await db.insert(cases).values(shortCaseData);
+        shortCasesWithoutImagesCreated++;
+        totalCases++;
+        console.log(`  📄 Created SHORT case (no images): "${shortCaseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
+      } catch (error) {
+        console.error(`  ❌ Failed to create short case without images for Dr. ${randomUser.firstName} ${randomUser.lastName}`, error);
+      }
+    }
+    
     console.log(`\n🎉 Test data generation complete!`);
     console.log(`📊 Summary:`);
     console.log(`   - Users created: ${userCount}`);
-    console.log(`   - Short cases created: ${totalCases - longCasesCreated}`);
+    console.log(`   - Short cases (with images) created: ${totalCases - longCasesCreated - shortCasesWithoutImagesCreated}`);
+    console.log(`   - Short cases (without images) created: ${shortCasesWithoutImagesCreated}`);
     console.log(`   - Long cases created: ${longCasesCreated}`);
     console.log(`   - Total cases created: ${totalCases}`);
     console.log(`   - Specialties covered: ${[...new Set(generatedUsers.map(u => u.specialty))].length}`);

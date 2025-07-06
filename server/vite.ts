@@ -87,17 +87,32 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
+  const staticLandingPath = path.resolve(__dirname, "..", "static-landing.html");
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  // Serve static assets (like images, CSS, JS) from the dist directory if it exists
+  if (fs.existsSync(distPath)) {
+    app.use('/assets', express.static(path.join(distPath, 'assets')));
+    app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
   }
 
-  app.use(express.static(distPath));
+  // Serve uploads directory for images
+  app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
 
-  // fall through to index.html if the file doesn't exist
+  // Route for web app (if needed for specific paths like /app)
+  app.get('/app*', (_req, res) => {
+    if (fs.existsSync(distPath)) {
+      res.sendFile(path.resolve(distPath, "index.html"));
+    } else {
+      res.status(404).send('Web app not built. Run `npm run build` first.');
+    }
+  });
+
+  // Serve the static landing page for all other routes
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    if (fs.existsSync(staticLandingPath)) {
+      res.sendFile(staticLandingPath);
+    } else {
+      res.status(404).send('Landing page not found');
+    }
   });
 }

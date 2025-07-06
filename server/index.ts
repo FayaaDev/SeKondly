@@ -241,10 +241,23 @@ app.get('/api/users/:userId/follow-status', async (req, res) => {
     // setting up all the other routes so the catch-all route
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
-      // Serve static landing page instead of Vite development server
+      // Set up Vite dev server for web app development
+      await setupVite(app, server);
+      
+      // Route for web app development
+      app.get('/app*', (req, res, next) => {
+        // Let Vite handle this in development
+        next();
+      });
+      
+      // Serve static landing page for root and other routes
       app.get('*', (req, res, next) => {
         // Skip API routes
         if (req.path.startsWith('/api/')) {
+          return next();
+        }
+        // Skip /app routes (handled by Vite)
+        if (req.path.startsWith('/app')) {
           return next();
         }
         // Serve the static landing page
