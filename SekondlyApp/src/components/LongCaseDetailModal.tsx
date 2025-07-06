@@ -264,6 +264,9 @@ const LongCaseDetailModal = ({
                     Dr. {caseData.author.firstName} {caseData.author.lastName}
                   </Text>
                   <Text style={styles.authorSpecialty}>{caseData.author.specialty}</Text>
+                  {(caseData.author as any)?.level && (
+                    <Text style={styles.authorLevel}>{(caseData.author as any)?.level}</Text>
+                  )}
                 </View>
               </TouchableOpacity>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -544,6 +547,12 @@ const styles = StyleSheet.create({
   authorSpecialty: {
     fontSize: 14,
     color: "#536471",
+  },
+  authorLevel: {
+    fontSize: 13,
+    color: "#059669",
+    marginTop: 2,
+    fontWeight: "500",
   },
 
   // Case Meta Styles

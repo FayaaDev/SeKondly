@@ -429,8 +429,15 @@ export default function CaseDetailModal({
             <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt!)}</Text>
           </View>
           
-          <View style={styles.commentSpecialtyBadge}>
-            <Text style={styles.commentSpecialtyText}>{item.author.specialty}</Text>
+          <View style={styles.commentBadgesContainer}>
+            {(item.author as any)?.level && (
+              <View style={styles.commentLevelBadge}>
+                <Text style={styles.commentLevelText}>{(item.author as any)?.level}</Text>
+              </View>
+            )}
+            <View style={styles.commentSpecialtyBadge}>
+              <Text style={styles.commentSpecialtyText}>{item.author.specialty}</Text>
+            </View>
           </View>
           
           <Text style={styles.commentContent}>{item.content}</Text>
@@ -511,6 +518,9 @@ export default function CaseDetailModal({
                   Dr. {caseData.author.firstName} {caseData.author.lastName}
                 </Text>
                 <Text style={styles.authorSpecialty}>{caseData.author.specialty}</Text>
+                {(caseData.author as any)?.level && (
+                  <Text style={styles.authorLevel}>{(caseData.author as any)?.level}</Text>
+                )}
               </View>
             </TouchableOpacity>
             
@@ -783,6 +793,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#536471",
     marginTop: 1,
+  },
+  authorLevel: {
+    fontSize: 12,
+    color: "#059669",
+    marginTop: 2,
+    fontWeight: "500",
   },
   closeButton: {
     padding: 8,
@@ -1099,6 +1115,25 @@ const styles = StyleSheet.create({
   commentSpecialtyText: {
     fontSize: 11,
     color: "#1D9BF0",
+    fontWeight: "500",
+  },
+  commentBadgesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+    flexWrap: "wrap",
+  },
+  commentLevelBadge: {
+    backgroundColor: "#E8FDF5",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    alignSelf: "flex-start",
+  },
+  commentLevelText: {
+    fontSize: 11,
+    color: "#059669",
     fontWeight: "500",
   },
   commentContent: {

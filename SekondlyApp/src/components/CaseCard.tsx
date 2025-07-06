@@ -322,8 +322,15 @@ export default function CaseCard({
               <Text style={styles.authorName}>
                 {caseData.author?.firstName} {caseData.author?.lastName}
               </Text>
-              <View style={styles.specialtyBadge}>
-                <Text style={styles.specialtyBadgeText}>{caseData.specialty}</Text>
+              <View style={styles.badgesContainer}>
+                {(caseData.author as any)?.level && (
+                  <View style={styles.levelBadge}>
+                    <Text style={styles.levelBadgeText}>{(caseData.author as any)?.level}</Text>
+                  </View>
+                )}
+                <View style={styles.specialtyBadge}>
+                  <Text style={styles.specialtyBadgeText}>{caseData.specialty}</Text>
+                </View>
               </View>
             </View>
             <View style={styles.metaRow}>
@@ -470,6 +477,23 @@ const styles = StyleSheet.create({
   specialtyBadgeText: {
     fontSize: 12,
     color: "#1E40AF",
+    fontWeight: "500",
+  },
+  badgesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  levelBadge: {
+    backgroundColor: "#E8FDF5",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  levelBadgeText: {
+    fontSize: 12,
+    color: "#059669",
     fontWeight: "500",
   },
   metaRow: {
