@@ -41,7 +41,7 @@ export const users = pgTable("users", {
   experience: varchar("experience"),
   institution: varchar("institution"),
   specialty: varchar("specialty"),
-  level: varchar("level"), // Registrar, Senior Registrar, Consultant
+  level: varchar("level"), // Resident, Registrar, Senior Registrar, Consultant
   isApproved: boolean("is_approved").default(false),
   isAdmin: boolean("is_admin").default(false),
   approvedAt: timestamp("approved_at"),

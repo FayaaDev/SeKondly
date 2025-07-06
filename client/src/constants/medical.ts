@@ -66,3 +66,16 @@ export type Specialty = typeof MEDICAL_SPECIALTIES[number];
 export const BOARD_CERTIFICATIONS = MEDICAL_SPECIALTIES;
 
 export type BoardCertification = typeof BOARD_CERTIFICATIONS[number];
+
+/**
+ * Medical levels for user classification
+ * Keep in sync with SekondlyApp/src/types/shared.ts
+ */
+export const MEDICAL_LEVELS = [
+  "Resident",
+  "Registrar",
+  "Senior Registrar", 
+  "Consultant"
+] as const;
+
+export type MedicalLevel = typeof MEDICAL_LEVELS[number];

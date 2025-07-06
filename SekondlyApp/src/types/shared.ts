@@ -242,6 +242,7 @@ export type Fellowship = typeof FELLOWSHIPS[number];
 
 // Medical levels for user classification
 export const MEDICAL_LEVELS = [
+  "Resident",
   "Registrar",
   "Senior Registrar", 
   "Consultant"
