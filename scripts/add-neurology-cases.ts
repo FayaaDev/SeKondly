@@ -37,9 +37,9 @@ async function addNeurologyCases() {
         history: 'A 24-year-old previously healthy female presents with new-onset focal seizures. Episodes began 2 weeks ago with right arm twitching, progressing to secondary generalization. No family history of epilepsy. MRI shows subtle cortical dysplasia in left frontal region.',
         specialty: 'Neurology',
         authorId: neurologistUser.id,
-        isApproved: true,
-        approvedAt: new Date(),
-        approvedBy: 'admin-001',
+        // isApproved: true, // Removed - now requires approval
+        // approvedAt: new Date(), // Removed
+        // approvedBy: 'admin-001', // Removed
         likesCount: 3,
         commentsCount: 2,
         viewsCount: 45,
@@ -49,9 +49,9 @@ async function addNeurologyCases() {
         history: 'A 68-year-old male with 18-month history of progressive memory decline and personality changes. Family reports increasing agitation and poor judgment. MMSE score 18/30. Brain MRI shows bilateral temporal lobe atrophy.',
         specialty: 'Neurology',
         authorId: neurologistUser.id,
-        isApproved: true,
-        approvedAt: new Date(),
-        approvedBy: 'admin-001',
+        // isApproved: true, // Removed - now requires approval
+        // approvedAt: new Date(), // Removed
+        // approvedBy: 'admin-001', // Removed
         likesCount: 7,
         commentsCount: 5,
         viewsCount: 82,
@@ -61,9 +61,9 @@ async function addNeurologyCases() {
         history: 'A 72-year-old male with sudden onset left hemiplegia and aphasia. NIHSS score 18. CT angiogram reveals right M1 occlusion. Patient arrived within 4-hour window. Considering mechanical thrombectomy.',
         specialty: 'Neurology',
         authorId: neurologistUser.id,
-        isApproved: true,
-        approvedAt: new Date(),
-        approvedBy: 'admin-001',
+        // isApproved: true, // Removed - now requires approval
+        // approvedAt: new Date(), // Removed
+        // approvedBy: 'admin-001', // Removed
         likesCount: 12,
         commentsCount: 8,
         viewsCount: 156,

@@ -105,11 +105,11 @@ export default function MyCasesScreen() {
     >
       <View style={styles.caseHeader}>
         <Text style={styles.caseTitle}>{caseData.title}</Text>
-        {caseData.isApproved && (
-          <View style={[styles.statusBadge, styles.publishedBadge]}>
-            <Text style={[styles.statusText, styles.publishedText]}>Published</Text>
-          </View>
-        )}
+        <View style={[styles.statusBadge, caseData.isApproved ? styles.publishedBadge : styles.pendingBadge]}>
+          <Text style={[styles.statusText, caseData.isApproved ? styles.publishedText : styles.pendingText]}>
+            {caseData.isApproved ? 'Published' : 'Pending Approval'}
+          </Text>
+        </View>
       </View>
       
       <Text style={styles.caseDate}>
@@ -289,11 +289,17 @@ const styles = StyleSheet.create({
   publishedBadge: {
     backgroundColor: "#007AFF",
   },
+  pendingBadge: {
+    backgroundColor: "#F59E0B",
+  },
   statusText: {
     fontSize: 12,
     fontWeight: "500",
   },
   publishedText: {
+    color: "#FFFFFF",
+  },
+  pendingText: {
     color: "#FFFFFF",
   },
   caseDate: {

@@ -43,7 +43,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
       toast({
         title: "Case submitted",
-        description: "Your case has been submitted for review.",
+        description: "Your case has been submitted for review and will be published once approved by our medical team.",
       });
       onClose();
       resetForm();

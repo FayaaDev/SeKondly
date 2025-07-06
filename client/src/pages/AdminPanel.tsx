@@ -5,18 +5,38 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Users, FileText, Check, X, Eye, Settings, LogOut, Shield, TrendingUp, Clock, Download } from "lucide-react";
+import { ChevronLeft, Users, FileText, Check, X, Eye, Settings, LogOut, Shield, TrendingUp, Clock, Download, Stethoscope } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { User, Document } from "@shared/schema";
 
-type AdminTab = "users" | "documents";
+interface CaseForReview {
+  id: number;
+  title: string;
+  history: string;
+  specialty: string;
+  format: 'short' | 'long';
+  createdAt: string;
+  author: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    specialty?: string;
+  };
+  imageUrls?: string[];
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+}
+
+type AdminTab = "users" | "documents" | "cases";
 
 export default function AdminPanel() {
   const [currentTab, setCurrentTab] = useState<AdminTab>("users");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedCase, setSelectedCase] = useState<CaseForReview | null>(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showCaseModal, setShowCaseModal] = useState(false);
   const { user, isLoading, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,6 +59,12 @@ export default function AdminPanel() {
   const { data: userDocuments = [], isLoading: userDocumentsLoading } = useQuery<Document[]>({
     queryKey: [`/api/admin/user-documents/${selectedUser?.id || ''}`],
     enabled: !!selectedUser?.id && showDocumentsModal,
+    retry: false,
+  });
+
+  const { data: pendingCases = [], isLoading: casesLoading, error: casesError } = useQuery<CaseForReview[]>({
+    queryKey: ["/api/admin/pending-cases"],
+    enabled: !!user?.isAdmin && currentTab === "cases",
     retry: false,
   });
 
@@ -111,6 +137,46 @@ export default function AdminPanel() {
       toast({
         title: "Document rejected",
         description: "The document has been rejected.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const approveCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest("POST", `/api/admin/approve-case/${caseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-cases"] });
+      toast({
+        title: "Case approved",
+        description: "The case has been approved successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest("DELETE", `/api/admin/reject-case/${caseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-cases"] });
+      toast({
+        title: "Case rejected",
+        description: "The case has been rejected and removed.",
       });
     },
     onError: (error) => {
@@ -307,6 +373,17 @@ export default function AdminPanel() {
               >
                 <FileText className="w-5 h-5 inline mr-2" />
                 Document Reviews ({pendingDocuments.length})
+              </button>
+              <button
+                onClick={() => setCurrentTab("cases")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  currentTab === "cases"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Stethoscope className="w-5 h-5 inline mr-2" />
+                Case Reviews ({pendingCases.length})
               </button>
             </nav>
           </div>
@@ -516,6 +593,131 @@ export default function AdminPanel() {
                 )}
               </div>
             )}
+
+            {/* Cases Tab */}
+            {currentTab === "cases" && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Pending Case Approvals</h2>
+                  <p className="text-gray-600">Review and approve medical case submissions</p>
+                </div>
+                
+                {casesLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="animate-pulse">
+                        <CardContent className="p-6">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <div className="w-16 h-8 bg-gray-200 rounded"></div>
+                              <div className="w-16 h-8 bg-gray-200 rounded"></div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : casesError ? (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="text-red-500 mb-2">
+                        <X className="w-8 h-8 mx-auto" />
+                      </div>
+                      <p className="text-gray-600">Error loading pending cases</p>
+                    </CardContent>
+                  </Card>
+                ) : pendingCases.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="text-gray-400 mb-4">
+                        <Stethoscope className="w-12 h-12 mx-auto" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No pending cases</h3>
+                      <p className="text-gray-600">All case submissions have been reviewed.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingCases.map((caseItem) => (
+                      <Card key={caseItem.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                  <Stethoscope className="w-5 h-5 text-orange-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">{caseItem.title}</h3>
+                                  <p className="text-sm text-gray-600">
+                                    By Dr. {caseItem.author.firstName} {caseItem.author.lastName}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-4 mb-3">
+                                <Badge variant="secondary">{caseItem.specialty}</Badge>
+                                <Badge variant={caseItem.format === 'long' ? 'default' : 'outline'}>
+                                  {caseItem.format === 'long' ? 'Long Case' : 'Short Case'}
+                                </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(caseItem.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              
+                              <p className="text-gray-700 text-sm line-clamp-3 mb-4">
+                                {caseItem.history}
+                              </p>
+                            </div>
+                            
+                            <div className="flex flex-col space-y-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedCase(caseItem);
+                                  setShowCaseModal(true);
+                                }}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => approveCaseMutation.mutate(caseItem.id)}
+                                disabled={approveCaseMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to reject this case? This action cannot be undone.')) {
+                                    rejectCaseMutation.mutate(caseItem.id);
+                                  }
+                                }}
+                                disabled={rejectCaseMutation.isPending}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -657,6 +859,115 @@ export default function AdminPanel() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Case Detail Modal */}
+      {showCaseModal && selectedCase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{selectedCase.title}</h2>
+                <p className="text-gray-600">
+                  By Dr. {selectedCase.author.firstName} {selectedCase.author.lastName} • {selectedCase.specialty}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCaseModal(false);
+                  setSelectedCase(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Format</span>
+                    <p className="text-sm text-gray-900">
+                      {selectedCase.format === 'long' ? 'Long Case Format' : 'Short Case Format'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Submitted</span>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedCase.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Specialty</span>
+                    <p className="text-sm text-gray-900">{selectedCase.specialty}</p>
+                  </div>
+                  {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Images</span>
+                      <p className="text-sm text-gray-900">{selectedCase.imageUrls.length} attached</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Case History</h3>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-gray-700 leading-relaxed">{selectedCase.history}</p>
+                  </div>
+                </div>
+
+                {selectedCase.format === 'long' && selectedCase.chiefComplaint && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Chief Complaint</h3>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-gray-700 leading-relaxed">{selectedCase.chiefComplaint}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCase.format === 'long' && selectedCase.historyOfPresentIllness && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">History of Present Illness</h3>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-gray-700 leading-relaxed">{selectedCase.historyOfPresentIllness}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex space-x-3 p-6 border-t bg-gray-50">
+              <Button
+                onClick={() => {
+                  approveCaseMutation.mutate(selectedCase.id);
+                  setShowCaseModal(false);
+                  setSelectedCase(null);
+                }}
+                disabled={approveCaseMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Approve Case
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (confirm('Are you sure you want to reject this case? This action cannot be undone.')) {
+                    rejectCaseMutation.mutate(selectedCase.id);
+                    setShowCaseModal(false);
+                    setSelectedCase(null);
+                  }
+                }}
+                disabled={rejectCaseMutation.isPending}
+                className="flex-1"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Reject Case
+              </Button>
             </div>
           </div>
         </div>

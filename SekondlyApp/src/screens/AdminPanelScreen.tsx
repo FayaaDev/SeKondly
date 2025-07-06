@@ -15,6 +15,7 @@ interface User {
   specialty?: string;
   institution?: string;
 }
+
 interface Document {
   id: number;
   fileName: string;
@@ -25,12 +26,32 @@ interface Document {
   isApproved?: boolean;
 }
 
-type AdminTab = 'users' | 'documents';
+interface CaseForReview {
+  id: number;
+  title: string;
+  history: string;
+  specialty: string;
+  format: 'short' | 'long';
+  createdAt: string;
+  author: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    specialty?: string;
+  };
+  imageUrls?: string[];
+  chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+}
+
+type AdminTab = 'users' | 'documents' | 'cases';
 
 export default function AdminPanelScreen() {
   const [currentTab, setCurrentTab] = useState<AdminTab>('users');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedCase, setSelectedCase] = useState<CaseForReview | null>(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showCaseDetailModal, setShowCaseDetailModal] = useState(false);
   const { user, isLoading } = useAuth();
   const queryClient = useQueryClient();
 
@@ -46,6 +67,13 @@ export default function AdminPanelScreen() {
     queryKey: ['/api/admin/pending-documents'],
     queryFn: () => apiRequest('GET', '/api/admin/pending-documents'),
     enabled: !!user?.isAdmin && currentTab === 'documents',
+    retry: false,
+  });
+
+  const { data: pendingCases = [], isLoading: casesLoading } = useQuery<CaseForReview[]>({
+    queryKey: ['/api/admin/pending-cases'],
+    queryFn: () => apiRequest('GET', '/api/admin/pending-cases'),
+    enabled: !!user?.isAdmin && currentTab === 'cases',
     retry: false,
   });
 
@@ -107,6 +135,32 @@ export default function AdminPanelScreen() {
     },
     onError: (error: any) => {
       Alert.alert('❌ Error', error.message || 'Failed to reject document');
+    },
+  });
+
+  const approveCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest('POST', `/api/admin/approve-case/${caseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-cases'] });
+      Alert.alert('✅ Success', 'The case has been approved successfully.');
+    },
+    onError: (error: any) => {
+      Alert.alert('❌ Error', error.message || 'Failed to approve case');
+    },
+  });
+
+  const rejectCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest('DELETE', `/api/admin/reject-case/${caseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-cases'] });
+      Alert.alert('🗑️ Case Rejected', 'The case has been rejected and removed.');
+    },
+    onError: (error: any) => {
+      Alert.alert('❌ Error', error.message || 'Failed to reject case');
     },
   });
 
@@ -172,6 +226,21 @@ export default function AdminPanelScreen() {
           />
           <Text style={[styles.tabText, currentTab === 'documents' && styles.activeTabText]}>
             Documents
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          onPress={() => setCurrentTab('cases')}
+          style={[styles.tab, currentTab === 'cases' && styles.activeTab]}
+        >
+          <Ionicons 
+            name="medical" 
+            size={20} 
+            color={currentTab === 'cases' ? '#4ECDC4' : '#8E8E93'} 
+            style={styles.tabIcon}
+          />
+          <Text style={[styles.tabText, currentTab === 'cases' && styles.activeTabText]}>
+            Cases
           </Text>
         </TouchableOpacity>
       </View>
@@ -351,6 +420,110 @@ export default function AdminPanelScreen() {
             )}
           </View>
         )}
+
+        {currentTab === 'cases' && (
+          <View>
+            <Text style={styles.sectionTitle}>Pending Case Approvals</Text>
+            
+            {casesLoading ? (
+              <View style={styles.loadingSection}>
+                {[1, 2, 3].map((i) => (
+                  <View key={i} style={styles.skeletonCard}>
+                    <View style={styles.skeletonHeader}>
+                      <View style={styles.skeletonAvatar} />
+                      <View style={styles.skeletonInfo}>
+                        <View style={styles.skeletonLine} />
+                        <View style={[styles.skeletonLine, styles.skeletonLineSmall]} />
+                      </View>
+                    </View>
+                    <View style={styles.skeletonButtons}>
+                      <View style={styles.skeletonButton} />
+                      <View style={styles.skeletonButton} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : pendingCases.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="medical" size={64} color="#8E8E93" />
+                <Text style={styles.emptyTitle}>No pending cases</Text>
+                <Text style={styles.emptySubtitle}>All cases have been reviewed.</Text>
+              </View>
+            ) : (
+              pendingCases.map((caseItem) => (
+                <View key={caseItem.id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.caseIcon}>
+                      <Ionicons name="medical" size={24} color="#FF6B35" />
+                    </View>
+                    <View style={styles.caseInfo}>
+                      <Text style={styles.caseTitle}>{caseItem.title}</Text>
+                      <Text style={styles.caseAuthor}>
+                        By Dr. {caseItem.author.firstName} {caseItem.author.lastName}
+                      </Text>
+                      <Text style={styles.caseSpecialty}>{caseItem.specialty}</Text>
+                      <Text style={styles.caseFormat}>
+                        {caseItem.format === 'long' ? 'Long Case Format' : 'Short Case Format'}
+                      </Text>
+                      <Text style={styles.caseDate}>
+                        {new Date(caseItem.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusText}>Review</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.casePreview}>
+                    <Text style={styles.caseHistory} numberOfLines={3}>
+                      {caseItem.history}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedCase(caseItem);
+                        setShowCaseDetailModal(true);
+                      }}
+                      style={[styles.actionButton, styles.viewButton]}
+                    >
+                      <Ionicons name="eye" size={16} color="#4ECDC4" />
+                      <Text style={styles.viewButtonText}>View Details</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      onPress={() => approveCaseMutation.mutate(caseItem.id)}
+                      style={[styles.actionButton, styles.approveButton]}
+                      disabled={approveCaseMutation.isPending}
+                    >
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      <Text style={styles.approveButtonText}>Approve</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      onPress={() => {
+                        Alert.alert(
+                          'Reject Case',
+                          'Are you sure you want to reject this case? This action cannot be undone.',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Reject', style: 'destructive', onPress: () => rejectCaseMutation.mutate(caseItem.id) }
+                          ]
+                        );
+                      }}
+                      style={[styles.actionButton, styles.rejectButton]}
+                      disabled={rejectCaseMutation.isPending}
+                    >
+                      <Ionicons name="close" size={16} color="#FFFFFF" />
+                      <Text style={styles.rejectButtonText}>Reject</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* User Documents Modal */}
@@ -437,6 +610,128 @@ export default function AdminPanelScreen() {
                     )}
                   </View>
                 ))}
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Case Detail Modal */}
+      <Modal
+        visible={showCaseDetailModal && !!selectedCase}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowCaseDetailModal(false);
+          setSelectedCase(null);
+        }}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderContent}>
+              <Text style={styles.modalTitle}>
+                {selectedCase?.title}
+              </Text>
+              <Text style={styles.modalSubtitle}>
+                By Dr. {selectedCase?.author.firstName} {selectedCase?.author.lastName} • {selectedCase?.specialty}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCaseDetailModal(false);
+                setSelectedCase(null);
+              }}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#8E8E93" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalScrollContent}>
+            {selectedCase && (
+              <View style={styles.caseDetailContainer}>
+                <View style={styles.caseMetaInfo}>
+                  <View style={styles.caseMetaItem}>
+                    <Text style={styles.caseMetaLabel}>Format:</Text>
+                    <Text style={styles.caseMetaValue}>
+                      {selectedCase.format === 'long' ? 'Long Case Format' : 'Short Case Format'}
+                    </Text>
+                  </View>
+                  <View style={styles.caseMetaItem}>
+                    <Text style={styles.caseMetaLabel}>Submitted:</Text>
+                    <Text style={styles.caseMetaValue}>
+                      {new Date(selectedCase.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (
+                    <View style={styles.caseMetaItem}>
+                      <Text style={styles.caseMetaLabel}>Images:</Text>
+                      <Text style={styles.caseMetaValue}>
+                        {selectedCase.imageUrls.length} attached
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.caseSection}>
+                  <Text style={styles.caseSectionTitle}>Case History</Text>
+                  <Text style={styles.caseSectionContent}>{selectedCase.history}</Text>
+                </View>
+
+                {selectedCase.format === 'long' && selectedCase.chiefComplaint && (
+                  <View style={styles.caseSection}>
+                    <Text style={styles.caseSectionTitle}>Chief Complaint</Text>
+                    <Text style={styles.caseSectionContent}>{selectedCase.chiefComplaint}</Text>
+                  </View>
+                )}
+
+                {selectedCase.format === 'long' && selectedCase.historyOfPresentIllness && (
+                  <View style={styles.caseSection}>
+                    <Text style={styles.caseSectionTitle}>History of Present Illness</Text>
+                    <Text style={styles.caseSectionContent}>{selectedCase.historyOfPresentIllness}</Text>
+                  </View>
+                )}
+
+                <View style={styles.modalActionButtons}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      approveCaseMutation.mutate(selectedCase.id);
+                      setShowCaseDetailModal(false);
+                      setSelectedCase(null);
+                    }}
+                    style={[styles.modalActionButton, styles.modalApproveButton]}
+                    disabled={approveCaseMutation.isPending}
+                  >
+                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                    <Text style={styles.modalApproveButtonText}>Approve Case</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        'Reject Case',
+                        'Are you sure you want to reject this case? This action cannot be undone.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Reject', 
+                            style: 'destructive', 
+                            onPress: () => {
+                              rejectCaseMutation.mutate(selectedCase.id);
+                              setShowCaseDetailModal(false);
+                              setSelectedCase(null);
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                    style={[styles.modalActionButton, styles.modalRejectButton]}
+                    disabled={rejectCaseMutation.isPending}
+                  >
+                    <Ionicons name="close" size={20} color="#FFFFFF" />
+                    <Text style={styles.modalRejectButtonText}>Reject Case</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </ScrollView>
@@ -865,5 +1160,129 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 4,
+  },
+  // Case styles
+  caseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  caseInfo: {
+    flex: 1,
+  },
+  caseTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  caseAuthor: {
+    fontSize: 14,
+    color: '#2E86AB',
+    marginBottom: 2,
+  },
+  caseSpecialty: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginBottom: 2,
+  },
+  caseFormat: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  caseDate: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  casePreview: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+  },
+  caseHistory: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+  },
+  // Case detail modal styles
+  caseDetailContainer: {
+    padding: 16,
+  },
+  caseMetaInfo: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  caseMetaItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  caseMetaLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8E8E93',
+  },
+  caseMetaValue: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '500',
+  },
+  caseSection: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  caseSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  caseSectionContent: {
+    fontSize: 14,
+    color: '#333333',
+    lineHeight: 20,
+  },
+  modalActionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    gap: 8,
+  },
+  modalApproveButton: {
+    backgroundColor: '#4ECDC4',
+  },
+  modalApproveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalRejectButton: {
+    backgroundColor: '#FF3B30',
+  },
+  modalRejectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

@@ -244,7 +244,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       
       queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my-cases'] });
-      Alert.alert('Success', 'Your case has been submitted successfully!');
+      Alert.alert('Success', 'Your case has been submitted successfully and will be published once approved by our medical team!');
       
       // Clear draft after successful submission
       await clearDraft();

@@ -1023,6 +1023,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CASE APPROVAL ROUTES
+  // Get pending cases for approval
+  app.get("/api/admin/pending-cases", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pendingCases = await storage.getPendingCases();
+      res.json(pendingCases);
+    } catch (error) {
+      console.error("Error fetching pending cases:", error);
+      res.status(500).json({ message: "Failed to fetch pending cases" });
+    }
+  });
+
+  // Approve case
+  app.post("/api/admin/approve-case/:caseId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { caseId } = req.params;
+      const adminId = req.user?.id || "admin";
+      
+      await storage.approveCase(parseInt(caseId), adminId);
+      res.json({ message: "Case approved successfully" });
+    } catch (error) {
+      console.error("Error approving case:", error);
+      res.status(500).json({ message: "Failed to approve case" });
+    }
+  });
+
+  // Reject case
+  app.delete("/api/admin/reject-case/:caseId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { caseId } = req.params;
+      
+      await storage.rejectCase(parseInt(caseId));
+      res.json({ message: "Case rejected successfully" });
+    } catch (error) {
+      console.error("Error rejecting case:", error);
+      res.status(500).json({ message: "Failed to reject case" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
