@@ -639,8 +639,8 @@ export default function AdminPanel() {
                       <span className="ml-2 font-medium">{selectedUser.phone || 'Not provided'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Medical Board:</span>
-                      <span className="ml-2 font-medium">{selectedUser.medicalBoard || 'Not provided'}</span>
+                      <span className="text-gray-600">Specialty:</span>
+                      <span className="ml-2 font-medium">{selectedUser.specialty || 'Not provided'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Fellowship:</span>

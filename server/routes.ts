@@ -762,7 +762,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         level: level || null,
         experience: yearsOfExperience || '',
         institution: workplace || null,
-        medicalBoard: boardCertification || '',
         isApproved: false,
         isAdmin: false,
         password: password // Ensure password is included

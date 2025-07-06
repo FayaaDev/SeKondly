@@ -25,7 +25,6 @@ const editProfileSchema = z.object({
   institution: z.string().min(1, "Institution is required"),
   specialty: z.string().min(1, "Specialty is required"),
   experience: z.string().min(1, "Experience is required"),
-  medicalBoard: z.string().optional(),
   fellowship: z.string().optional(),
 });
 
@@ -56,7 +55,6 @@ export default function EditProfile() {
       institution: user?.institution || "",
       specialty: user?.specialty || "",
       experience: user?.experience || "",
-      medicalBoard: user?.medicalBoard || "",
       fellowship: user?.fellowship || "",
     },
   });
@@ -71,7 +69,6 @@ export default function EditProfile() {
         institution: user.institution || "",
         specialty: user.specialty || "",
         experience: user.experience || "",
-        medicalBoard: user.medicalBoard || "",
         fellowship: user.fellowship || "",
       });
     }
@@ -280,16 +277,6 @@ export default function EditProfile() {
                   </p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="medicalBoard">Medical Board Certification</Label>
-                <Input
-                  id="medicalBoard"
-                  {...form.register("medicalBoard")}
-                  placeholder="e.g., ABIM, ABFM, etc."
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="fellowship">Fellowship</Label>
                 <Input

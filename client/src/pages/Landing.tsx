@@ -60,7 +60,6 @@ export default function Landing() {
     
     const profileData = {
       phone: formData.get("phone"),
-      medicalBoard: formData.get("medicalBoard"),
       fellowship: formData.get("fellowship"),
       experience: formData.get("experience"),
       specialty: formData.get("specialty"),
@@ -138,26 +137,6 @@ export default function Landing() {
                 required
               />
             </div>
-            
-            <div>
-              <Label htmlFor="medicalBoard" className="block text-sm font-medium text-gray-700 mb-2">
-                Medical Board
-              </Label>
-              <Select name="medicalBoard" required>
-                <SelectTrigger className="w-full px-4 py-3 border border-ios-gray-light rounded-xl">
-                  <SelectValue placeholder="Select Board Certification" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="internal-medicine">American Board of Internal Medicine</SelectItem>
-                  <SelectItem value="surgery">American Board of Surgery</SelectItem>
-                  <SelectItem value="pediatrics">American Board of Pediatrics</SelectItem>
-                  <SelectItem value="emergency-medicine">American Board of Emergency Medicine</SelectItem>
-                  <SelectItem value="cardiology">American Board of Cardiology</SelectItem>
-                  <SelectItem value="neurology">American Board of Neurology</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div>
               <Label htmlFor="fellowship" className="block text-sm font-medium text-gray-700 mb-2">
                 Fellowship (Optional)
