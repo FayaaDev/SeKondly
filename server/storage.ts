@@ -591,8 +591,8 @@ export class DatabaseStorage implements IStorage {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         phone: users.phone,
-        medicalBoard: users.medicalBoard,
         fellowship: users.fellowship,
+        level: users.level,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
       })
@@ -767,8 +767,8 @@ export class DatabaseStorage implements IStorage {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         phone: users.phone,
-        medicalBoard: users.medicalBoard,
         fellowship: users.fellowship,
+        level: users.level,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
       })
@@ -796,8 +796,8 @@ export class DatabaseStorage implements IStorage {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         phone: users.phone,
-        medicalBoard: users.medicalBoard,
         fellowship: users.fellowship,
+        level: users.level,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
       })

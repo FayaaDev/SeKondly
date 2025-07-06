@@ -21,10 +21,10 @@ const testTypeCompatibility = () => {
     profileImageUrl: null,
     phone: null,
     specialty: 'Cardiology',
+    level: 'Consultant',
     institution: null,
     experience: null,
     fellowship: null,
-    medicalBoard: null,
     isApproved: true,
     isAdmin: false,
     createdAt: new Date(),
@@ -49,6 +49,15 @@ const testTypeCompatibility = () => {
     approvedAt: null,
     approvedBy: null,
     imageUrls: [],
+    format: 'short',
+    chiefComplaint: null,
+    historyOfPresentIllness: null,
+    pastMedicalHistory: null,
+    familyHistory: null,
+    drugHistory: null,
+    systemicReview: null,
+    examination: null,
+    management: null,
   };
   
   // Test CaseComment type

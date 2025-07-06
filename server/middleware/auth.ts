@@ -34,11 +34,11 @@ declare global {
         firstName?: string | null;
         lastName?: string | null;
         specialty?: string | null;
+        level?: string | null;
         isApproved?: boolean | null;
         isAdmin?: boolean | null;
         profileImageUrl?: string | null;
         phone?: string | null;
-        medicalBoard?: string | null;
         fellowship?: string | null;
         experience?: string | null;
         institution?: string | null;
@@ -59,11 +59,11 @@ declare module 'express-session' {
       firstName?: string | null;
       lastName?: string | null;
       specialty?: string | null;
+      level?: string | null;
       isApproved?: boolean | null;
       isAdmin?: boolean | null;
       profileImageUrl?: string | null;
       phone?: string | null;
-      medicalBoard?: string | null;
       fellowship?: string | null;
       experience?: string | null;
       institution?: string | null;
