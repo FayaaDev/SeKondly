@@ -87,12 +87,11 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
-  const staticLandingPath = path.resolve(__dirname, "..", "static-landing.html");
+  const staticLandingPath = path.resolve(__dirname, "static-landing.html");
 
   // Serve static assets (like images, CSS, JS) from the dist directory if it exists
   if (fs.existsSync(distPath)) {
     app.use('/assets', express.static(path.join(distPath, 'assets')));
-    app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
   }
 
   // Serve uploads directory for images
@@ -112,7 +111,7 @@ export function serveStatic(app: Express) {
     if (fs.existsSync(staticLandingPath)) {
       res.sendFile(staticLandingPath);
     } else {
-      res.status(404).send('Landing page not found');
+      res.status(404).send('Landing page not found at: ' + staticLandingPath);
     }
   });
 }
