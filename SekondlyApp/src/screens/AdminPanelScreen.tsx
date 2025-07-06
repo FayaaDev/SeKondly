@@ -370,7 +370,7 @@ export default function AdminPanelScreen() {
                 Credentials for {selectedUser?.firstName} {selectedUser?.lastName}
               </Text>
               <Text style={styles.modalSubtitle}>
-                {selectedUser?.specialty} • {selectedUser?.institution}
+                {selectedUser?.specialty} {(selectedUser as any)?.level && `• ${(selectedUser as any)?.level}`} • {selectedUser?.institution}
               </Text>
             </View>
             <TouchableOpacity

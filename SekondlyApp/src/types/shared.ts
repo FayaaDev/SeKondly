@@ -240,6 +240,15 @@ export const FELLOWSHIPS = [
 
 export type Fellowship = typeof FELLOWSHIPS[number];
 
+// Medical levels for user classification
+export const MEDICAL_LEVELS = [
+  "Registrar",
+  "Senior Registrar", 
+  "Consultant"
+] as const;
+
+export type MedicalLevel = typeof MEDICAL_LEVELS[number];
+
 // Additional native-specific types
 export type SearchFilters = {
   query: string;

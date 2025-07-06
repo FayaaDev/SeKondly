@@ -173,6 +173,11 @@ export default function ProfileScreen() {
           <Text style={styles.userSpecialty}>
             {user?.specialty}
           </Text>
+          {user?.level && (
+            <Text style={styles.userLevel}>
+              {user?.level}
+            </Text>
+          )}
           {user?.fellowship && (
             <Text style={styles.userFellowship}>
               {user?.fellowship}
@@ -343,6 +348,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: "center",
     fontWeight: "600",
+  },
+  userLevel: {
+    fontSize: 13,
+    color: "#4ECDC4",
+    marginBottom: 4,
+    textAlign: "center",
+    fontWeight: "500",
   },
   userExperience: {
     fontSize: 13,

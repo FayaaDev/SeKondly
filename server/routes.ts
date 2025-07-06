@@ -708,8 +708,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Onboarding route
-  app.post('/api/onboarding', upload.single('credentialsFile'), async (req, res) => {
-    console.log('ONBOARDING ENDPOINT HIT! Request body:', req.body);
+  app.post('/api/onboarding', upload.single('credentialsFile'), async (req, res) => {      console.log('ONBOARDING ENDPOINT HIT! Request body:', req.body);
+      console.log('Level field received:', req.body.level);
+      console.log('Workplace field received:', req.body.workplace);
     
     try {
       const {
@@ -719,7 +720,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password,
         boardCertification,
         fellowship,
+        level,
         yearsOfExperience,
+        workplace,
         email
       } = req.body;
 
@@ -756,8 +759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: phone || '',
         specialty: boardCertification || '',
         fellowship: fellowship || null,
+        level: level || null,
         experience: yearsOfExperience || '',
-        institution: null,
+        institution: workplace || null,
         medicalBoard: boardCertification || '',
         isApproved: false,
         isAdmin: false,

@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   experience: varchar("experience"),
   institution: varchar("institution"),
   specialty: varchar("specialty"),
+  level: varchar("level"), // Registrar, Senior Registrar, Consultant
   isApproved: boolean("is_approved").default(false),
   isAdmin: boolean("is_admin").default(false),
   approvedAt: timestamp("approved_at"),
@@ -316,32 +317,6 @@ export type Case = typeof cases.$inferSelect;
 export type InsertCase = z.infer<typeof insertCaseSchema>;
 
 export type CaseFormat = 'short' | 'long';
-
-export type Case = {
-  id: number;
-  title: string;
-  format: CaseFormat;  // Format is required for all cases
-  history: string;
-  specialty: string;
-  authorId: string;
-  isApproved: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  approvedAt: Date | null;
-  approvedBy: string | null;
-  imageUrls: string[] | null;
-  likesCount: number | null;
-  commentsCount: number | null;
-  viewsCount: number | null;
-  chiefComplaint: string | null;
-  historyOfPresentIllness: string | null;
-  pastMedicalHistory: string | null;
-  familyHistory: string | null;
-  drugHistory: string | null;
-  systemicReview: string | null;
-  examination: string | null;
-  management: string | null;
-};
 
 export type CaseLike = typeof caseLikes.$inferSelect;
 export type CaseComment = typeof caseComments.$inferSelect;

@@ -17,7 +17,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config/api';
 import StorageService from '../lib/storage';
-import { MEDICAL_SPECIALTIES, FELLOWSHIPS } from '../types/shared';
+import { MEDICAL_SPECIALTIES, FELLOWSHIPS, MEDICAL_LEVELS } from '../types/shared';
 
 interface OnboardingData {
   firstName: string;
@@ -27,6 +27,7 @@ interface OnboardingData {
   confirmPassword: string;
   boardCertification: string;
   fellowship: string;
+  level: string;
   yearsOfExperience: string;
   workplace: string;
   credentialsFile?: DocumentPicker.DocumentPickerAsset;
@@ -68,6 +69,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>('welcome');
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
   const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
+  const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [specialtySearch, setSpecialtySearch] = useState('');
   const [fellowshipSearch, setFellowshipSearch] = useState('');
   const [signInData, setSignInData] = useState({
@@ -82,12 +84,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     confirmPassword: '',
     boardCertification: '',
     fellowship: '',
+    level: '',
     yearsOfExperience: '',
     workplace: '',
   });
 
   const submitMutation = useMutation({
     mutationFn: async (data: OnboardingData) => {
+      console.log('Submitting onboarding data:', data);
       const formData = new FormData();
       
       // Add form fields
@@ -97,9 +101,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       formData.append('password', data.password);
       formData.append('boardCertification', data.boardCertification);
       formData.append('fellowship', data.fellowship || '');
+      formData.append('level', data.level);
       formData.append('yearsOfExperience', data.yearsOfExperience);
       formData.append('workplace', data.workplace || '');
       formData.append('email', `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@example.com`);
+      
+      console.log('Form data level:', data.level);
+      console.log('Form data workplace:', data.workplace);
       
       // Add credentials file if uploaded
       if (data.credentialsFile) {
@@ -198,8 +206,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   };
 
   const validateProfessionalInfo = (): boolean => {
-    if (!formData.boardCertification || !formData.yearsOfExperience || !formData.workplace) {
-      Alert.alert('Required Fields Missing', 'Please fill in board certification, years of experience, and workplace.');
+    if (!formData.boardCertification || !formData.level || !formData.yearsOfExperience || !formData.workplace) {
+      Alert.alert('Required Fields Missing', 'Please fill in board certification, level, years of experience, and workplace.');
       return false;
     }
     return true;
@@ -299,6 +307,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     updateFormData('fellowship', fellowship);
     setFellowshipSearch(fellowship);
     setShowFellowshipPicker(false);
+  };
+
+  const selectLevel = (level: string) => {
+    console.log('Level selected:', level);
+    updateFormData('level', level);
+    console.log('Form data after level update:', formData);
+    setShowLevelPicker(false);
   };
 
   const getProgressPercentage = (): number => {
@@ -574,6 +589,19 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </View>
 
             <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Medical Level *</Text>
+              <TouchableOpacity
+                style={styles.pickerButton}
+                onPress={() => setShowLevelPicker(true)}
+              >
+                <Text style={[styles.pickerButtonText, !formData.level && styles.placeholderText]}>
+                  {formData.level || 'Select your medical level'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Years of Experience *</Text>
               <TextInput
                 style={styles.input}
@@ -715,6 +743,36 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 <Text style={styles.modalNoResultsSubtext}>Try adjusting your search terms</Text>
               </View>
             )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showLevelPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowLevelPicker(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Medical Level</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
+            {MEDICAL_LEVELS.map((level: string) => (
+              <TouchableOpacity
+                key={level}
+                style={styles.modalOption}
+                onPress={() => selectLevel(level)}
+              >
+                <Text style={styles.modalOptionText}>{level}</Text>
+                {formData.level === level && (
+                  <Ionicons name="checkmark" size={20} color="#4ECDC4" />
+                )}
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </SafeAreaView>
       </Modal>
