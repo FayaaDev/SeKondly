@@ -3,6 +3,10 @@ import { db } from "../server/db";
 import { users, cases } from "../shared/schema";
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Medical specialties directly defined
 const MEDICAL_SPECIALTIES = [
@@ -253,10 +257,14 @@ function generateRandomUser() {
   const medicalBoard = getRandomElement(MEDICAL_BOARDS);
   const profileImage = getRandomElement(PROFILE_IMAGES);
   
+  // Make email unique by adding timestamp
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substr(2, 9);
+  
   return {
-    id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@medconsult.com`,
-    username: `dr${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+    id: `user_${timestamp}_${randomId}`,
+    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${randomId}@medconsult.com`,
+    username: `dr${firstName.toLowerCase()}${lastName.toLowerCase()}${randomId}`,
     password: "hashedpassword123", // In real app, this would be properly hashed
     firstName,
     lastName,
@@ -472,13 +480,14 @@ async function generateTestData() {
     const realCases = loadRealCases();
     console.log(`📋 Found ${realCases.length} real cases to import`);
     
-    // Generate 14 random users
-    const userCount = 14;
-    const casesPerUser = realCases.length > 0 ? 1 : 3; // Fewer synthetic cases if we have real ones
-    const longCasesToGenerate = realCases.length > 0 ? 0 : 10; // Skip synthetic long cases if we have real ones
-    const shortCasesWithoutImages = realCases.length > 0 ? 0 : 10; // Skip synthetic short cases if we have real ones
+    // Generate exactly 8 users and 8 cases
+    const userCount = 8;
+    const totalCasesToGenerate = 8;
+    const casesPerUser = 1; // Each user will get 1 case
+    const longCasesToGenerate = 0; // No additional long cases
+    const shortCasesWithoutImages = 0; // No additional short cases without images
     
-    console.log(`📝 Generating ${userCount} users with profile images...`);
+    console.log(`📝 Generating ${userCount} users and ${totalCasesToGenerate} cases...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
     
     for (let i = 0; i < userCount; i++) {
@@ -492,46 +501,23 @@ async function generateTestData() {
       }
     }
     
-    console.log(`📋 Generating real cases...`);
-    let realCasesCreated = 0;
+    console.log(`📋 Generating ${totalCasesToGenerate} cases...`);
     let totalCases = 0;
     
-    // Import real cases if available
-    if (realCases.length > 0) {
-      for (const realCase of realCases) {
-        // Find a user with matching specialty or use random user
-        let assignedUser = generatedUsers.find(user => user.specialty === realCase.specialty);
-        if (!assignedUser) {
-          assignedUser = getRandomElement(generatedUsers);
-          console.log(`  ⚠️  No user found for specialty "${realCase.specialty}", assigning to Dr. ${assignedUser.firstName} ${assignedUser.lastName} (${assignedUser.specialty})`);
-        }
-        
-        const caseData = createCaseFromRealData(realCase, assignedUser.id);
-        try {
-          await db.insert(cases).values(caseData);
-          realCasesCreated++;
-          totalCases++;
-          console.log(`  ✅ Created REAL case: "${caseData.title}" by Dr. ${assignedUser.firstName} ${assignedUser.lastName} (${realCase.specialty})`);
-        } catch (error) {
-          console.error(`  ❌ Failed to create real case: "${realCase.title}"`, error);
-        }
-      }
-    }
-    
-    console.log(`\n📋 Generating synthetic cases for each user...`);
-    
-    for (const user of generatedUsers) {
-      const numCases = Math.floor(Math.random() * casesPerUser) + 2; // 2-4 cases per user
-      
-      for (let j = 0; j < numCases; j++) {
-        const caseData = generateRandomCase(user.id, user.specialty!, 'short');
+    // Generate exactly 8 cases - one for each user (without images)
+    for (let i = 0; i < userCount && totalCases < totalCasesToGenerate; i++) {
+      const user = generatedUsers[i];
+      if (user) { // Check if user exists
+        const caseData = generateRandomCase(user.id, user.specialty!, 'short', false); // No images
         try {
           await db.insert(cases).values(caseData);
           totalCases++;
-          console.log(`  📄 Created case: "${caseData.title}" by Dr. ${user.firstName} ${user.lastName}`);
+          console.log(`  📄 Created case ${totalCases}: "${caseData.title}" by Dr. ${user.firstName} ${user.lastName} (${user.specialty})`);
         } catch (error) {
           console.error(`  ❌ Failed to create case for Dr. ${user.firstName} ${user.lastName}`, error);
         }
+      } else {
+        console.log(`  ⚠️  Skipping case creation for missing user at index ${i}`);
       }
     }
     
@@ -540,7 +526,7 @@ async function generateTestData() {
     
     for (let i = 0; i < longCasesToGenerate; i++) {
       const randomUser = getRandomElement(generatedUsers);
-      const longCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'long');
+      const longCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'long', false); // No images
       
       try {
         await db.insert(cases).values(longCaseData);
@@ -572,11 +558,7 @@ async function generateTestData() {
     console.log(`\n🎉 Test data generation complete!`);
     console.log(`📊 Summary:`);
     console.log(`   - Users created: ${userCount}`);
-    console.log(`   - Real cases imported: ${realCasesCreated}`);
-    console.log(`   - Short cases (with images) created: ${totalCases - longCasesCreated - shortCasesWithoutImagesCreated - realCasesCreated}`);
-    console.log(`   - Short cases (without images) created: ${shortCasesWithoutImagesCreated}`);
-    console.log(`   - Long cases created: ${longCasesCreated}`);
-    console.log(`   - Total cases created: ${totalCases}`);
+    console.log(`   - Cases created: ${totalCases}`);
     console.log(`   - Specialties covered: ${[...new Set(generatedUsers.map(u => u.specialty))].length}`);
     
     console.log(`\n🔍 Specialty breakdown:`);
@@ -588,7 +570,6 @@ async function generateTestData() {
     Object.entries(specialtyCount).forEach(([specialty, count]) => {
       console.log(`   - ${specialty}: ${count} doctors`);
     });
-    
   } catch (error) {
     console.error("❌ Error generating test data:", error);
     process.exit(1);

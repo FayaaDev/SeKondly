@@ -381,25 +381,6 @@ export default function CaseCard({
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => likeMutation.mutate()}
-        >
-          <Ionicons
-            name={caseData.isLikedByUser ? "heart" : "heart-outline"}
-            size={20}
-            color={caseData.isLikedByUser ? "#4ECDC4" : "#666"}
-          />
-          <Text
-            style={[
-              styles.actionText,
-              caseData.isLikedByUser && styles.actionTextActive,
-            ]}
-          >
-            {caseData.likesCount || 0}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
           onPress={onPress}
         >
           <Ionicons name="chatbubble-outline" size={20} color="#666" />
