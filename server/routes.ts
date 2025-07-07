@@ -55,6 +55,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use("/uploads", express.static(uploadDir));
 
+  // Privacy Policy route
+  app.get("/privacy", (req, res) => {
+    const privacyPolicyPath = path.join(uploadDir, "privacy-policy.pdf");
+    if (fs.existsSync(privacyPolicyPath)) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="SeKondly-Privacy-Policy.pdf"');
+      res.sendFile(privacyPolicyPath);
+    } else {
+      res.status(404).json({ error: "Privacy policy not found" });
+    }
+  });
+
   // Auth routes
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
