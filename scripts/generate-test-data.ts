@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { db } from "../server/db";
 import { users, cases } from "../shared/schema";
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Medical specialties directly defined
 const MEDICAL_SPECIALTIES = [
@@ -30,63 +32,61 @@ const MEDICAL_SPECIALTIES = [
 
 // Sample data for generating realistic test content
 const FIRST_NAMES = [
-  "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda",
-  "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica",
-  "Thomas", "Sarah", "Christopher", "Karen", "Charles", "Nancy", "Daniel", "Lisa",
-  "Matthew", "Betty", "Anthony", "Helen", "Mark", "Sandra", "Donald", "Donna",
-  "Steven", "Carol", "Paul", "Ruth", "Andrew", "Sharon", "Joshua", "Michelle",
-  "Kenneth", "Laura", "Kevin", "Sarah", "Brian", "Kimberly", "George", "Deborah",
-  "Timothy", "Dorothy", "Ronald", "Lisa", "Jason", "Nancy", "Edward", "Karen",
-  "Jeffrey", "Betty", "Ryan", "Helen", "Jacob", "Sandra", "Gary", "Donna",
-  "Nicholas", "Carol", "Eric", "Ruth", "Jonathan", "Sharon", "Stephen", "Michelle"
+  "Mohammed", "Ahmed", "Ali", "Saud", "Abdullah", "Fahad", "Salman", "Rashed",
+  "Hassan", "Yousef", "Khalid", "Ibrahim", "Majed", "Tariq", "Badr", "Sultan",
+  "Nawaf", "Murad", "Yasser", "Hussein",
+  "Fatima", "Sara", "Reem", "Noura", "Hind", "Mona", "Abeer", "Laila",
+  "Rana", "Dalal", "Amal", "Jawaher", "Kholoud", "Shahad", "Najla", "Somaya",
+  "Mai", "Bushra", "Huda", "Rasha"
 ];
 
 const LAST_NAMES = [
-  "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-  "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas",
-  "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White",
-  "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young",
-  "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores",
-  "Green", "AdAMS", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell",
-  "Carter", "Roberts", "Gomez", "Phillips", "EvANS", "Turner", "Diaz", "Parker",
-  "Cruz", "Edwards", "Collins", "Reyes", "Stewart", "Morris", "Morales", "Murphy",
-  "Cook", "Rogers", "Gutierrez", "Ortiz", "Morgan", "Cooper", "Peterson", "Bailey"
+  "AlHarbi", "AlMutairi", "AlQahtani", "AlAnzi", "AlOtaibi", "AlSubaie", "AlShammari",
+  "AlDosari", "AlGhamdi", "AlZahrani", "AlJohani", "AlMarri", "AlShehri", "AlSuwaidi",
+  "AlMansour", "AlMazrouei", "AlAmri", "AlSharif", "AlOmari", "AlHussain", "AlNaimi",
+  "AlSalem", "AlRashid", "AlJaber", "AlSaud", "AlFarsi", "AlEssa", "AlObaid",
+  "AlMutlaq", "AlJumah", "AlHajri", "AlBalushi", "AlKhaldi", "AlTurki", "AlAjmi",
+  "AlDabbagh", "AlSamari", "AlTayeb", "AlBaz", "AlHarthi", "AlRowais", "AlQarni",
+  "AlRuwaili", "AlTamimi", "AlQaissi", "AlKuwaiti", "AlMalki", "AlMugren", "AlSultan",
+  "AlOwais", "AlBarqi", "AlYami", "AlBishi", "AlFaraj", "AlRafie", "AlMishari",
+  "AlQattan", "AlBadr", "AlMahmoud", "AlSaeed", "AlSaeedi", "AlHaddad", "AlSadiq",
+  "AlFahad", "AlZaid", "AlMoqbel", "AlShaya", "AlDossary", "AlMansouri"
 ];
 
 const INSTITUTIONS = [
-  "Johns Hopkins Hospital",
-  "Mayo Clinic",
-  "Cleveland Clinic",
-  "Massachusetts General Hospital",
-  "UCLA Medical Center",
-  "Stanford Health Care",
-  "Mount Sinai Hospital",
-  "Cedars-Sinai Medical Center",
-  "NYU Langone Health",
-  "University of Chicago Medicine",
-  "Houston Methodist Hospital",
-  "Duke University Hospital",
-  "UCSF Medical Center",
-  "Northwestern Memorial Hospital",
-  "Brigham and Women's Hospital",
-  "Yale-New Haven Hospital",
-  "Barnes-Jewish Hospital",
-  "University of Pennsylvania Health System",
-  "Vanderbilt University Medical Center",
-  "Seattle Children's Hospital"
+  "King Medical City",
+  "Noor National Hospital",
+  "Al X Specialist Hospital",
+  "Emirates Medical Center",
+  "Dar Al Shifa Hospital",
+  "Salam International Hospital",
+  "Al Amal General Hospital",
+  "King K University Hospital",
+  "Nour Al Hayat Medical Center",
+  "Madinah Care Hospital",
+  "Al Seha Specialist Hospital",
+  "Royal Hospital",
+  "Al Rawdah Medical Complex",
+  "Shifa Al Jazeera Hospital",
+  "Al Rahma Hospital",
+  "Al Hanan Medical Center",
+  "Al Taif Medical City",
+  "Major Health Center",
+  "Sultan Qaboos Medical Center",
+  "J International Hospital"
 ];
 
 const MEDICAL_BOARDS = [
-  "American Board of Internal Medicine",
-  "American Board of Surgery", 
-  "American Board of Pediatrics",
-  "American Board of Emergency Medicine",
-  "American Board of Radiology",
-  "American Board of Anesthesiology",
-  "American Board of Pathology",
-  "American Board of Psychiatry and Neurology",
-  "American Board of Orthopedic Surgery",
-  "American Board of Obstetrics and Gynecology"
+  " Internal Medicine",
+  " Surgery", 
+  " Pediatrics",
+  " Emergency Medicine",
+  " Radiology",
+  " Anesthesiology",
+  " Pathology",
+  " Psychiatry and Neurology",
+  " Orthopedic Surgery",
+  " Obstetrics and Gynecology"
 ];
 
 // Sample medical imaging URLs for test data
@@ -468,11 +468,15 @@ async function generateTestData() {
   try {
     console.log("🚀 Starting test data generation...");
     
+    // Load real cases if available
+    const realCases = loadRealCases();
+    console.log(`📋 Found ${realCases.length} real cases to import`);
+    
     // Generate 14 random users
     const userCount = 14;
-    const casesPerUser = 3; // Each user will have 2-4 cases
-    const longCasesToGenerate = 10; // Generate 10 long cases
-    const shortCasesWithoutImages = 10; // Generate 10 short cases without images
+    const casesPerUser = realCases.length > 0 ? 1 : 3; // Fewer synthetic cases if we have real ones
+    const longCasesToGenerate = realCases.length > 0 ? 0 : 10; // Skip synthetic long cases if we have real ones
+    const shortCasesWithoutImages = realCases.length > 0 ? 0 : 10; // Skip synthetic short cases if we have real ones
     
     console.log(`📝 Generating ${userCount} users with profile images...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
@@ -488,8 +492,33 @@ async function generateTestData() {
       }
     }
     
-    console.log(`📋 Generating regular cases for each user...`);
+    console.log(`📋 Generating real cases...`);
+    let realCasesCreated = 0;
     let totalCases = 0;
+    
+    // Import real cases if available
+    if (realCases.length > 0) {
+      for (const realCase of realCases) {
+        // Find a user with matching specialty or use random user
+        let assignedUser = generatedUsers.find(user => user.specialty === realCase.specialty);
+        if (!assignedUser) {
+          assignedUser = getRandomElement(generatedUsers);
+          console.log(`  ⚠️  No user found for specialty "${realCase.specialty}", assigning to Dr. ${assignedUser.firstName} ${assignedUser.lastName} (${assignedUser.specialty})`);
+        }
+        
+        const caseData = createCaseFromRealData(realCase, assignedUser.id);
+        try {
+          await db.insert(cases).values(caseData);
+          realCasesCreated++;
+          totalCases++;
+          console.log(`  ✅ Created REAL case: "${caseData.title}" by Dr. ${assignedUser.firstName} ${assignedUser.lastName} (${realCase.specialty})`);
+        } catch (error) {
+          console.error(`  ❌ Failed to create real case: "${realCase.title}"`, error);
+        }
+      }
+    }
+    
+    console.log(`\n📋 Generating synthetic cases for each user...`);
     
     for (const user of generatedUsers) {
       const numCases = Math.floor(Math.random() * casesPerUser) + 2; // 2-4 cases per user
@@ -543,7 +572,8 @@ async function generateTestData() {
     console.log(`\n🎉 Test data generation complete!`);
     console.log(`📊 Summary:`);
     console.log(`   - Users created: ${userCount}`);
-    console.log(`   - Short cases (with images) created: ${totalCases - longCasesCreated - shortCasesWithoutImagesCreated}`);
+    console.log(`   - Real cases imported: ${realCasesCreated}`);
+    console.log(`   - Short cases (with images) created: ${totalCases - longCasesCreated - shortCasesWithoutImagesCreated - realCasesCreated}`);
     console.log(`   - Short cases (without images) created: ${shortCasesWithoutImagesCreated}`);
     console.log(`   - Long cases created: ${longCasesCreated}`);
     console.log(`   - Total cases created: ${totalCases}`);
@@ -563,6 +593,64 @@ async function generateTestData() {
     console.error("❌ Error generating test data:", error);
     process.exit(1);
   }
+}
+
+// Add interface for real case data structure
+interface RealCaseData {
+  title: string;
+  history: string;
+  specialty: string;
+  format?: 'short' | 'long';
+  imageUrls?: string[];
+  chiefComplaint?: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  drugHistory?: string;
+  physicalExam?: string;
+  assessment?: string;
+  plan?: string;
+}
+
+// Function to load real cases from JSON file
+function loadRealCases(): RealCaseData[] {
+  try {
+    const casesPath = path.join(__dirname, '../real-cases.json');
+    if (fs.existsSync(casesPath)) {
+      const casesData = fs.readFileSync(casesPath, 'utf8');
+      return JSON.parse(casesData);
+    }
+    console.log('❌ real-cases.json not found. Using synthetic data instead.');
+    return [];
+  } catch (error) {
+    console.error('❌ Error loading real cases:', error);
+    return [];
+  }
+}
+
+// Function to create case from real data
+function createCaseFromRealData(realCase: RealCaseData, authorId: string) {
+  return {
+    title: realCase.title,
+    history: realCase.history,
+    specialty: realCase.specialty,
+    authorId,
+    isApproved: true,
+    approvedAt: new Date(),
+    approvedBy: "admin_system",
+    imageUrls: realCase.imageUrls || [],
+    likesCount: Math.floor(Math.random() * 50),
+    commentsCount: Math.floor(Math.random() * 20),
+    viewsCount: Math.floor(Math.random() * 200) + 50,
+    format: realCase.format || 'short',
+    // Long case fields (if provided)
+    ...(realCase.chiefComplaint && { chiefComplaint: realCase.chiefComplaint }),
+    ...(realCase.pastMedicalHistory && { pastMedicalHistory: realCase.pastMedicalHistory }),
+    ...(realCase.familyHistory && { familyHistory: realCase.familyHistory }),
+    ...(realCase.drugHistory && { drugHistory: realCase.drugHistory }),
+    ...(realCase.physicalExam && { physicalExam: realCase.physicalExam }),
+    ...(realCase.assessment && { assessment: realCase.assessment }),
+    ...(realCase.plan && { plan: realCase.plan })
+  };
 }
 
 // Run the script

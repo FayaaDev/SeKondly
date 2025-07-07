@@ -34,6 +34,7 @@ const STORAGE_KEYS = {
   DRAFT_CASE: '@MedConnect:draft_case',
   ONBOARDING_COMPLETED: '@MedConnect:onboarding_completed',
   LOGOUT_TIMESTAMP: '@MedConnect:logout_timestamp',
+  DISCLAIMER_SHOWN: '@MedConnect:disclaimer_shown',
 } as const;
 
 interface AppSettings {
@@ -351,6 +352,25 @@ export class StorageService {
       } catch (fallbackError) {
         console.error('Fallback clear failed:', fallbackError);
       }
+    }
+  }
+
+  // Disclaimer methods
+  static async hasDisclaimerBeenShown(): Promise<boolean> {
+    try {
+      const shown = await this.getItem<boolean>(STORAGE_KEYS.DISCLAIMER_SHOWN, false);
+      return shown || false;
+    } catch (error) {
+      console.error('Error checking disclaimer status:', error);
+      return false;
+    }
+  }
+
+  static async setDisclaimerShown(): Promise<void> {
+    try {
+      await this.setItem(STORAGE_KEYS.DISCLAIMER_SHOWN, true);
+    } catch (error) {
+      console.error('Error setting disclaimer shown:', error);
     }
   }
 }

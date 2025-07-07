@@ -1,0 +1,51 @@
+[
+  {
+    "title": "Complex Coronary Artery Disease with Multiple Comorbidities",
+    "specialty": "Cardiology",
+    "format": "long",
+    "history": "A 65-year-old male presented to the emergency department with acute chest pain that began 3 hours prior to arrival. The pain was described as crushing, substernal, radiating to the left arm and jaw, associated with diaphoresis and nausea. Patient has a significant past medical history of hypertension, type 2 diabetes mellitus, and hyperlipidemia. He is a former smoker with a 40 pack-year history, having quit 5 years ago.",
+    "chiefComplaint": "Acute chest pain for 3 hours",
+    "pastMedicalHistory": "Hypertension for 15 years, Type 2 DM for 10 years on metformin and insulin, Hyperlipidemia on atorvastatin, Former smoker (40 pack-years, quit 5 years ago), No known drug allergies",
+    "familyHistory": "Father died of MI at age 58, Mother with diabetes and stroke at age 72, Brother with coronary artery disease",
+    "drugHistory": "Lisinopril 20mg daily, Metformin 1000mg BID, Insulin glargine 40 units nightly, Atorvastatin 80mg nightly, Aspirin 81mg daily",
+    "physicalExam": "VS: BP 160/95, HR 105, RR 20, O2 sat 94% on RA, Temp 98.6°F. General: Diaphoretic, anxious, in moderate distress. HEENT: Normocephalic, PERRLA, no JVD. CV: Tachycardic, regular rhythm, no murmurs, rubs, or gallops. Pulm: Clear to auscultation bilaterally. Abd: Soft, non-tender. Ext: No peripheral edema, pulses 2+ throughout. Neuro: Alert and oriented x3.",
+    "assessment": "STEMI (ST-elevation myocardial infarction) - inferior wall based on ECG findings showing ST elevation in leads II, III, aVF with reciprocal changes in I, aVL. Troponin I elevated at 25.6 ng/mL. Given the presentation and ECG findings, this appears to be an acute RCA (right coronary artery) occlusion.",
+    "plan": "1. Emergent cardiac catheterization for primary PCI\n2. Dual antiplatelet therapy (aspirin 325mg + clopidogrel 600mg loading dose)\n3. Heparin bolus and infusion per protocol\n4. High-intensity statin therapy\n5. Beta-blocker once hemodynamically stable\n6. ACE inhibitor post-procedure if no contraindications\n7. Diabetes management with insulin sliding scale\n8. Cardiac rehabilitation referral\n9. Smoking cessation counseling reinforcement",
+    "imageUrls": [
+      "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_13ox1i13ox1i13ox.png",
+      "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_8p7z2e8p7z2e8p7z.png"
+    ]
+  },
+  {
+    "title": "Acute Ischemic Stroke with Thrombolytic Therapy",
+    "specialty": "Neurology",
+    "format": "long",
+    "history": "A 72-year-old female was brought to the ED by family after sudden onset of left-sided weakness and speech difficulties that began 45 minutes prior to arrival. Family reports she was eating breakfast when she suddenly dropped her fork and began having difficulty speaking. No loss of consciousness. Patient has a history of atrial fibrillation but had stopped taking warfarin 2 months ago due to a fall with minor bleeding.",
+    "chiefComplaint": "Sudden onset left-sided weakness and speech problems",
+    "pastMedicalHistory": "Atrial fibrillation (off anticoagulation for 2 months), Hypertension, Osteoporosis, History of fall 3 months ago with minor head trauma",
+    "familyHistory": "Mother had stroke at age 80, Father with heart disease",
+    "drugHistory": "Metoprolol 50mg BID, Amlodipine 10mg daily, Calcium with Vitamin D. Recently discontinued warfarin 2 months ago.",
+    "physicalExam": "VS: BP 185/110, HR 88 irregular, RR 18, O2 sat 98% on RA. General: Alert but with obvious speech difficulty. HEENT: PERRLA, no signs of trauma. Neuro: Alert, follows commands. Severe expressive aphasia. Left facial droop (NIHSS facial = 2). Left arm drift (NIHSS arm = 2), left leg weakness (NIHSS leg = 2). Reflexes hyperactive on left. Positive Babinski on left. NIHSS total = 12.",
+    "assessment": "Acute ischemic stroke, likely right MCA territory based on left hemiparesis and aphasia. Patient is within the therapeutic window for thrombolytic therapy. NIHSS score of 12 indicates moderate stroke severity.",
+    "plan": "1. Immediate IV tPA (alteplase) 0.9 mg/kg with 10% bolus, remainder over 1 hour\n2. Neuro ICU monitoring\n3. Blood pressure management per stroke protocol (target <185/110 pre-tPA, <180/105 post-tPA)\n4. Serial neurological assessments\n5. CT head in 24 hours to rule out hemorrhage\n6. Swallow evaluation before any PO intake\n7. DVT prophylaxis with pneumatic compression devices\n8. Restart anticoagulation after 24 hours if no hemorrhage\n9. Physical and occupational therapy evaluation\n10. Speech therapy consultation",
+    "imageUrls": [
+      "/Users/fayaa/SeKondly/uploads/i_Google_Create_20_random_images_of_patients_being_examined_by_a_doctor_2d32c763-0091-4293-a44f-91161a64f94e.png"
+    ]
+  },
+  {
+    "title": "Pediatric Asthma Exacerbation",
+    "specialty": "Pediatrics",
+    "format": "short",
+    "history": "8-year-old boy brought to ED by parents for worsening shortness of breath and cough over the past 2 days. Patient has known asthma, usually well-controlled with daily inhaled corticosteroid. Parents report he has been using his rescue inhaler every 2-3 hours today with minimal relief. No fever, but some rhinorrhea and congestion started 4 days ago. Family reports possible viral upper respiratory infection going around his school.",
+    "imageUrls": [
+      "/Users/fayaa/SeKondly/uploads/Gemini_Generated_Image_k77vjpk77vjpk77v.png"
+    ]
+  },
+  {
+    "title": "Emergency Appendectomy Case",
+    "specialty": "Surgery",
+    "format": "short",
+    "history": "24-year-old female presents with 18 hours of abdominal pain that started periumbilically and migrated to the right lower quadrant. Associated with nausea, vomiting, and low-grade fever. Physical exam reveals McBurney's point tenderness, positive Rovsing's sign, and guarding. CBC shows leukocytosis with left shift. CT abdomen shows appendiceal wall thickening with periappendiceal fat stranding consistent with acute appendicitis.",
+    "imageUrls": []
+  }
+]

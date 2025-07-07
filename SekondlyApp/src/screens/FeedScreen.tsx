@@ -39,6 +39,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest, SearchManager, CacheManager } from "../lib/queryClient";
+import StorageService from "../lib/storage";
 import CaseCard from "../components/CaseCard";
 import CaseDetailModal from "../components/CaseDetailModal";
 import NewCaseModal from "../components/NewCaseModal";
@@ -87,6 +88,7 @@ export default function FeedScreen() {
   const [selectedCase, setSelectedCase] = useState<CaseWithAuthor | null>(null);
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   
   // Animated values for smooth tab transitions
   const translateX = useSharedValue(0);
@@ -96,6 +98,25 @@ export default function FeedScreen() {
   const horizontalGestureRef = useRef<PanGestureHandler>(null);
   
   const { user } = useAuth();
+
+  // Check if disclaimer should be shown on first load
+  useEffect(() => {
+    const checkDisclaimer = async () => {
+      if (user?.isApproved) {
+        const hasBeenShown = await StorageService.hasDisclaimerBeenShown();
+        if (!hasBeenShown) {
+          setShowDisclaimer(true);
+        }
+      }
+    };
+    
+    checkDisclaimer();
+  }, [user?.isApproved]);
+
+  const handleDisclaimerAccept = async () => {
+    await StorageService.setDisclaimerShown();
+    setShowDisclaimer(false);
+  };
 
   // Query for cases
   const { 
@@ -905,6 +926,34 @@ export default function FeedScreen() {
         </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Disclaimer Modal */}
+      <Modal
+        visible={showDisclaimer}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {}} // Prevent dismissing without acceptance
+      >
+        <View style={styles.disclaimerOverlay}>
+          <View style={styles.disclaimerContainer}>
+            <View style={styles.disclaimerHeader}>
+              <Ionicons name="shield-checkmark" size={32} color="#4ECDC4" />
+              <Text style={styles.disclaimerTitle}>Important Notice</Text>
+            </View>
+            
+            <Text style={styles.disclaimerText}>
+              All SeKondly users are verified licensed physicians. Content on SeKondly is for discussion purposes only and should not replace the standard of care or serve as the sole guide for clinical judgment.
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.disclaimerButton}
+              onPress={handleDisclaimerAccept}
+            >
+              <Text style={styles.disclaimerButtonText}>I Understand</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1474,5 +1523,54 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#4ECDC4',
     marginHorizontal: 4,
+  },
+  // Disclaimer Modal Styles
+  disclaimerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  disclaimerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  disclaimerHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  disclaimerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000000',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  disclaimerText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  disclaimerButton: {
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  disclaimerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

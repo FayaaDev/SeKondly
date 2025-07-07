@@ -10,6 +10,7 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -88,6 +89,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const [specialtyInput, setSpecialtyInput] = useState('');
   const [showSpecialtySuggestions, setShowSpecialtySuggestions] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
 
@@ -275,6 +277,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     setSpecialtyInput('');
     setShowSpecialtySuggestions(false);
     setHasDraft(false);
+    setDeclarationAccepted(false);
   };
 
   const requestPermissions = async () => {
@@ -377,6 +380,11 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       return;
     }
 
+    if (!declarationAccepted) {
+      Alert.alert('Declaration Required', 'Please accept the patient confidentiality declaration to proceed.');
+      return;
+    }
+
     console.log('Preparing case submission:', {
       title: title.trim(),
       format: caseFormat,
@@ -440,6 +448,21 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     setSelectedSpecialty(specialty);
     setSpecialtyInput(specialty);
     setShowSpecialtySuggestions(false);
+  };
+
+  const openPatientRightsDocument = async () => {
+    const url = 'https://www.moh.gov.sa/HealthAwareness/EducationalContent/HealthTips/Documents/Patient-Bill-of-Rights-and-Responsibilities.pdf';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open the document. Please check your internet connection.');
+      }
+    } catch (error) {
+      console.error('Error opening patient rights document:', error);
+      Alert.alert('Error', 'Unable to open the document.');
+    }
   };
 
   return (
@@ -528,7 +551,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             style={{ flex: 1 }}
             contentContainerStyle={{ 
               padding: 20,
-              paddingBottom: caseFormat === 'long' ? 100 : 20 
+              paddingBottom: caseFormat === 'long' ? 100 : 60 
             }}
             keyboardShouldPersistTaps="handled"
             enableOnAndroid={true}
@@ -901,6 +924,59 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                   </View>
                 )}
               </View>
+            </View>
+
+            {/* Declaration Checkbox */}
+            <View style={{ marginBottom: 32 }}>
+              <TouchableOpacity
+                onPress={() => setDeclarationAccepted(!declarationAccepted)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  padding: 16,
+                  backgroundColor: '#F9F9F9',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#E5E5E7',
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 4,
+                  borderWidth: 2,
+                  borderColor: declarationAccepted ? '#4ECDC4' : '#C7C7CC',
+                  backgroundColor: declarationAccepted ? '#4ECDC4' : '#FFFFFF',
+                  marginRight: 12,
+                  marginTop: 2,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  {declarationAccepted && (
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 14,
+                    color: '#1C1C1E',
+                    lineHeight: 20,
+                  }}>
+                    I acknowledge and agree to protect the confidentiality of patients' medical records and information, and not to disclose, misuse, or share them without the patient's or legal guardian's consent.{' '}
+                    <Text 
+                      style={{
+                        color: '#4ECDC4',
+                        textDecorationLine: 'underline',
+                      }}
+                      onPress={openPatientRightsDocument}
+                    >
+                      Read more about "Patient Bill of Rights and Responsibilities"
+                    </Text>
+                    .
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </KeyboardAwareScrollView>
       </SafeAreaView>
