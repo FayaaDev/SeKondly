@@ -24,6 +24,7 @@ import { apiRequest } from "../lib/queryClient";
 import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
+import { useCustomAlert } from "./CustomAlert";
 import { useAuth } from "../hooks/useAuth";
 import type { CaseWithAuthor, CommentWithAuthor, CaseFormat } from "../types/schema";
 import LongCaseDetailModal from "./LongCaseDetailModal";
@@ -72,6 +73,7 @@ export default function CaseDetailModal({
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [showImageManagement, setShowImageManagement] = useState(false);
   const { user: currentUser } = useAuth();
+  const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<TextInput>(null);
@@ -99,14 +101,17 @@ export default function CaseDetailModal({
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-      Alert.alert(
-        "Success",
-        data?.favorited ? "Case added to favorites" : "Case removed from favorites"
-      );
+      // Favorite status updated - no popup needed, UI will reflect the change
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to favorite case");
+        showAlert(
+          "Error", 
+          error.message || "Failed to favorite case",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -124,11 +129,17 @@ export default function CaseDetailModal({
       setNewComment("");
       setReplyingTo(null);
       Keyboard.dismiss();
-      Alert.alert("Success", "Your comment has been posted successfully.");
+      // Comment posted successfully - no popup needed
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to add comment");
+        showAlert(
+          "Error", 
+          error.message || "Failed to add comment",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -145,7 +156,13 @@ export default function CaseDetailModal({
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to like comment");
+        showAlert(
+          "Error", 
+          error.message || "Failed to like comment",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -158,12 +175,24 @@ export default function CaseDetailModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
-      Alert.alert("Success", "Case deleted successfully");
+      showAlert(
+        "Success", 
+        "Case deleted successfully",
+        [{ text: 'OK', onPress: () => {} }],
+        'trash',
+        '#4ECDC4'
+      );
       onClose();
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to delete case");
+        showAlert(
+          "Error", 
+          error.message || "Failed to delete case",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -176,7 +205,13 @@ export default function CaseDetailModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
-      Alert.alert("Success", "Image removed successfully");
+      showAlert(
+        "Success", 
+        "Image removed successfully",
+        [{ text: 'OK', onPress: () => {} }],
+        'checkmark-circle',
+        '#4ECDC4'
+      );
       // Reset current image index if needed
       if (caseData?.imageUrls && currentImageIndex >= caseData.imageUrls.length - 1) {
         setCurrentImageIndex(Math.max(0, caseData.imageUrls.length - 2));
@@ -184,7 +219,13 @@ export default function CaseDetailModal({
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to remove image");
+        showAlert(
+          "Error", 
+          error.message || "Failed to remove image",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -253,32 +294,36 @@ export default function CaseDetailModal({
   const isAuthor = currentUser?.id === caseData?.authorId;
 
   const confirmDelete = () => {
-    Alert.alert(
+    showAlert(
       "Delete Case",
       "Are you sure you want to delete this case? This action cannot be undone.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancel", onPress: () => {}, style: "cancel" },
         { 
           text: "Delete", 
-          style: "destructive",
-          onPress: () => deleteCaseMutation.mutate()
+          onPress: () => deleteCaseMutation.mutate(),
+          style: "destructive"
         }
-      ]
+      ],
+      'trash',
+      '#FF3B30'
     );
   };
 
   const confirmImageRemoval = (imageUrl: string) => {
-    Alert.alert(
+    showAlert(
       "Remove Image",
       "Are you sure you want to remove this image? This action cannot be undone.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancel", onPress: () => {}, style: "cancel" },
         { 
           text: "Remove", 
-          style: "destructive",
-          onPress: () => removeImageMutation.mutate(imageUrl)
+          onPress: () => removeImageMutation.mutate(imageUrl),
+          style: "destructive"
         }
-      ]
+      ],
+      'image',
+      '#FF3B30'
     );
   };
 
@@ -722,6 +767,9 @@ export default function CaseDetailModal({
         initialIndex={currentImageIndex}
         onClose={() => setShowImageGallery(false)}
       />
+      
+      {/* Custom Alert Component */}
+      <AlertComponent />
     </Modal>
   );
 }

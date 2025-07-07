@@ -19,6 +19,7 @@ import { apiRequest } from "../lib/queryClient";
 import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
+import { useCustomAlert } from "./CustomAlert";
 import type { CaseWithAuthor } from "../types/schema";
 
 interface CaseCardProps {
@@ -55,6 +56,7 @@ export default function CaseCard({
   const [showFullHistory, setShowFullHistory] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
 
   // Extract format info
@@ -72,7 +74,13 @@ export default function CaseCard({
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to like case");
+        showAlert(
+          "Error", 
+          error.message || "Failed to like case",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -85,14 +93,17 @@ export default function CaseCard({
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-      Alert.alert(
-        "Success",
-        data?.favorited ? "Case added to favorites" : "Case removed from favorites"
-      );
+      // Favorite status updated - no popup needed, UI will reflect the change
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to favorite case");
+        showAlert(
+          "Error", 
+          error.message || "Failed to favorite case",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -106,14 +117,23 @@ export default function CaseCard({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
-      Alert.alert(
+      showAlert(
         "Specialty Hidden",
-        `${caseData.specialty} cases will no longer appear in your feed.`
+        `${caseData.specialty} cases will no longer appear in your feed.`,
+        [{ text: 'OK', onPress: () => {} }],
+        'eye-off',
+        '#4ECDC4'
       );
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to hide specialty");
+        showAlert(
+          "Error", 
+          error.message || "Failed to hide specialty",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
       }
     },
   });
@@ -152,7 +172,7 @@ export default function CaseCard({
   };
 
   const handleMoreOptions = () => {
-    Alert.alert(
+    showAlert(
       "Options",
       "Choose an action",
       [
@@ -163,9 +183,12 @@ export default function CaseCard({
         },
         {
           text: "Cancel",
+          onPress: () => {},
           style: "cancel",
         },
-      ]
+      ],
+      'ellipsis-horizontal',
+      '#4ECDC4'
     );
   };
 
@@ -388,7 +411,7 @@ export default function CaseCard({
           onPress={() => favoriteMutation.mutate()}
         >
           <Ionicons
-            name={caseData.isFavoritedByUser ? "bookmark" : "bookmark-outline"}
+            name={caseData.isFavoritedByUser ? "heart" : "heart-outline"}
             size={20}
             color={caseData.isFavoritedByUser ? "#4ECDC4" : "#666"}
           />
@@ -406,6 +429,9 @@ export default function CaseCard({
         initialIndex={currentImageIndex}
         onClose={() => setShowImageGallery(false)}
       />
+      
+      {/* Custom Alert Component */}
+      <AlertComponent />
     </TouchableOpacity>
   );
 }

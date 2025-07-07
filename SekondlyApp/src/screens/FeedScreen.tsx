@@ -99,22 +99,14 @@ export default function FeedScreen() {
   
   const { user } = useAuth();
 
-  // Check if disclaimer should be shown on first load
+  // Show disclaimer every time user accesses the feed (on sign-in)
   useEffect(() => {
-    const checkDisclaimer = async () => {
-      if (user?.isApproved) {
-        const hasBeenShown = await StorageService.hasDisclaimerBeenShown();
-        if (!hasBeenShown) {
-          setShowDisclaimer(true);
-        }
-      }
-    };
-    
-    checkDisclaimer();
+    if (user?.isApproved) {
+      setShowDisclaimer(true);
+    }
   }, [user?.isApproved]);
 
-  const handleDisclaimerAccept = async () => {
-    await StorageService.setDisclaimerShown();
+  const handleDisclaimerAccept = () => {
     setShowDisclaimer(false);
   };
 

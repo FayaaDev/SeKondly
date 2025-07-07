@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import StorageService from '../lib/storage';
 import { API_BASE_URL } from '../config/api';
 import { MEDICAL_SPECIALTIES } from '../types/shared';
+import { useCustomAlert } from './CustomAlert';
 
 interface DraftCase {
   title?: string;
@@ -90,6 +91,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const [showSpecialtySuggestions, setShowSpecialtySuggestions] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
+  const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
 
@@ -246,7 +248,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       
       queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my-cases'] });
-      Alert.alert('Success', 'Your case has been submitted successfully and will be published once approved by our medical team!');
+      showAlert(
+        'Success', 
+        'Your case has been submitted successfully and will be published once approved by our medical team!',
+        [{ text: 'OK', onPress: () => {} }],
+        'checkmark-circle',
+        '#4ECDC4'
+      );
       
       // Clear draft after successful submission
       await clearDraft();
@@ -256,7 +264,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     },
     onError: (error: any) => {
       console.error('Case submission error:', error);
-      Alert.alert('Error', error.message || 'Failed to create case');
+      showAlert(
+        'Error', 
+        error.message || 'Failed to create case',
+        [{ text: 'OK', onPress: () => {} }],
+        'alert-circle',
+        '#FF3B30'
+      );
     },
   });
 
@@ -353,35 +367,71 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      Alert.alert('Missing title', 'Please enter a case title.');
+      showAlert(
+        'Missing Title', 
+        'Please enter a case title.',
+        [{ text: 'OK', onPress: () => {} }],
+        'information-circle',
+        '#FF9500'
+      );
       return;
     }
     
     // History is required for both formats
     if (!history.trim()) {
-      Alert.alert('Missing history', 'Please enter a case history.');
+      showAlert(
+        'Missing History', 
+        'Please enter a case history.',
+        [{ text: 'OK', onPress: () => {} }],
+        'information-circle',
+        '#FF9500'
+      );
       return;
     }
 
     // Additional required fields for long format
     if (caseFormat === 'long') {
       if (!chiefComplaint.trim()) {
-        Alert.alert('Missing information', 'Please enter the chief complaint.');
+        showAlert(
+          'Missing Information', 
+          'Please enter the chief complaint.',
+          [{ text: 'OK', onPress: () => {} }],
+          'information-circle',
+          '#FF9500'
+        );
         return;
       }
       if (!historyOfPresentIllness.trim()) {
-        Alert.alert('Missing information', 'Please enter the history of present illness.');
+        showAlert(
+          'Missing Information', 
+          'Please enter the history of present illness.',
+          [{ text: 'OK', onPress: () => {} }],
+          'information-circle',
+          '#FF9500'
+        );
         return;
       }
     }
     
     if (!selectedSpecialty) {
-      Alert.alert('Missing specialty', 'Please select a medical specialty for this case.');
+      showAlert(
+        'Missing Specialty', 
+        'Please select a medical specialty for this case.',
+        [{ text: 'OK', onPress: () => {} }],
+        'information-circle',
+        '#FF9500'
+      );
       return;
     }
 
     if (!declarationAccepted) {
-      Alert.alert('Declaration Required', 'Please accept the patient confidentiality declaration to proceed.');
+      showAlert(
+        'Declaration Required', 
+        'Please accept the patient confidentiality declaration to proceed.',
+        [{ text: 'OK', onPress: () => {} }],
+        'shield-checkmark',
+        '#FF9500'
+      );
       return;
     }
 
@@ -979,6 +1029,9 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
               </TouchableOpacity>
             </View>
           </KeyboardAwareScrollView>
+          
+          {/* Custom Alert Component */}
+          <AlertComponent />
       </SafeAreaView>
     </Modal>
   );
