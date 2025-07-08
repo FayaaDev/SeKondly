@@ -61,7 +61,7 @@ When users complete registration, they must wait for admin approval before acces
 interface OnboardingData {
   firstName: string;
   lastName: string;
-  phone: string;
+  email: string;
   password: string;
   confirmPassword: string;
   boardCertification: string;
@@ -98,9 +98,8 @@ Content-Type: multipart/form-data
 FormData fields:
 - firstName: string
 - lastName: string
-- phone: string
+- email: string
 - password: string
-- email: string (generated)
 - boardCertification: string
 - fellowship: string (optional)
 - yearsOfExperience: string
@@ -113,7 +112,7 @@ POST /api/login
 Content-Type: application/json
 
 {
-  username: string;
+  email: string;
   password: string;
 }
 ```
@@ -122,9 +121,9 @@ Content-Type: application/json
 
 ### Personal Information
 - All fields required except fellowship
+- Email address format validation
 - Password minimum 6 characters
 - Password confirmation must match
-- Phone number format validation
 
 ### Professional Information
 - Board certification required (dropdown selection)

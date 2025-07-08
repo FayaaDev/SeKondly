@@ -157,6 +157,110 @@
             display: inline-block;
         }
         
+        .support-section {
+            margin: 4rem 0;
+            padding: 3rem 2rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .support-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .support-description {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .support-form {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4ECDC4;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(78, 205, 196, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .ticket-confirmation {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(46, 204, 113, 0.1);
+            border: 2px solid rgba(46, 204, 113, 0.3);
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+        
+        .confirmation-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .ticket-confirmation h4 {
+            color: #27ae60;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .ticket-confirmation p {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
         footer {
             margin-top: 3rem;
             padding-top: 2rem;
@@ -182,6 +286,19 @@
             .download-buttons {
                 flex-direction: column;
                 align-items: center;
+            }
+            
+            .support-section {
+                margin: 2rem 0;
+                padding: 2rem 1rem;
+            }
+            
+            .support-title {
+                font-size: 1.5rem;
+            }
+            
+            .support-form {
+                padding: 0;
             }
         }
     </style>
@@ -236,9 +353,170 @@
             </div>
         </div>
         
+        <div class="support-section">
+            <h3 class="support-title">Need Help? Contact Support</h3>
+            <p class="support-description">Have questions, suggestions, or need assistance? We're here to help!</p>
+            
+            <form id="supportForm" class="support-form">
+                <div class="form-group">
+                    <input type="text" id="name" name="name" placeholder="Your Name" required>
+                </div>
+                
+                <div class="form-group">
+                    <input type="email" id="email" name="email" placeholder="Your Email" required>
+                </div>
+                
+                <div class="form-group">
+                    <input type="text" id="title" name="title" placeholder="Subject/Title" required>
+                </div>
+                
+                <div class="form-group">
+                    <select id="reason" name="reason" required>
+                        <option value="">Select reason for contact</option>
+                        <option value="question">Ask a Question</option>
+                        <option value="feature">Request a Feature</option>
+                        <option value="bug">Report a Bug</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <textarea id="content" name="content" placeholder="Please describe your question, feature request, or bug report..." rows="5" required></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">Submit Support Request</button>
+            </form>
+            
+            <div id="ticketConfirmation" class="ticket-confirmation" style="display: none;">
+                <div class="confirmation-icon">✅</div>
+                <h4>Support Request Submitted Successfully!</h4>
+                <p>Your ticket number is: <strong id="ticketNumber"></strong></p>
+                <p>We'll respond to your email within 24 hours.</p>
+            </div>
+        </div>
+        
         <footer>
             <p>&copy; 2025 SeKondly. All rights reserved. | Empowering healthcare through collaboration | <a href="/privacy" style="color: #4ECDC4; text-decoration: none;">Privacy Policy</a></p>
         </footer>
     </div>
+    
+    <script>
+        // Generate a unique ticket number
+        function generateTicketNumber() {
+            const timestamp = Date.now();
+            const random = Math.floor(Math.random() * 1000);
+            return `SK-${timestamp}-${random}`;
+        }
+        
+        // Format email content
+        function formatEmailContent(formData, ticketNumber) {
+            const reasonLabels = {
+                'question': 'Ask a Question',
+                'feature': 'Request a Feature',
+                'bug': 'Report a Bug'
+            };
+            
+            return `
+New Support Request - Ticket #${ticketNumber}
+
+Name: ${formData.name}
+Email: ${formData.email}
+Subject: ${formData.title}
+Reason: ${reasonLabels[formData.reason]}
+
+Message:
+${formData.content}
+
+---
+This ticket was submitted via the SeKondly landing page on ${new Date().toLocaleString()}.
+Please respond to: ${formData.email}
+            `.trim();
+        }
+        
+        // Handle form submission
+        document.getElementById('supportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.textContent;
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            
+            // Collect form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                title: document.getElementById('title').value,
+                reason: document.getElementById('reason').value,
+                content: document.getElementById('content').value
+            };
+            
+            // Generate ticket number
+            const ticketNumber = generateTicketNumber();
+            
+            // Format email content
+            const emailContent = formatEmailContent(formData, ticketNumber);
+            
+            try {
+                // Create mailto link for fallback
+                const mailtoLink = `mailto:admin@sekondly.app?subject=Support Request - ${ticketNumber}&body=${encodeURIComponent(emailContent)}`;
+                
+                // For production, you would implement server-side email sending
+                // For now, we'll use a mailto link and localStorage to track tickets
+                
+                // Store ticket in localStorage for reference
+                const tickets = JSON.parse(localStorage.getItem('supportTickets') || '[]');
+                tickets.push({
+                    ticketNumber,
+                    ...formData,
+                    timestamp: new Date().toISOString(),
+                    status: 'submitted'
+                });
+                localStorage.setItem('supportTickets', JSON.stringify(tickets));
+                
+                // In a real implementation, you would send this to your server
+                // For demonstration, we'll open the mailto link
+                window.location.href = mailtoLink;
+                
+                // Show confirmation
+                document.getElementById('ticketNumber').textContent = ticketNumber;
+                document.getElementById('ticketConfirmation').style.display = 'block';
+                
+                // Hide form
+                document.getElementById('supportForm').style.display = 'none';
+                
+                // Reset form
+                document.getElementById('supportForm').reset();
+                
+            } catch (error) {
+                console.error('Error submitting support request:', error);
+                alert('There was an error submitting your request. Please try again or contact us directly at admin@sekondly.app');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+        
+        // Function to show form again (for user convenience)
+        function showFormAgain() {
+            document.getElementById('supportForm').style.display = 'block';
+            document.getElementById('ticketConfirmation').style.display = 'none';
+        }
+        
+        // Add a "Submit Another Request" button to the confirmation
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmation = document.getElementById('ticketConfirmation');
+            const anotherRequestBtn = document.createElement('button');
+            anotherRequestBtn.textContent = 'Submit Another Request';
+            anotherRequestBtn.className = 'submit-btn';
+            anotherRequestBtn.style.marginTop = '1rem';
+            anotherRequestBtn.style.width = 'auto';
+            anotherRequestBtn.style.padding = '0.5rem 1rem';
+            anotherRequestBtn.onclick = showFormAgain;
+            confirmation.appendChild(anotherRequestBtn);
+        });
+    </script>
 </body>
 </html>

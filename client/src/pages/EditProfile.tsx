@@ -257,7 +257,7 @@ export default function EditProfile() {
                     <SelectValue placeholder="Select your experience level" />
                   </SelectTrigger>
                   <SelectContent>
-                    {experienceLevels.map((level) => (
+                    {MEDICAL_LEVELS.map((level) => (
                       <SelectItem key={level} value={level}>
                         {level}
                       </SelectItem>

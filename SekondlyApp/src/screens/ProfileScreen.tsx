@@ -108,6 +108,45 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete Account", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Send account deletion request to admin
+              await apiRequest("POST", "/api/delete-account-request", {
+                userId: user?.id,
+                userEmail: user?.email,
+                userName: `${user?.firstName} ${user?.lastName}`,
+                specialty: user?.specialty,
+                reason: "User requested account deletion from mobile app"
+              });
+              
+              Alert.alert(
+                "Request Sent",
+                "Your account deletion request has been sent to our admin team. You will receive a confirmation email shortly.",
+                [{ text: "OK", style: "default" }]
+              );
+            } catch (error) {
+              console.error("Error sending deletion request:", error);
+              Alert.alert(
+                "Error",
+                "Failed to send deletion request. Please try again or contact support at admin@sekondly.app",
+                [{ text: "OK", style: "default" }]
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleFollowersPress = () => {
     setFollowModalType('followers');
     setShowFollowModal(true);
@@ -253,10 +292,17 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={[styles.settingItem, styles.signOutItem]} onPress={handleSignOut}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
             <View style={styles.settingContent}>
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
               <Text style={[styles.settingText, styles.signOutText]}>Sign Out</Text>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.settingItem, styles.deleteAccountItem]} onPress={handleDeleteAccount}>
+            <View style={styles.settingContent}>
+              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+              <Text style={[styles.settingText, styles.deleteAccountText]}>Delete Account</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -458,6 +504,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   signOutText: {
+    color: "#FF3B30",
+  },
+  deleteAccountItem: {
+    borderBottomWidth: 0,
+  },
+  deleteAccountText: {
     color: "#FF3B30",
   },
   pendingContainer: {

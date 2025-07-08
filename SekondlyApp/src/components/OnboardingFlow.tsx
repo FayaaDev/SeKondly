@@ -22,7 +22,7 @@ import { MEDICAL_SPECIALTIES, FELLOWSHIPS, MEDICAL_LEVELS } from '../types/share
 interface OnboardingData {
   firstName: string;
   lastName: string;
-  phone: string;
+  email: string;
   password: string;
   confirmPassword: string;
   boardCertification: string;
@@ -71,16 +71,17 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [showAccountReview, setShowAccountReview] = useState(false);
+  const [showSignInAccountReview, setShowSignInAccountReview] = useState(false);
   const [specialtySearch, setSpecialtySearch] = useState('');
   const [fellowshipSearch, setFellowshipSearch] = useState('');
   const [signInData, setSignInData] = useState({
-    username: '',
+    email: '',
     password: '',
   });
   const [formData, setFormData] = useState<OnboardingData>({
     firstName: '',
     lastName: '',
-    phone: '',
+    email: '',
     password: '',
     confirmPassword: '',
     boardCertification: '',
@@ -98,7 +99,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       // Add form fields
       formData.append('firstName', data.firstName);
       formData.append('lastName', data.lastName);
-      formData.append('phone', data.phone);
+      formData.append('email', data.email);
       formData.append('password', data.password);
       formData.append('boardCertification', data.boardCertification);
       formData.append('fellowship', data.fellowship || '');
@@ -140,13 +141,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   });
 
   const signInMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
+    mutationFn: async (credentials: { email: string; password: string }) => {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ username: credentials.email, password: credentials.password }),
       });
 
       if (!response.ok) {
@@ -161,11 +162,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
         if (data.user) {
           // Check if user is approved before proceeding
           if (!data.user.isApproved) {
-            Alert.alert(
-              'Account Under Review', 
-              'Your account is currently being reviewed by our medical verification team. This process typically takes one hours. You will receive an email notification once your account is approved.',
-              [{ text: 'OK' }]
-            );
+            setShowSignInAccountReview(true);
             return; // Don't save user data or navigate away
           }
           
@@ -184,10 +181,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   });
 
   const validatePersonalInfo = (): boolean => {
-    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.password || !formData.confirmPassword) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
       Alert.alert('Required Fields Missing', 'Please fill in all required fields.');
       return false;
     }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return false;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       Alert.alert('Password Mismatch', 'Passwords do not match.');
       return false;
@@ -247,8 +252,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   };
 
   const handleSignIn = () => {
-    if (!signInData.username || !signInData.password) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!signInData.email || !signInData.password) {
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
     signInMutation.mutate(signInData);
@@ -377,12 +382,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Username</Text>
+              <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput
                 style={styles.input}
-                value={signInData.username}
-                onChangeText={(text) => setSignInData(prev => ({ ...prev, username: text }))}
-                placeholder="Enter your username"
+                value={signInData.email}
+                onChangeText={(text) => setSignInData(prev => ({ ...prev, email: text }))}
+                placeholder="Enter your email address"
+                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!signInMutation.isPending}
@@ -473,13 +479,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Phone Number *</Text>
+              <Text style={styles.inputLabel}>Email Address *</Text>
               <TextInput
                 style={styles.input}
-                value={formData.phone}
-                onChangeText={(text) => updateFormData('phone', text)}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
+                value={formData.email}
+                onChangeText={(text) => updateFormData('email', text)}
+                placeholder="Enter your email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
                 autoCorrect={false}
               />
             </View>
@@ -882,6 +889,36 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               onPress={() => {
                 setShowAccountReview(false);
                 setCurrentScreen('signin');
+              }}
+            >
+              <Text style={styles.accountReviewButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Sign In Account Under Review Modal */}
+      <Modal
+        visible={showSignInAccountReview}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {}}
+      >
+        <View style={styles.accountReviewOverlay}>
+          <View style={styles.accountReviewContainer}>
+            <View style={styles.accountReviewHeader}>
+              <Ionicons name="time-outline" size={32} color="#4ECDC4" />
+              <Text style={styles.accountReviewTitle}>Account Under Review</Text>
+            </View>
+            
+            <Text style={styles.accountReviewText}>
+              Your account is currently being reviewed by our medical verification team.
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.accountReviewButton}
+              onPress={() => {
+                setShowSignInAccountReview(false);
               }}
             >
               <Text style={styles.accountReviewButtonText}>OK</Text>

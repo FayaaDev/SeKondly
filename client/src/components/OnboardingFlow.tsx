@@ -81,7 +81,6 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       firstName: formData.get('firstName') as string,
       lastName: formData.get('lastName') as string,
       email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
       password: formData.get('password') as string,
       boardCertification: formData.get('specialty') as string,
       fellowship: formData.get('fellowship') as string,
@@ -274,19 +273,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 type="email"
                 className="mt-1"
                 placeholder="john.doe@hospital.com"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                className="mt-1"
-                placeholder="+1 (555) 123-4567"
+                required
               />
             </div>
             

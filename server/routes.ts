@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { isAuthenticated, isAdmin } from "./middleware/auth";
+import nodemailer from "nodemailer";
 
 // File upload configuration
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -728,33 +729,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const {
         firstName,
         lastName,
-        phone,
+        email,
         password,
         boardCertification,
         fellowship,
         level,
         yearsOfExperience,
-        workplace,
-        email
+        workplace
       } = req.body;
 
       // Validate required fields
-      if (!firstName || !lastName || !password) {
+      if (!firstName || !lastName || !email || !password) {
         return res.status(400).json({ 
-          message: "First name, last name, and password are required for registration" 
+          message: "First name, last name, email, and password are required for registration" 
         });
       }
 
-      // Generate email if not provided
-      const userEmail = email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@medical.example.com`;
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ 
+          message: "Please enter a valid email address" 
+        });
+      }
+
+      // Use the provided email as the user email
+      const userEmail = email;
 
       // Extract fields for logging
       const extractedFields = {
         firstName,
         lastName,
-        phone,
-        boardCertification,
-        email: userEmail
+        email: userEmail,
+        boardCertification
       };
       console.log('Extracted fields:', extractedFields);
 
@@ -768,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: userEmail,
         firstName: firstName || '',
         lastName: lastName || '',
-        phone: phone || '',
+        phone: null, // Remove phone as it's no longer collected
         specialty: boardCertification || '',
         fellowship: fellowship || null,
         level: level || null,
@@ -1071,6 +1078,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error rejecting case:", error);
       res.status(500).json({ message: "Failed to reject case" });
+    }
+  });
+
+  // Account deletion request
+  app.post("/api/delete-account-request", isAuthenticated, async (req, res) => {
+    try {
+      const { userId, userEmail, userName, specialty, reason } = req.body;
+      
+      // Validate required fields
+      if (!userId || !userEmail || !userName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Create email transporter (using Gmail as default, can be configured)
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER || 'noreply@sekondly.app',
+          pass: process.env.EMAIL_PASS || 'your-app-password'
+        }
+      });
+
+      // Email content
+      const emailSubject = `Account Deletion Request - ${userName}`;
+      const emailBody = `
+        <h2>Account Deletion Request</h2>
+        <p>A user has requested account deletion:</p>
+        <ul>
+          <li><strong>User ID:</strong> ${userId}</li>
+          <li><strong>Name:</strong> ${userName}</li>
+          <li><strong>Email:</strong> ${userEmail}</li>
+          <li><strong>Specialty:</strong> ${specialty || 'Not specified'}</li>
+          <li><strong>Reason:</strong> ${reason || 'Not specified'}</li>
+          <li><strong>Request Time:</strong> ${new Date().toISOString()}</li>
+        </ul>
+        <p>Please process this request according to your data retention policies.</p>
+      `;
+
+      // Send email to admin
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER || 'noreply@sekondly.app',
+        to: 'admin@sekondly.app',
+        subject: emailSubject,
+        html: emailBody
+      });
+
+      // Log the request
+      console.log(`Account deletion request for user ${userId} (${userName}) sent to admin`);
+
+      res.json({ message: "Account deletion request sent successfully" });
+    } catch (error) {
+      console.error("Error sending account deletion request:", error);
+      res.status(500).json({ message: "Failed to send deletion request" });
     }
   });
 
