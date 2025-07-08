@@ -92,12 +92,15 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
       return await apiRequest("POST", `/api/users/${userId}/follow`);
     },
     onSuccess: (data) => {
+      // Invalidate target user's data
       queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      Alert.alert(
-        "Success",
-        data?.isFollowing ? "User followed successfully" : "User unfollowed successfully"
-      );
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/followers`] });
+      
+      // Invalidate current user's following data
+      if (currentUser) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser.id}/following`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser.id}/follow-status`] });
+      }
     },
     onError: (error) => {
       if (!handleAuthError(error)) {

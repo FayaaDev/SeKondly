@@ -12,13 +12,13 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../lib/queryClient";
 import ProfilePicture from "../components/ProfilePicture";
 import ProfilePictureModal from "../components/ProfilePictureModal";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { User } from '../types/schema';
 
 /**
@@ -44,6 +44,7 @@ export default function ProfileScreen() {
   
   const { user, signOut } = useAuth();
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
 
   // Query for user's cases count
   const { data: myCases = [] } = useQuery({
@@ -81,11 +82,16 @@ export default function ProfileScreen() {
     setRefreshing(true);
     try {
       // Refetch all profile-related data
-      // Note: You might want to implement specific refetch functions here
+      if (user?.id) {
+        await queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/follow-status`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/followers`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/following`] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      }
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.id, queryClient]);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -282,13 +288,24 @@ export default function ProfileScreen() {
               <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>No users found.</Text>
             ) : (
               (followModalType === 'followers' ? myFollowers : myFollowing).map((u: User) => (
-                <View key={u.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                <TouchableOpacity key={u.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }} onPress={() => { 
+                  setShowFollowModal(false); 
+                  navigation.dispatch(
+                    CommonActions.navigate({
+                      name: 'Home',
+                      params: {
+                        screen: 'PublicProfile',
+                        params: { userId: u.id }
+                      }
+                    })
+                  );
+                }}>
                   <ProfilePicture imageUrl={u.profileImageUrl} userName={`${u.firstName || ''} ${u.lastName || ''}`.trim()} size="small" />
                   <View style={{ marginLeft: 16 }}>
                     <Text style={{ fontSize: 16, fontWeight: '500' }}>{u.firstName} {u.lastName}</Text>
                     {u.specialty && <Text style={{ color: '#888', fontSize: 14 }}>{u.specialty}</Text>}
                   </View>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </ScrollView>
