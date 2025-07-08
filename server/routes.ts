@@ -12,16 +12,14 @@ import nodemailer from "nodemailer";
 
 // Email configuration for AWS SES
 const emailTransporter = nodemailer.createTransport({
-  host: 'email-smtp.us-east-1.amazonaws.com',
+  host: 'email-smtp.eu-north-1.amazonaws.com',
   port: 587,
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER || 'AKIAVRCYZCTXCVKECGIR',
     pass: process.env.SMTP_PASS || 'BMONkxzcbSEXcPc9gcf/p0PIUZzxW4iueTEeN4p0uElp'
   },
-  tls: {
-    ciphers: 'SSLv3'
-  }
+  requireTLS: true
 });
 
 // Support ticket schema
@@ -125,59 +123,46 @@ This ticket was submitted via the SeKondly landing page on ${new Date().toLocale
 Please respond to: ${validatedData.email}
       `.trim();
       
-      // Send email notification
-      const mailOptions = {
-        from: '"SeKondly Support" <admin@sekondly.app>',
-        to: 'admin@sekondly.app',
-        subject: `Support Request - ${ticketNumber}`,
-        text: emailContent,
-        replyTo: validatedData.email
-      };
-      
-      console.log('Sending email with options:', {
-        ...mailOptions,
-        text: '[EMAIL CONTENT HIDDEN]'
-      });
-      
-      await emailTransporter.sendMail(mailOptions);
-      
-      console.log('Support ticket email sent successfully');
-      
-      // Optional: Send confirmation email to user (only if main email succeeded)
+      // Try to send email, but don't fail the request if it fails
+      let emailSent = false;
       try {
-        await emailTransporter.sendMail({
-          from: '"SeKondly Support" <admin@sekondly.app>',
-          to: validatedData.email,
-          subject: `Support Request Received - ${ticketNumber}`,
-          text: `
-Dear ${validatedData.name},
-
-Thank you for contacting SeKondly support. We have received your support request.
-
-Ticket Number: ${ticketNumber}
-Subject: ${validatedData.title}
-Reason: ${reasonLabels[validatedData.reason]}
-
-Our team will review your request and respond within 24 hours.
-
-Best regards,
-The SeKondly Support Team
-
----
-This is an automated response. Please do not reply to this email.
-For urgent matters, please contact us directly at admin@sekondly.app.
-          `.trim()
+        // Test if we can connect first
+        await emailTransporter.verify();
+        
+        // Send email notification using a verified sender email
+        const mailOptions = {
+          from: '"SeKondly Support" <admin@sekondly.app>', // Use verified sender
+          to: process.env.ADMIN_EMAIL || 'admin@sekondly.app',
+          subject: `Support Request - ${ticketNumber}`,
+          text: emailContent,
+          replyTo: validatedData.email
+        };
+        
+        console.log('Sending email with options:', {
+          ...mailOptions,
+          text: '[EMAIL CONTENT HIDDEN]'
         });
-        console.log('Confirmation email sent to user');
-      } catch (confirmationError) {
-        console.warn('Failed to send confirmation email to user:', confirmationError);
-        // Don't fail the whole request if confirmation email fails
+        
+        await emailTransporter.sendMail(mailOptions);
+        emailSent = true;
+        console.log('Support ticket email sent successfully');
+        
+      } catch (emailError) {
+        console.warn('Failed to send email notification:', emailError);
+        
+        // Save to a local file as backup
+        const fs = require('fs');
+        const ticketLogPath = path.join(process.cwd(), 'support-tickets.log');
+        const logEntry = `\n\n--- Support Ticket ${ticketNumber} ---\nTimestamp: ${new Date().toISOString()}\n${emailContent}\n`;
+        fs.appendFileSync(ticketLogPath, logEntry);
+        console.log('Support ticket saved to local log file');
       }
       
       res.status(200).json({
         success: true,
         ticketNumber,
-        message: "Support ticket submitted successfully"
+        message: "Support ticket submitted successfully",
+        emailSent
       });
       
     } catch (error) {
@@ -1277,6 +1262,13 @@ For urgent matters, please contact us directly at admin@sekondly.app.
   app.get("/api/test-smtp", async (req, res) => {
     try {
       console.log('Testing SMTP connection...');
+      console.log('SMTP Config:', {
+        host: 'email-smtp.eu-north-1.amazonaws.com',
+        port: 587,
+        user: process.env.SMTP_USER ? 'SET' : 'NOT_SET',
+        pass: process.env.SMTP_PASS ? 'SET' : 'NOT_SET'
+      });
+      
       await emailTransporter.verify();
       res.json({ 
         success: true, 
@@ -1287,7 +1279,8 @@ For urgent matters, please contact us directly at admin@sekondly.app.
       res.status(500).json({ 
         success: false, 
         error: "SMTP connection failed",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        code: error instanceof Error && 'code' in error ? error.code : undefined
       });
     }
   });
