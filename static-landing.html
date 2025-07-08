@@ -421,7 +421,6 @@
             };
             
             try {
-                // Send to server endpoint
                 const response = await fetch('/api/support/ticket', {
                     method: 'POST',
                     headers: {
@@ -453,12 +452,22 @@
                     // Reset form
                     document.getElementById('supportForm').reset();
                 } else {
-                    throw new Error(result.error || 'Failed to submit ticket');
+                    // Handle validation errors specifically
+                    let errorMessage = 'There was an error submitting your request. Please try again.';
+                    
+                    if (result.details && result.details.length > 0) {
+                        // Show the first validation error message
+                        errorMessage = result.details[0].message;
+                    } else if (result.error) {
+                        errorMessage = result.error;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
                 
             } catch (error) {
                 console.error('Error submitting support request:', error);
-                alert('There was an error submitting your request. Please try again or contact us directly at admin@sekondly.app');
+                alert(error.message || 'There was an error submitting your request. Please try again or contact us directly at admin@sekondly.app');
             } finally {
                 // Re-enable button
                 submitBtn.disabled = false;

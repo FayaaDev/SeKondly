@@ -33,7 +33,7 @@ SMTP_USER=AKIAVRCYZCTXCVKECGIR
 SMTP_PASS=BMONkxzcbSEXcPc9gcf/p0PIUZzxW4iueTEeN4p0uElp
 SMTP_HOST=email-smtp.eu-north-1.amazonaws.com
 EMAIL_USER=admin@sekondly.app
-EMAIL_PASS=xxxx
+EMAIL_PASS=xxxxn
 ```
 
 ### 3. Deployment Steps
