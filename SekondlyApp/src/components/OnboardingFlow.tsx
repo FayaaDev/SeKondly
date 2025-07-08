@@ -70,6 +70,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
   const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
+  const [showAccountReview, setShowAccountReview] = useState(false);
   const [specialtySearch, setSpecialtySearch] = useState('');
   const [fellowshipSearch, setFellowshipSearch] = useState('');
   const [signInData, setSignInData] = useState({
@@ -131,14 +132,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       return response.json();
     },
     onSuccess: () => {
-      Alert.alert(
-        'Registration Complete!', 
-        'Your account has been submitted for review. Please sign in with your credentials. You will receive an email notification once your account is approved.',
-        [{ 
-          text: 'OK', 
-          onPress: () => setCurrentScreen('signin')
-        }]
-      );
+      setShowAccountReview(true);
     },
     onError: (error: Error) => {
       Alert.alert('Error', error.message);
@@ -169,7 +163,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
           if (!data.user.isApproved) {
             Alert.alert(
               'Account Under Review', 
-              'Your account is currently being reviewed by our medical verification team. This process typically takes 1-2 business days. You will receive an email notification once your account is approved.',
+              'Your account is currently being reviewed by our medical verification team. This process typically takes one hours. You will receive an email notification once your account is approved.',
               [{ text: 'OK' }]
             );
             return; // Don't save user data or navigate away
@@ -824,12 +818,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </TouchableOpacity>
 
             <Text style={styles.disclaimerText}>
-              Your credentials will be reviewed by our verification team. This process typically takes 1-2 business days.
+              Your credentials will be reviewed by our verification team.
             </Text>
 
             <TouchableOpacity
               style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
-              onPress={handleNext}
+              onPress={() => {
+                submitMutation.mutate(formData);
+              }}
               disabled={submitMutation.isPending}
             >
               {submitMutation.isPending ? (
@@ -844,20 +840,57 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     </SafeAreaView>
   );
 
-  switch (currentScreen) {
-    case 'welcome':
-      return renderWelcomeScreen();
-    case 'signin':
-      return renderSignInScreen();
-    case 'signup':
-      return renderSignUpScreen();
-    case 'professional':
-      return renderProfessionalScreen();
-    case 'credentials':
-      return renderCredentialsScreen();
-    default:
-      return renderWelcomeScreen();
-  }
+  return (
+    <>
+      {(() => {
+        switch (currentScreen) {
+          case 'welcome':
+            return renderWelcomeScreen();
+          case 'signin':
+            return renderSignInScreen();
+          case 'signup':
+            return renderSignUpScreen();
+          case 'professional':
+            return renderProfessionalScreen();
+          case 'credentials':
+            return renderCredentialsScreen();
+          default:
+            return renderWelcomeScreen();
+        }
+      })()}
+      
+      {/* Account Under Review Modal */}
+      <Modal
+        visible={showAccountReview}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {}}
+      >
+        <View style={styles.accountReviewOverlay}>
+          <View style={styles.accountReviewContainer}>
+            <View style={styles.accountReviewHeader}>
+              <Ionicons name="time-outline" size={32} color="#4ECDC4" />
+              <Text style={styles.accountReviewTitle}>Account Under Review</Text>
+            </View>
+            
+            <Text style={styles.accountReviewText}>
+              Your account has been submitted for review. You will receive an SMS once your account is approved.
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.accountReviewButton}
+              onPress={() => {
+                setShowAccountReview(false);
+                setCurrentScreen('signin');
+              }}
+            >
+              <Text style={styles.accountReviewButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
 };
 
 const styles = {
@@ -1156,6 +1189,55 @@ const styles = {
     fontSize: 14,
     color: '#8E8E93',
     textAlign: 'center',
+  },
+  // Account Review Modal Styles
+  accountReviewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  accountReviewContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  accountReviewHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  accountReviewTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000000',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  accountReviewText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  accountReviewButton: {
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  accountReviewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 } as const;
 
