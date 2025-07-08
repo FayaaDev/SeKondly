@@ -106,7 +106,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       formData.append('level', data.level);
       formData.append('yearsOfExperience', data.yearsOfExperience);
       formData.append('workplace', data.workplace || '');
-      formData.append('email', `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@example.com`);
       
       console.log('Form data level:', data.level);
       console.log('Form data workplace:', data.workplace);

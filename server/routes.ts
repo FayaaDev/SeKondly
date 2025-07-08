@@ -10,6 +10,29 @@ import fs from "fs";
 import { isAuthenticated, isAdmin } from "./middleware/auth";
 import nodemailer from "nodemailer";
 
+// Email configuration for AWS SES
+const emailTransporter = nodemailer.createTransport({
+  host: 'email-smtp.us-east-1.amazonaws.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || 'AKIAVRCYZCTXCVKECGIR',
+    pass: process.env.SMTP_PASS || 'BMONkxzcbSEXcPc9gcf/p0PIUZzxW4iueTEeN4p0uElp'
+  },
+  tls: {
+    ciphers: 'SSLv3'
+  }
+});
+
+// Support ticket schema
+const supportTicketSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  title: z.string().min(1, "Title is required"),
+  reason: z.enum(["question", "feature", "bug"]),
+  content: z.string().min(10, "Content must be at least 10 characters")
+});
+
 // File upload configuration
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -65,6 +88,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.sendFile(privacyPolicyPath);
     } else {
       res.status(404).json({ error: "Privacy policy not found" });
+    }
+  });
+
+  // Support ticket endpoint
+  app.post("/api/support/ticket", async (req, res) => {
+    try {
+      // Validate request data
+      const validatedData = supportTicketSchema.parse(req.body);
+      
+      // Generate unique ticket number
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const ticketNumber = `SK-${timestamp}-${random}`;
+      
+      // Format email content
+      const reasonLabels = {
+        'question': 'Ask a Question',
+        'feature': 'Request a Feature',
+        'bug': 'Report a Bug'
+      };
+      
+      const emailContent = `
+New Support Request - Ticket #${ticketNumber}
+
+Name: ${validatedData.name}
+Email: ${validatedData.email}
+Subject: ${validatedData.title}
+Reason: ${reasonLabels[validatedData.reason]}
+
+Message:
+${validatedData.content}
+
+---
+This ticket was submitted via the SeKondly landing page on ${new Date().toLocaleString()}.
+Please respond to: ${validatedData.email}
+      `.trim();
+      
+      // Send email notification
+      const mailOptions = {
+        from: '"SeKondly Support" <admin@sekondly.app>',
+        to: 'admin@sekondly.app',
+        subject: `Support Request - ${ticketNumber}`,
+        text: emailContent,
+        replyTo: validatedData.email
+      };
+      
+      console.log('Sending email with options:', {
+        ...mailOptions,
+        text: '[EMAIL CONTENT HIDDEN]'
+      });
+      
+      await emailTransporter.sendMail(mailOptions);
+      
+      console.log('Support ticket email sent successfully');
+      
+      // Optional: Send confirmation email to user (only if main email succeeded)
+      try {
+        await emailTransporter.sendMail({
+          from: '"SeKondly Support" <admin@sekondly.app>',
+          to: validatedData.email,
+          subject: `Support Request Received - ${ticketNumber}`,
+          text: `
+Dear ${validatedData.name},
+
+Thank you for contacting SeKondly support. We have received your support request.
+
+Ticket Number: ${ticketNumber}
+Subject: ${validatedData.title}
+Reason: ${reasonLabels[validatedData.reason]}
+
+Our team will review your request and respond within 24 hours.
+
+Best regards,
+The SeKondly Support Team
+
+---
+This is an automated response. Please do not reply to this email.
+For urgent matters, please contact us directly at admin@sekondly.app.
+          `.trim()
+        });
+        console.log('Confirmation email sent to user');
+      } catch (confirmationError) {
+        console.warn('Failed to send confirmation email to user:', confirmationError);
+        // Don't fail the whole request if confirmation email fails
+      }
+      
+      res.status(200).json({
+        success: true,
+        ticketNumber,
+        message: "Support ticket submitted successfully"
+      });
+      
+    } catch (error) {
+      console.error("Error submitting support ticket:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid request data",
+          details: error.errors
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        error: "Failed to submit support ticket"
+      });
     }
   });
 
@@ -745,16 +875,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Debug logging for email validation
+      console.log('Email value type:', typeof email);
+      console.log('Email value:', email);
+      console.log('Is email an array?', Array.isArray(email));
+
+      // Handle case where email might be an array (due to duplicate form fields)
+      const emailValue = Array.isArray(email) ? email[0] : email;
+      console.log('Final email value:', emailValue);
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(emailValue)) {
         return res.status(400).json({ 
           message: "Please enter a valid email address" 
         });
       }
 
-      // Use the provided email as the user email
-      const userEmail = email;
+      // Use the cleaned email value
+      const userEmail = emailValue;
 
       // Extract fields for logging
       const extractedFields = {
@@ -1131,6 +1270,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending account deletion request:", error);
       res.status(500).json({ message: "Failed to send deletion request" });
+    }
+  });
+
+  // Test SMTP connection endpoint (for debugging)
+  app.get("/api/test-smtp", async (req, res) => {
+    try {
+      console.log('Testing SMTP connection...');
+      await emailTransporter.verify();
+      res.json({ 
+        success: true, 
+        message: "SMTP connection verified successfully" 
+      });
+    } catch (error) {
+      console.error('SMTP verification failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "SMTP connection failed",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

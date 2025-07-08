@@ -400,38 +400,6 @@
     </div>
     
     <script>
-        // Generate a unique ticket number
-        function generateTicketNumber() {
-            const timestamp = Date.now();
-            const random = Math.floor(Math.random() * 1000);
-            return `SK-${timestamp}-${random}`;
-        }
-        
-        // Format email content
-        function formatEmailContent(formData, ticketNumber) {
-            const reasonLabels = {
-                'question': 'Ask a Question',
-                'feature': 'Request a Feature',
-                'bug': 'Report a Bug'
-            };
-            
-            return `
-New Support Request - Ticket #${ticketNumber}
-
-Name: ${formData.name}
-Email: ${formData.email}
-Subject: ${formData.title}
-Reason: ${reasonLabels[formData.reason]}
-
-Message:
-${formData.content}
-
----
-This ticket was submitted via the SeKondly landing page on ${new Date().toLocaleString()}.
-Please respond to: ${formData.email}
-            `.trim();
-        }
-        
         // Handle form submission
         document.getElementById('supportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -452,42 +420,41 @@ Please respond to: ${formData.email}
                 content: document.getElementById('content').value
             };
             
-            // Generate ticket number
-            const ticketNumber = generateTicketNumber();
-            
-            // Format email content
-            const emailContent = formatEmailContent(formData, ticketNumber);
-            
             try {
-                // Create mailto link for fallback
-                const mailtoLink = `mailto:admin@sekondly.app?subject=Support Request - ${ticketNumber}&body=${encodeURIComponent(emailContent)}`;
-                
-                // For production, you would implement server-side email sending
-                // For now, we'll use a mailto link and localStorage to track tickets
-                
-                // Store ticket in localStorage for reference
-                const tickets = JSON.parse(localStorage.getItem('supportTickets') || '[]');
-                tickets.push({
-                    ticketNumber,
-                    ...formData,
-                    timestamp: new Date().toISOString(),
-                    status: 'submitted'
+                // Send to server endpoint
+                const response = await fetch('/api/support/ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
                 });
-                localStorage.setItem('supportTickets', JSON.stringify(tickets));
                 
-                // In a real implementation, you would send this to your server
-                // For demonstration, we'll open the mailto link
-                window.location.href = mailtoLink;
+                const result = await response.json();
                 
-                // Show confirmation
-                document.getElementById('ticketNumber').textContent = ticketNumber;
-                document.getElementById('ticketConfirmation').style.display = 'block';
-                
-                // Hide form
-                document.getElementById('supportForm').style.display = 'none';
-                
-                // Reset form
-                document.getElementById('supportForm').reset();
+                if (response.ok && result.success) {
+                    // Store ticket in localStorage for reference
+                    const tickets = JSON.parse(localStorage.getItem('supportTickets') || '[]');
+                    tickets.push({
+                        ticketNumber: result.ticketNumber,
+                        ...formData,
+                        timestamp: new Date().toISOString(),
+                        status: 'submitted'
+                    });
+                    localStorage.setItem('supportTickets', JSON.stringify(tickets));
+                    
+                    // Show confirmation
+                    document.getElementById('ticketNumber').textContent = result.ticketNumber;
+                    document.getElementById('ticketConfirmation').style.display = 'block';
+                    
+                    // Hide form
+                    document.getElementById('supportForm').style.display = 'none';
+                    
+                    // Reset form
+                    document.getElementById('supportForm').reset();
+                } else {
+                    throw new Error(result.error || 'Failed to submit ticket');
+                }
                 
             } catch (error) {
                 console.error('Error submitting support request:', error);

@@ -41,6 +41,7 @@ export default function ProfileScreen() {
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   
   const { user, signOut } = useAuth();
   const navigation = useNavigation();
@@ -109,42 +110,7 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete Account", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Send account deletion request to admin
-              await apiRequest("POST", "/api/delete-account-request", {
-                userId: user?.id,
-                userEmail: user?.email,
-                userName: `${user?.firstName} ${user?.lastName}`,
-                specialty: user?.specialty,
-                reason: "User requested account deletion from mobile app"
-              });
-              
-              Alert.alert(
-                "Request Sent",
-                "Your account deletion request has been sent to our admin team. You will receive a confirmation email shortly.",
-                [{ text: "OK", style: "default" }]
-              );
-            } catch (error) {
-              console.error("Error sending deletion request:", error);
-              Alert.alert(
-                "Error",
-                "Failed to send deletion request. Please try again or contact support at admin@sekondly.app",
-                [{ text: "OK", style: "default" }]
-              );
-            }
-          }
-        }
-      ]
-    );
+    setShowDeleteAccountModal(true);
   };
 
   const handleFollowersPress = () => {
@@ -357,6 +323,40 @@ export default function ProfileScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteAccountModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDeleteAccountModal(false)}
+      >
+        <View style={styles.deleteAccountOverlay}>
+          <View style={styles.deleteAccountContainer}>
+            <View style={styles.deleteAccountHeader}>
+              <Ionicons name="trash-outline" size={32} color="#FF3B30" />
+              <Text style={styles.deleteAccountTitle}>Delete Account</Text>
+            </View>
+            
+            <Text style={styles.deleteAccountModalText}>
+              To delete your account, please send an email to{' '}
+              <Text style={styles.deleteAccountEmail}>admin@sekondly.app</Text>
+              {' '}
+            </Text>
+            
+            <Text style={styles.deleteAccountSubText}>
+              Our admin team will process your request and confirm the deletion.
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={() => setShowDeleteAccountModal(false)}
+            >
+              <Text style={styles.deleteAccountButtonText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -552,5 +552,66 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 16,
     fontWeight: "500",
+  },
+  // Delete Account Modal Styles
+  deleteAccountOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  deleteAccountContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  deleteAccountHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  deleteAccountTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000000',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  deleteAccountModalText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  deleteAccountEmail: {
+    fontSize: 16,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  deleteAccountSubText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  deleteAccountButton: {
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  deleteAccountButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
