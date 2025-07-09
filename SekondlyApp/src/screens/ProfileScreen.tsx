@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Linking,
 } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -111,6 +112,13 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = () => {
     setShowDeleteAccountModal(true);
+  };
+
+  const handleSubmitTicket = () => {
+    Linking.openURL('https://sekondly.app').catch((err) => {
+      console.error('Failed to open URL:', err);
+      Alert.alert('Error', 'Could not open website. Please try again.');
+    });
   };
 
   const handleFollowersPress = () => {
@@ -263,6 +271,14 @@ export default function ProfileScreen() {
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
               <Text style={[styles.settingText, styles.signOutText]}>Sign Out</Text>
             </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.settingItem} onPress={handleSubmitTicket}>
+            <View style={styles.settingContent}>
+              <Ionicons name="help-circle-outline" size={20} color="#007AFF" />
+              <Text style={[styles.settingText, styles.submitTicketText]}>Submit Ticket</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.settingItem, styles.deleteAccountItem]} onPress={handleDeleteAccount}>
@@ -505,6 +521,9 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: "#FF3B30",
+  },
+  submitTicketText: {
+    color: "#007AFF",
   },
   deleteAccountItem: {
     borderBottomWidth: 0,
