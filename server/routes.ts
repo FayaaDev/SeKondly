@@ -34,6 +34,10 @@ const supportTicketSchema = z.object({
 // Email sending utility functions
 async function sendWelcomeEmail(userEmail: string, firstName: string, lastName: string) {
   try {
+    console.log(`Attempting to send welcome email to: ${userEmail}`);
+    console.log(`SMTP Config - User: ${process.env.EMAIL_USER ? 'SET' : 'NOT_SET'}`);
+    console.log(`SMTP Config - Pass: ${process.env.EMAIL_PASS ? 'SET' : 'NOT_SET'}`);
+    
     const welcomeEmailContent = `
 Dear Dr. ${firstName} ${lastName},
 
@@ -69,7 +73,7 @@ Website: https://sekondly.app
     `.trim();
 
     const mailOptions = {
-      from: '"SeKondly Team" <admin@sekondly.app>',
+      from: `"SeKondly Team" <${process.env.EMAIL_USER || 'admin@sekondly.app'}>`,
       to: userEmail,
       subject: 'Welcome to SeKondly - Your Account is Being Reviewed',
       text: welcomeEmailContent,
@@ -134,11 +138,18 @@ Website: https://sekondly.app
     };
 
     await emailTransporter.verify();
+    console.log('SMTP connection verified for welcome email');
+    
     await emailTransporter.sendMail(mailOptions);
     console.log(`Welcome email sent successfully to ${userEmail}`);
     return true;
   } catch (error) {
     console.error('Failed to send welcome email:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      code: error instanceof Error && 'code' in error ? error.code : undefined,
+      command: error instanceof Error && 'command' in error ? error.command : undefined
+    });
     return false;
   }
 }
@@ -181,7 +192,7 @@ Website: https://sekondly.app
     `.trim();
 
     const mailOptions = {
-      from: '"SeKondly Team" <admin@sekondly.app>',
+      from: `"SeKondly Team" <${process.env.EMAIL_USER || 'admin@sekondly.app'}>`,
       to: userEmail,
       subject: '🎉 Your SeKondly Account Has Been Approved!',
       text: approvalEmailContent,
@@ -1563,6 +1574,38 @@ Please respond to: ${validatedData.email}
         error: "SMTP connection failed",
         details: error instanceof Error ? error.message : String(error),
         code: error instanceof Error && 'code' in error ? error.code : undefined
+      });
+    }
+  });
+
+  // Test welcome email endpoint (for debugging)
+  app.post("/api/test-welcome-email", async (req, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
+      
+      if (!email || !firstName || !lastName) {
+        return res.status(400).json({ 
+          error: "email, firstName, and lastName are required" 
+        });
+      }
+      
+      console.log(`Testing welcome email for: ${firstName} ${lastName} <${email}>`);
+      
+      const result = await sendWelcomeEmail(email, firstName, lastName);
+      
+      res.json({ 
+        success: result,
+        message: result ? "Welcome email sent successfully" : "Welcome email failed to send",
+        email,
+        firstName,
+        lastName
+      });
+    } catch (error) {
+      console.error('Test welcome email error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to send test welcome email",
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });
