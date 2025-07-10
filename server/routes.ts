@@ -31,6 +31,246 @@ const supportTicketSchema = z.object({
   content: z.string().min(10, "Content must be at least 10 characters")
 });
 
+// Email sending utility functions
+async function sendWelcomeEmail(userEmail: string, firstName: string, lastName: string) {
+  try {
+    const welcomeEmailContent = `
+Dear Dr. ${firstName} ${lastName},
+
+Welcome to SeKondly! 🎉
+
+Thank you for joining our community of medical professionals. We're excited to have you as part of our platform where healthcare experts collaborate, share knowledge, and discuss complex medical cases.
+
+Here's what happens next:
+
+✅ Your account has been created successfully
+⏳ Our medical verification team is currently reviewing your credentials
+📧 You'll receive an email notification once your account is approved (typically 1-2 business days)
+🔐 Once approved, you can sign in and start contributing to our medical community
+
+What you can do once approved:
+• Share and discuss interesting medical cases
+• Get second opinions from specialists across different fields
+• Connect with fellow medical professionals
+• Access our growing library of educational cases
+• Participate in professional medical discussions
+
+If you have any questions or need assistance, please don't hesitate to contact our support team by visiting https://sekondly.app/static-landing.html
+
+Welcome to the future of medical collaboration!
+
+Best regards,
+The SeKondly Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
+
+    const mailOptions = {
+      from: '"SeKondly Team" <admin@sekondly.app>',
+      to: userEmail,
+      subject: 'Welcome to SeKondly - Your Account is Being Reviewed',
+      text: welcomeEmailContent,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #4ECDC4; margin: 0; font-size: 28px;">Welcome to SeKondly! 🎉</h1>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">Dear Dr. ${firstName} ${lastName},</p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for joining our community of medical professionals. We're excited to have you as part of our platform where healthcare experts collaborate, share knowledge, and discuss complex medical cases.
+            </p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">What happens next:</h3>
+              <ul style="line-height: 1.8; color: #333;">
+                <li>✅ Your account has been created successfully</li>
+                <li>⏳ Our medical verification team is currently reviewing your credentials</li>
+                <li>📧 You'll receive an email notification once your account is approved (typically 1-2 business days)</li>
+                <li>🔐 Once approved, you can sign in and start contributing to our medical community</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #e8f5f4; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">What you can do once approved:</h3>
+              <ul style="line-height: 1.8; color: #333;">
+                <li>Share and discuss interesting medical cases</li>
+                <li>Get second opinions from specialists across different fields</li>
+                <li>Connect with fellow medical professionals</li>
+                <li>Access our growing library of educational cases</li>
+                <li>Participate in professional medical discussions</li>
+              </ul>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              If you have any questions or need assistance, please don't hesitate to contact our support team by visiting 
+              <a href="https://sekondly.app/static-landing.html" style="color: #4ECDC4; text-decoration: none;">our support page</a>.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+              Welcome to the future of medical collaboration!
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Best regards,<br>
+              <strong>The SeKondly Team</strong>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <div style="text-align: center; color: #888; font-size: 14px;">
+              <p>This email was sent to ${userEmail}</p>
+              <p><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p>Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await emailTransporter.verify();
+    await emailTransporter.sendMail(mailOptions);
+    console.log(`Welcome email sent successfully to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    return false;
+  }
+}
+
+async function sendApprovalEmail(userEmail: string, firstName: string, lastName: string) {
+  try {
+    const approvalEmailContent = `
+Dear Dr. ${firstName} ${lastName},
+
+Great news! Your SeKondly account has been approved! 🎉
+
+Your credentials have been successfully verified by our medical team, and you now have full access to the SeKondly platform.
+
+You can now:
+✅ Sign in to your account at https://sekondly.app
+✅ Share and discuss medical cases with fellow professionals
+✅ Get second opinions from specialists across different medical fields
+✅ Connect with other healthcare professionals in your specialty
+✅ Access our growing library of educational cases
+
+Getting Started:
+1. Visit https://sekondly.app and sign in with your registered email and password
+2. Complete your profile to help colleagues find and connect with you
+3. Start exploring cases or share your first case with the community
+4. Connect with other professionals in your field
+
+We're excited to see you contribute to our growing community of medical professionals!
+
+If you need any help getting started or have questions, please visit our support page at https://sekondly.app/static-landing.html
+
+Welcome to SeKondly!
+
+Best regards,
+The SeKondly Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
+
+    const mailOptions = {
+      from: '"SeKondly Team" <admin@sekondly.app>',
+      to: userEmail,
+      subject: '🎉 Your SeKondly Account Has Been Approved!',
+      text: approvalEmailContent,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #28a745; margin: 0; font-size: 28px;">Account Approved! 🎉</h1>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">Dear Dr. ${firstName} ${lastName},</p>
+            
+            <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 4px;">
+              <p style="font-size: 18px; line-height: 1.6; color: #155724; margin: 0; font-weight: bold;">
+                Great news! Your SeKondly account has been approved!
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Your credentials have been successfully verified by our medical team, and you now have full access to the SeKondly platform.
+            </p>
+            
+            <div style="background-color: #e8f5f4; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">You can now:</h3>
+              <ul style="line-height: 1.8; color: #333;">
+                <li>✅ Sign in to your account at <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></li>
+                <li>✅ Share and discuss medical cases with fellow professionals</li>
+                <li>✅ Get second opinions from specialists across different medical fields</li>
+                <li>✅ Connect with other healthcare professionals in your specialty</li>
+                <li>✅ Access our growing library of educational cases</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">Getting Started:</h3>
+              <ol style="line-height: 1.8; color: #333;">
+                <li>Visit <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a> and sign in with your registered email and password</li>
+                <li>Complete your profile to help colleagues find and connect with you</li>
+                <li>Start exploring cases or share your first case with the community</li>
+                <li>Connect with other professionals in your field</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sekondly.app" style="background-color: #4ECDC4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                Sign In to SeKondly
+              </a>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              We're excited to see you contribute to our growing community of medical professionals!
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              If you need any help getting started or have questions, please visit our 
+              <a href="https://sekondly.app/static-landing.html" style="color: #4ECDC4; text-decoration: none;">support page</a>.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+              Welcome to SeKondly!
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Best regards,<br>
+              <strong>The SeKondly Team</strong>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <div style="text-align: center; color: #888; font-size: 14px;">
+              <p>This email was sent to ${userEmail}</p>
+              <p><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p>Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await emailTransporter.verify();
+    await emailTransporter.sendMail(mailOptions);
+    console.log(`Approval email sent successfully to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send approval email:', error);
+    return false;
+  }
+}
+
 // File upload configuration
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -916,6 +1156,19 @@ Please respond to: ${validatedData.email}
       const user = await storage.upsertUser(userData);
       console.log('User saved successfully:', user);
 
+      // Send welcome email
+      let welcomeEmailSent = false;
+      try {
+        welcomeEmailSent = await sendWelcomeEmail(userEmail, firstName, lastName);
+        if (welcomeEmailSent) {
+          console.log(`Welcome email sent to ${userEmail}`);
+        } else {
+          console.log(`Welcome email failed to send to ${userEmail}`);
+        }
+      } catch (emailError) {
+        console.error('Welcome email error:', emailError);
+      }
+
       // Handle credentials file if uploaded
       if (req.file) {
         console.log('Received credentials file:', req.file.originalname);
@@ -933,7 +1186,7 @@ Please respond to: ${validatedData.email}
         console.log('Document saved successfully:', document);
       }
 
-      res.json({ success: true, user });
+      res.json({ success: true, user, welcomeEmailSent });
     } catch (error) {
       console.error('Onboarding error:', error);
       res.status(500).json({ message: "Failed to create account" });
@@ -1093,8 +1346,37 @@ Please respond to: ${validatedData.email}
       const { userId } = req.params;
       const adminId = req.user?.id || "admin";
       
+      // Get user details before approval for email
+      const userToApprove = await storage.getUser(userId);
+      if (!userToApprove) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       await storage.approveUser(userId, adminId);
-      res.json({ message: "User approved successfully" });
+      
+      // Send approval email
+      let approvalEmailSent = false;
+      try {
+        if (userToApprove.email && userToApprove.firstName && userToApprove.lastName) {
+          approvalEmailSent = await sendApprovalEmail(
+            userToApprove.email, 
+            userToApprove.firstName, 
+            userToApprove.lastName
+          );
+          if (approvalEmailSent) {
+            console.log(`Approval email sent to ${userToApprove.email}`);
+          } else {
+            console.log(`Approval email failed to send to ${userToApprove.email}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('Approval email error:', emailError);
+      }
+      
+      res.json({ 
+        message: "User approved successfully", 
+        approvalEmailSent 
+      });
     } catch (error) {
       console.error("Error approving user:", error);
       res.status(500).json({ message: "Failed to approve user" });
