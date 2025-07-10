@@ -201,6 +201,7 @@ export class DatabaseStorage implements IStorage {
         author: users,
         isLikedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseLikes} WHERE ${caseLikes.caseId} = ${cases.id} AND ${caseLikes.userId} = ${userId})` : sql<boolean>`false`,
         isFavoritedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseFavorites} WHERE ${caseFavorites.caseId} = ${cases.id} AND ${caseFavorites.userId} = ${userId})` : sql<boolean>`false`,
+        isAuthorFollowedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${userFollows} WHERE ${userFollows.followerId} = ${userId} AND ${userFollows.followingId} = ${cases.authorId})` : sql<boolean>`false`,
       })
       .from(cases)
       .innerJoin(users, eq(cases.authorId, users.id))
@@ -210,7 +211,32 @@ export class DatabaseStorage implements IStorage {
       query.where(whereClause);
     }
 
-    return await query;
+    const allCases = await query;
+
+    // If user is specified, prioritize cases from users they follow
+    if (userId) {
+      const followingUsers = await this.getUserFollowing(userId);
+      const followingUserIds = new Set(followingUsers.map(user => user.id));
+
+      if (followingUserIds.size > 0) {
+        // Separate cases into two groups: from followed users and others
+        const casesFromFollowed: CaseWithAuthor[] = [];
+        const casesFromOthers: CaseWithAuthor[] = [];
+
+        allCases.forEach(caseItem => {
+          if (followingUserIds.has(caseItem.authorId)) {
+            casesFromFollowed.push(caseItem);
+          } else {
+            casesFromOthers.push(caseItem);
+          }
+        });
+
+        // Return followed users' cases first, then others (both already sorted by creation date)
+        return [...casesFromFollowed, ...casesFromOthers];
+      }
+    }
+
+    return allCases;
   }
 
   async getCase(id: number): Promise<CaseWithAuthor | undefined> {

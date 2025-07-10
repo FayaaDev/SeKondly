@@ -338,6 +338,7 @@ export type CaseWithAuthor = Case & {
   author: User;
   isLikedByUser?: boolean;
   userLikeId?: number;
+  isAuthorFollowedByUser?: boolean;
 };
 
 export type CommentWithAuthor = CaseComment & {

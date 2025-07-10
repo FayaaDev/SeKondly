@@ -819,21 +819,130 @@ After admin approves a user:
 - ✅ **NEW: Professional HTML email templates with responsive design**
 - ✅ **NEW: Automated user lifecycle email notifications**
 
+## 🧪 Testing Email Functionality
+
+### Test SMTP Connection
+```bash
+curl https://api.sekondly.app/api/test-smtp
+```
+
+### Test Welcome Email
+```bash
+curl -X POST https://api.sekondly.app/api/test-welcome-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "firstName": "Test",
+    "lastName": "User"
+  }'
+```
+
+The welcome email should be sent automatically when new users register through the onboarding process.
+
+## ⚠️ AWS SES Sandbox Limitations
+
+**CRITICAL**: AWS SES accounts start in "sandbox mode" which has significant restrictions that can cause email delivery failures.
+
+### Sandbox Restrictions:
+1. **Verified Recipients Only**: You can only send emails TO verified email addresses
+2. **Verified Senders Only**: You can only send emails FROM verified email addresses
+3. **Limited Send Rate**: 200 emails per 24-hour period
+4. **1 email per second**: Maximum send rate
+
+### Current Status:
+- ✅ Sender verified: `admin@sekondly.app`
+- ❌ Recipients must be verified individually OR account moved to production
+
+### Common Error Message:
+```
+554 Message rejected: Email address is not verified. 
+The following identities failed the check in region EU-NORTH-1: [recipient-email]
+```
+
+### Solutions:
+
+#### Option 1: Verify Individual Recipient Emails (Quick Fix for Testing)
+1. Log into AWS SES Console: https://console.aws.amazon.com/ses/
+2. Navigate to "Verified identities"
+3. Click "Create identity"
+4. Choose "Email address"
+5. Enter the recipient email address (e.g., `drfayaa@gmail.com`)
+6. Click "Create identity"
+7. Check the recipient's email inbox for verification email from AWS
+8. Click the verification link in the email
+9. Email address will show as "Verified" in AWS console
+
+#### Option 2: Request Production Access (Recommended for Live App)
+1. Log into AWS SES Console: https://console.aws.amazon.com/ses/
+2. Go to "Account dashboard"
+3. Look for sandbox mode notice and click "Request production access"
+4. Fill out the request form:
+   - **Use case description**: "Medical professional platform for sharing clinical cases and knowledge between doctors"
+   - **Website URL**: https://sekondly.app
+   - **Use case details**: "We need to send transactional emails including welcome messages, account approval notifications, and password reset emails to medical professionals who register on our platform"
+   - **Expected send volume**: Start with your estimated monthly user registrations
+   - **Compliance**: Confirm you handle unsubscribes and complaints properly
+5. Submit the request
+6. **Response time**: AWS typically responds within 24-48 hours
+7. Once approved, you can send to any email address
+
+#### Option 3: Test with Verified Emails Only (Immediate Solution)
+For immediate testing, modify the test endpoint to use verified emails:
+```bash
+curl -X POST https://api.sekondly.app/api/test-welcome-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@sekondly.app",
+    "firstName": "Test",
+    "lastName": "User"
+  }'
+```
+
+### Production Readiness Requirements:
+- ✅ **Move out of sandbox** before launching to real users
+- ✅ **Set up bounce/complaint handling** via SNS notifications
+- ✅ **Implement retry logic** for temporary email failures
+- ✅ **Monitor email reputation** and delivery rates
+- ✅ **Configure proper DNS records** (SPF, DKIM, DMARC) for domain
+
+### Verification Steps for Going Live:
+1. Request and receive AWS SES production access
+2. Update documentation to remove sandbox limitations
+3. Test with real user email addresses
+4. Set up monitoring for email delivery rates
+5. Implement proper error handling for different email failures
+
 ## 📋 Deployment Checklist
 
+### Pre-Deployment (AWS SES Setup)
+- [ ] **CRITICAL: Verify AWS SES is out of sandbox mode OR verify test recipient emails**
+- [ ] Confirm sender email `admin@sekondly.app` is verified in AWS SES
+- [ ] If in sandbox: verify recipient emails or request production access
+- [ ] Test email sending with verified addresses only
+
+### Application Deployment
 - [ ] Build application: `npm run build`
 - [ ] Upload `dist/` folder contents to server
 - [ ] Update server `.env` with production AWS SES credentials
 - [ ] Install dependencies: `npm install --production`
 - [ ] Restart Node.js application
+
+### Testing & Verification
 - [ ] Test SMTP connection: `/api/test-smtp`
-- [ ] **NEW: Test user registration welcome email**
-- [ ] **NEW: Test admin approval email (using admin panel)**
+- [ ] **Test welcome email with verified recipient: `/api/test-welcome-email`**
+- [ ] Test user registration welcome email (full flow)
+- [ ] Test admin approval email (using admin panel)
 - [ ] Test support form on landing page
 - [ ] Verify emails are received at admin@sekondly.app
-- [ ] **NEW: Verify welcome emails are received by new users**
-- [ ] **NEW: Verify approval emails are received when users are approved**
+- [ ] Verify welcome emails are received by new users
+- [ ] Verify approval emails are received when users are approved
 - [ ] Check fallback logging works if email fails
+
+### Post-Deployment (Production)
+- [ ] **Request AWS SES production access if not already done**
+- [ ] Set up email delivery monitoring
+- [ ] Configure bounce/complaint handling
+- [ ] Update documentation when sandbox restrictions are removed
 
 ## 🎉 Implementation Complete!
 

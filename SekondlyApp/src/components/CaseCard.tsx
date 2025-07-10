@@ -342,9 +342,16 @@ export default function CaseCard({
           </View>
           <View style={styles.authorDetails}>
             <View style={styles.authorNameRow}>
-              <Text style={styles.authorName}>
-                {caseData.author?.firstName} {caseData.author?.lastName}
-              </Text>
+              <View style={styles.nameWithIndicator}>
+                <Text style={styles.authorName}>
+                  {caseData.author?.firstName} {caseData.author?.lastName}
+                </Text>
+                {caseData.isAuthorFollowedByUser && (
+                  <View style={styles.followingIndicator}>
+                    <Ionicons name="star" size={12} color="#FFD700" />
+                  </View>
+                )}
+              </View>
               <View style={styles.badgesContainer}>
                 {(caseData.author as any)?.level && (
                   <View style={styles.levelBadge}>
@@ -474,6 +481,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
     marginRight: 8,
+  },
+  nameWithIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  followingIndicator: {
+    marginLeft: 4,
+    backgroundColor: "rgba(255, 215, 0, 0.1)",
+    borderRadius: 8,
+    padding: 2,
   },
   specialtyBadge: {
     backgroundColor: "#EBF4FF",

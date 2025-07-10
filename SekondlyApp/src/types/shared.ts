@@ -48,6 +48,7 @@ export type CaseWithAuthor = Case & {
   isLikedByUser?: boolean;
   userLikeId?: number;
   isFavoritedByUser?: boolean;
+  isAuthorFollowedByUser?: boolean;
   // Long case format fields - matching database schema
   format: 'short' | 'long';
   history: string; // Required for all cases
