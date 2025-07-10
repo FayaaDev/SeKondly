@@ -34,6 +34,7 @@ interface CaseForReview {
   specialty: string;
   format: 'short' | 'long';
   createdAt: string;
+  isHot: boolean;
   author: {
     id: string;
     firstName: string;
@@ -163,6 +164,20 @@ export default function AdminPanelScreen() {
     },
     onError: (error: any) => {
       Alert.alert('❌ Error', error.message || 'Failed to reject case');
+    },
+  });
+
+  const toggleHotCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest('POST', `/api/cases/${caseId}/hot`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
+      Alert.alert('🔥 Hot Status Updated', 'The case hot status has been updated.');
+    },
+    onError: (error: any) => {
+      Alert.alert('❌ Error', error.message || 'Failed to toggle hot status');
     },
   });
 
@@ -499,6 +514,21 @@ export default function AdminPanelScreen() {
                     >
                       <Ionicons name="eye" size={16} color="#4ECDC4" />
                       <Text style={styles.viewButtonText}>View Details</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      onPress={() => toggleHotCaseMutation.mutate(caseItem.id)}
+                      style={[styles.actionButton, caseItem.isHot ? styles.hotButton : styles.coolButton]}
+                      disabled={toggleHotCaseMutation.isPending}
+                    >
+                      <Ionicons 
+                        name={caseItem.isHot ? "flame" : "flame-outline"} 
+                        size={16} 
+                        color={caseItem.isHot ? "#FFFFFF" : "#FF3B30"} 
+                      />
+                      <Text style={[styles.viewButtonText, caseItem.isHot && { color: "#FFFFFF" }]}>
+                        {caseItem.isHot ? 'Hot' : 'Make Hot'}
+                      </Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -1304,5 +1334,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  hotButton: {
+    backgroundColor: '#FF3B30',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  coolButton: {
+    backgroundColor: '#F2F2F7',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
   },
 });

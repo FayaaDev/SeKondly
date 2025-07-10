@@ -1610,6 +1610,36 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Mark/unmark case as hot (admin only)
+  app.post("/api/cases/:id/hot", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = req.user?.id || "mock-user-1";
+      
+      if (isNaN(caseId)) {
+        return res.status(400).json({ message: "Invalid case ID" });
+      }
+      
+      const existingCase = await storage.getCase(caseId);
+      if (!existingCase) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      // Toggle hot status
+      const newHotStatus = !existingCase.isHot;
+      const updatedCase = await storage.updateCaseHotStatus(caseId, newHotStatus);
+      
+      res.json({ 
+        message: newHotStatus ? "Case marked as hot" : "Case unmarked as hot",
+        isHot: newHotStatus,
+        case: updatedCase
+      });
+    } catch (error) {
+      console.error("Error toggling hot status:", error);
+      res.status(500).json({ message: "Failed to toggle hot status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

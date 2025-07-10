@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
   ScrollView,
   StatusBar,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
 import { useCustomAlert } from "./CustomAlert";
+import { useAuth } from "../hooks/useAuth";
 import type { CaseWithAuthor } from "../types/shared";
 
 interface CaseCardProps {
@@ -57,10 +59,35 @@ export default function CaseCard({
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { showAlert, AlertComponent } = useCustomAlert();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Extract format info
   const isLongCase = caseData.format === 'long';
+  const isHot = caseData.isHot;
+  const isAdmin = user?.isAdmin;
+
+  // Pulsating animation for hot cases
+  useEffect(() => {
+    if (isHot) {
+      const pulsate = () => {
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.02,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]).start(() => pulsate());
+      };
+      pulsate();
+    }
+  }, [isHot, pulseAnim]);
 
   // Like mutation
   const likeMutation = useMutation({
@@ -130,6 +157,29 @@ export default function CaseCard({
         showAlert(
           "Error", 
           error.message || "Failed to hide specialty",
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
+      }
+    },
+  });
+
+  // Toggle hot case mutation (admin only)
+  const toggleHotMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/cases/${caseData.id}/hot`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+    },
+    onError: (error) => {
+      if (!handleAuthError(error)) {
+        showAlert(
+          "Error", 
+          error.message || "Failed to toggle hot status",
           [{ text: 'OK', onPress: () => {} }],
           'alert-circle',
           '#FF3B30'
@@ -320,10 +370,16 @@ export default function CaseCard({
 
   return (
     <TouchableOpacity 
-      style={styles.container} 
       onPress={onPress}
       activeOpacity={0.8}
     >
+      <Animated.View
+        style={[
+          styles.container,
+          isHot && styles.hotContainer,
+          isHot && { transform: [{ scale: pulseAnim }] }
+        ]}
+      >
       {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.authorInfo} onPress={handleProfilePress}>
@@ -405,6 +461,22 @@ export default function CaseCard({
           />
         </TouchableOpacity>
 
+        {isAdmin && (
+          <TouchableOpacity
+            style={[styles.actionButton, isHot && styles.hotActionButton]}
+            onPress={() => toggleHotMutation.mutate()}
+          >
+            <Ionicons
+              name={isHot ? "flame" : "flame-outline"}
+              size={20}
+              color={isHot ? "#FF3B30" : "#666"}
+            />
+            <Text style={[styles.actionText, isHot && styles.hotActionText]}>
+              {isHot ? "Hot" : "Hot"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={20} color="#666" />
         </TouchableOpacity>
@@ -420,6 +492,7 @@ export default function CaseCard({
       
       {/* Custom Alert Component */}
       <AlertComponent />
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -436,6 +509,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  hotContainer: {
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#FF3B30",
+    shadowColor: "#FF3B30",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   header: {
     flexDirection: "row",
@@ -666,6 +749,15 @@ const styles = StyleSheet.create({
   },
   actionTextActive: {
     color: "#4ECDC4",
+  },
+  hotActionButton: {
+    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    borderWidth: 1,
+    borderColor: "#FF3B30",
+  },
+  hotActionText: {
+    color: "#FF3B30",
+    fontWeight: "600",
   },
   imageContainer: {
     marginBottom: 12,

@@ -92,6 +92,7 @@ export const cases = pgTable("cases", {
 	systemicReview: text("systemic_review"),
 	examination: text(),
 	management: text(),
+	isHot: boolean("is_hot").default(false).notNull(),
 });
 
 export const userFollows = pgTable("user_follows", {

@@ -72,9 +72,10 @@ export type BoardCertification = typeof BOARD_CERTIFICATIONS[number];
  * Keep in sync with SekondlyApp/src/types/shared.ts
  */
 export const MEDICAL_LEVELS = [
+  "Medical Student",
+  "Intern",
   "Resident",
-  "Registrar",
-  "Senior Registrar", 
+  "Specialist",
   "Consultant"
 ] as const;
 

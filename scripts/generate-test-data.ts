@@ -80,18 +80,13 @@ const INSTITUTIONS = [
   "J International Hospital"
 ];
 
-const MEDICAL_BOARDS = [
-  " Internal Medicine",
-  " Surgery", 
-  " Pediatrics",
-  " Emergency Medicine",
-  " Radiology",
-  " Anesthesiology",
-  " Pathology",
-  " Psychiatry and Neurology",
-  " Orthopedic Surgery",
-  " Obstetrics and Gynecology"
-];
+const MEDICAL_LEVELS = [
+  "Medical Student",
+  "Intern",
+  "Resident",
+  "Specialist",
+  "Consultant"
+] as const;
 
 // Sample medical imaging URLs for test data
 const MEDICAL_IMAGES = {
@@ -249,13 +244,13 @@ const PROFILE_IMAGES = [
   "/Users/fayaa/SeKondly/uploads/2.png"
 ];
 
-function generateRandomUser() {
+function generateRandomUser(specificLevel?: string) {
   const firstName = getRandomElement(FIRST_NAMES);
   const lastName = getRandomElement(LAST_NAMES);
   const specialty = getRandomElement(MEDICAL_SPECIALTIES);
   const institution = getRandomElement(INSTITUTIONS);
-  const medicalBoard = getRandomElement(MEDICAL_BOARDS);
-  const profileImage = getRandomElement(PROFILE_IMAGES);
+  const level = specificLevel || getRandomElement(MEDICAL_LEVELS);
+  const profileImageUrl = getRandomElement(PROFILE_IMAGES);
   
   // Make email unique by adding timestamp
   const timestamp = Date.now();
@@ -269,7 +264,7 @@ function generateRandomUser() {
     firstName,
     lastName,
     phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-    medicalBoard,
+    level,
     fellowship: `${specialty} Fellowship`,
     experience: `${Math.floor(Math.random() * 20) + 5} years`,
     institution,
@@ -278,7 +273,7 @@ function generateRandomUser() {
     isAdmin: false,
     approvedAt: new Date(),
     approvedBy: "admin_system",
-    profileImage
+    profileImageUrl
   };
 }
 
@@ -315,12 +310,13 @@ function generateRandomCase(authorId: string, specialty: string, format: 'short'
     return {
       ...baseCase,
       chiefComplaint: generateChiefComplaint(specialty),
+      historyOfPresentIllness: generateHistoryOfPresentIllness(specialty),
       pastMedicalHistory: generatePastMedicalHistory(),
       familyHistory: generateFamilyHistory(),
       drugHistory: generateDrugHistory(),
-      physicalExam: generatePhysicalExam(specialty),
-      assessment: generateAssessment(specialty),
-      plan: generatePlan(specialty)
+      systemicReview: generateSystemicReview(),
+      examination: generateExamination(specialty),
+      management: generateManagement(specialty)
     };
   }
 
@@ -360,6 +356,29 @@ function generateChiefComplaint(specialty: string): string {
   return getRandomElement(specialtyComplaints);
 }
 
+function generateHistoryOfPresentIllness(specialty: string): string {
+  const histories = {
+    "Cardiology": [
+      "Patient developed chest pain 2 hours ago while at rest. Pain is crushing in nature, radiating to left arm and jaw. Associated with nausea and diaphoresis. No shortness of breath initially, but now experiencing mild dyspnea.",
+      "Started with palpitations and shortness of breath during exercise. Symptoms have progressively worsened over the past week. Patient reports orthopnea and paroxysmal nocturnal dyspnea.",
+      "Sudden onset of chest pain followed by loss of consciousness while climbing stairs. Regained consciousness within seconds. No preceding symptoms."
+    ],
+    "Neurology": [
+      "Patient was speaking normally when suddenly developed difficulty finding words. Left-sided weakness began shortly after. No loss of consciousness. Symptoms have remained stable since onset.",
+      "Severe headache began abruptly while patient was watching TV. Described as 'worst headache of my life.' Associated with photophobia and mild neck stiffness.",
+      "Witnessed tonic-clonic seizure lasting approximately 2 minutes. Patient was confused post-ictally for 30 minutes. No previous history of seizures."
+    ],
+    "Default": [
+      "Patient presents with acute onset of symptoms that have been progressively worsening. Initial presentation was mild but has become more concerning over time.",
+      "Symptoms began gradually and have been associated with various other complaints. Patient reports significant impact on daily activities.",
+      "Clinical presentation is consistent with acute medical condition requiring immediate attention and further evaluation."
+    ]
+  };
+  
+  const specialtyHistories = histories[specialty as keyof typeof histories] || histories["Default"];
+  return getRandomElement(specialtyHistories);
+}
+
 function generatePastMedicalHistory(): string {
   const histories = [
     "Hypertension for 10 years, well controlled on ACE inhibitor. Type 2 diabetes mellitus diagnosed 5 years ago, managed with metformin. No known allergies.",
@@ -396,7 +415,17 @@ function generateDrugHistory(): string {
   return getRandomElement(histories);
 }
 
-function generatePhysicalExam(specialty: string): string {
+function generateSystemicReview(): string {
+  const reviews = [
+    "Cardiovascular: Denies chest pain, palpitations, or edema. Respiratory: No shortness of breath, cough, or wheezing. Gastrointestinal: Normal appetite, no nausea or vomiting. Genitourinary: No urinary frequency or urgency. Neurological: No headaches, dizziness, or weakness. Musculoskeletal: No joint pain or stiffness.",
+    "Constitutional: Reports fatigue and weight loss. Cardiovascular: Occasional palpitations. Respiratory: Mild shortness of breath on exertion. Gastrointestinal: Decreased appetite, no abdominal pain. Genitourinary: Normal urination. Neurological: Occasional headaches. Musculoskeletal: Generalized muscle weakness.",
+    "All systems reviewed and negative except for presenting complaint. Patient denies fever, chills, night sweats, or unintentional weight changes. No skin rashes or lesions noted.",
+    "Positive for fatigue and decreased exercise tolerance. Negative for fever, night sweats, or weight changes. All other systems negative."
+  ];
+  return getRandomElement(reviews);
+}
+
+function generateExamination(specialty: string): string {
   const exams = {
     "Cardiology": `Vital signs: BP 140/90, HR 88, RR 18, O2 sat 96% on room air. General appearance: Alert, well-developed, in mild distress.
 HEENT: Normocephalic, atraumatic. PERRLA. No JVD appreciated.
@@ -427,30 +456,9 @@ Neurological: Non-focal examination.`
   return specialtyExam;
 }
 
-function generateAssessment(specialty: string): string {
-  const assessments = {
-    "Cardiology": [
-      "Acute ST-elevation myocardial infarction, likely RCA territory. Cardiogenic shock. Will need emergent cardiac catheterization and primary PCI.",
-      "Heart failure with reduced ejection fraction, acute exacerbation. Likely precipitated by medication non-compliance. NYHA Class III symptoms.",
-      "Atrial fibrillation with rapid ventricular response. New onset vs. previously undiagnosed. Requires rate control and anticoagulation consideration."
-    ],
-    "Neurology": [
-      "Acute ischemic stroke, right MCA territory with left hemiparesis and aphasia. NIHSS score 15. Candidate for thrombolytic therapy.",
-      "New onset seizures, likely partial complex. Requires further workup with EEG and MRI. Consider metabolic vs. structural causes.",
-      "Multiple sclerosis relapse with new neurological deficits. Will need high-dose corticosteroids and MRI to assess disease progression."
-    ],
-    "Default": [
-      "Working diagnosis based on clinical presentation and examination findings. Requires further diagnostic workup to confirm.",
-      "Multiple differential diagnoses considered. Additional testing needed to narrow the diagnosis and guide treatment.",
-      "Clinical presentation consistent with suspected diagnosis. Treatment plan tailored to patient's specific needs and comorbidities."
-    ]
-  };
 
-  const specialtyAssessments = assessments[specialty as keyof typeof assessments] || assessments["Default"];
-  return getRandomElement(specialtyAssessments);
-}
 
-function generatePlan(specialty: string): string {
+function generateManagement(specialty: string): string {
   const plans = {
     "Cardiology": [
       "1. Emergent cardiac catheterization for primary PCI\n2. Dual antiplatelet therapy (aspirin + clopidogrel)\n3. High-intensity statin therapy\n4. ACE inhibitor once hemodynamically stable\n5. Beta-blocker when appropriate\n6. Cardiac rehabilitation referral\n7. Lifestyle counseling and smoking cessation",
@@ -480,88 +488,72 @@ async function generateTestData() {
     const realCases = loadRealCases();
     console.log(`📋 Found ${realCases.length} real cases to import`);
     
-    // Generate exactly 8 users and 8 cases
-    const userCount = 8;
-    const totalCasesToGenerate = 8;
-    const casesPerUser = 1; // Each user will get 1 case
-    const longCasesToGenerate = 0; // No additional long cases
-    const shortCasesWithoutImages = 0; // No additional short cases without images
+    // Generate exactly 10 users and 20 cases (10 short, 10 long)
+    const userCount = 10;
+    const totalCasesToGenerate = 20;
+    const shortCasesToGenerate = 10;
+    const longCasesToGenerate = 10;
+    
+    // Define specific medical levels distribution
+    const levelDistribution = [
+      ...Array(4).fill("Consultant"),
+      ...Array(3).fill("Specialist"),
+      ...Array(2).fill("Resident"),
+      ...Array(1).fill("Intern")
+    ];
     
     console.log(`📝 Generating ${userCount} users and ${totalCasesToGenerate} cases...`);
     const generatedUsers: (typeof users.$inferSelect)[] = [];
     
     for (let i = 0; i < userCount; i++) {
-      const userData = generateRandomUser();
+      const userData = generateRandomUser(levelDistribution[i]);
       try {
         const [insertedUser] = await db.insert(users).values(userData).returning();
         generatedUsers.push(insertedUser);
-        console.log(`✅ Created user: Dr. ${userData.firstName} ${userData.lastName} (${userData.specialty})`);
+        console.log(`✅ Created user: Dr. ${userData.firstName} ${userData.lastName} (${userData.specialty}) - ${userData.level}`);
       } catch (error) {
         console.error(`❌ Failed to create user: Dr. ${userData.firstName} ${userData.lastName}`, error);
       }
     }
     
-    console.log(`📋 Generating ${totalCasesToGenerate} cases...`);
+    console.log(`📋 Generating ${totalCasesToGenerate} cases (${shortCasesToGenerate} short, ${longCasesToGenerate} long)...`);
     let totalCases = 0;
     
-    // Generate exactly 8 cases - one for each user (without images)
-    for (let i = 0; i < userCount && totalCases < totalCasesToGenerate; i++) {
-      const user = generatedUsers[i];
-      if (user) { // Check if user exists
-        const caseData = generateRandomCase(user.id, user.specialty!, 'short', false); // No images
-        try {
-          await db.insert(cases).values(caseData);
-          totalCases++;
-          console.log(`  📄 Created case ${totalCases}: "${caseData.title}" by Dr. ${user.firstName} ${user.lastName} (${user.specialty})`);
-        } catch (error) {
-          console.error(`  ❌ Failed to create case for Dr. ${user.firstName} ${user.lastName}`, error);
-        }
-      } else {
-        console.log(`  ⚠️  Skipping case creation for missing user at index ${i}`);
+    // Generate 10 short cases
+    for (let i = 0; i < shortCasesToGenerate && totalCases < totalCasesToGenerate; i++) {
+      const randomUser = getRandomElement(generatedUsers);
+      const caseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'short', false);
+      
+      try {
+        await db.insert(cases).values(caseData);
+        totalCases++;
+        console.log(`  📄 Created SHORT case ${totalCases}: "${caseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
+      } catch (error) {
+        console.error(`  ❌ Failed to create short case for Dr. ${randomUser.firstName} ${randomUser.lastName}`, error);
       }
     }
     
-    console.log(`\n🔬 Generating ${longCasesToGenerate} long cases...`);
-    let longCasesCreated = 0;
-    
-    for (let i = 0; i < longCasesToGenerate; i++) {
+    // Generate 10 long cases
+    for (let i = 0; i < longCasesToGenerate && totalCases < totalCasesToGenerate; i++) {
       const randomUser = getRandomElement(generatedUsers);
-      const longCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'long', false); // No images
+      const caseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'long', false);
       
       try {
-        await db.insert(cases).values(longCaseData);
-        longCasesCreated++;
+        await db.insert(cases).values(caseData);
         totalCases++;
-        console.log(`  🔬 Created LONG case: "${longCaseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
+        console.log(`  � Created LONG case ${totalCases}: "${caseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
       } catch (error) {
         console.error(`  ❌ Failed to create long case for Dr. ${randomUser.firstName} ${randomUser.lastName}`, error);
-      }
-    }
-    
-    console.log(`\n📄 Generating ${shortCasesWithoutImages} short cases without images...`);
-    let shortCasesWithoutImagesCreated = 0;
-    
-    for (let i = 0; i < shortCasesWithoutImages; i++) {
-      const randomUser = getRandomElement(generatedUsers);
-      const shortCaseData = generateRandomCase(randomUser.id, randomUser.specialty!, 'short', false);
-      
-      try {
-        await db.insert(cases).values(shortCaseData);
-        shortCasesWithoutImagesCreated++;
-        totalCases++;
-        console.log(`  📄 Created SHORT case (no images): "${shortCaseData.title}" by Dr. ${randomUser.firstName} ${randomUser.lastName} (${randomUser.specialty})`);
-      } catch (error) {
-        console.error(`  ❌ Failed to create short case without images for Dr. ${randomUser.firstName} ${randomUser.lastName}`, error);
       }
     }
     
     console.log(`\n🎉 Test data generation complete!`);
     console.log(`📊 Summary:`);
     console.log(`   - Users created: ${userCount}`);
-    console.log(`   - Cases created: ${totalCases}`);
+    console.log(`   - Cases created: ${totalCases} (${shortCasesToGenerate} short, ${longCasesToGenerate} long)`);
     console.log(`   - Specialties covered: ${[...new Set(generatedUsers.map(u => u.specialty))].length}`);
     
-    console.log(`\n🔍 Specialty breakdown:`);
+    console.log(`\n� Specialty breakdown:`);
     const specialtyCount = generatedUsers.reduce((acc, user) => {
       acc[user.specialty!] = (acc[user.specialty!] || 0) + 1;
       return acc;
@@ -569,6 +561,16 @@ async function generateTestData() {
     
     Object.entries(specialtyCount).forEach(([specialty, count]) => {
       console.log(`   - ${specialty}: ${count} doctors`);
+    });
+    
+    console.log(`\n� Level breakdown:`);
+    const levelCount = generatedUsers.reduce((acc, user) => {
+      acc[user.level!] = (acc[user.level!] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    Object.entries(levelCount).forEach(([level, count]) => {
+      console.log(`   - ${level}: ${count} doctors`);
     });
   } catch (error) {
     console.error("❌ Error generating test data:", error);
@@ -584,12 +586,16 @@ interface RealCaseData {
   format?: 'short' | 'long';
   imageUrls?: string[];
   chiefComplaint?: string;
+  historyOfPresentIllness?: string;
   pastMedicalHistory?: string;
   familyHistory?: string;
   drugHistory?: string;
-  physicalExam?: string;
-  assessment?: string;
-  plan?: string;
+  systemicReview?: string;
+  physicalExam?: string; // Will be mapped to examination
+  examination?: string;
+  assessment?: string; // Will be mapped to management
+  plan?: string; // Will be mapped to management
+  management?: string;
 }
 
 // Function to load real cases from JSON file
@@ -628,16 +634,17 @@ function createCaseFromRealData(realCase: RealCaseData, authorId: string) {
     ...(realCase.pastMedicalHistory && { pastMedicalHistory: realCase.pastMedicalHistory }),
     ...(realCase.familyHistory && { familyHistory: realCase.familyHistory }),
     ...(realCase.drugHistory && { drugHistory: realCase.drugHistory }),
-    ...(realCase.physicalExam && { physicalExam: realCase.physicalExam }),
-    ...(realCase.assessment && { assessment: realCase.assessment }),
-    ...(realCase.plan && { plan: realCase.plan })
+    ...(realCase.physicalExam && { examination: realCase.physicalExam }), // Map physicalExam to examination
+    ...(realCase.assessment && { management: realCase.assessment }), // Map assessment to management
+    ...(realCase.plan && { management: realCase.plan }) // Map plan to management
   };
 }
 
 // Run the script
 generateTestData()
   .then(() => {
-    console.log("\n✨ All done! You can now test the vertical pager view with realistic data.");
+    console.log("\n✨ All done! Generated 10 users with 20 cases (10 short, 10 long) for testing.");
+    console.log("   👨‍⚕️ User distribution: 4 Consultants, 3 Specialists, 2 Residents, 1 Intern");
     process.exit(0);
   })
   .catch((error) => {

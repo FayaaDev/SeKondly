@@ -41,6 +41,7 @@ export interface IStorage {
   getUserCases(userId: string): Promise<CaseWithAuthor[]>;
   createCase(caseData: InsertCase): Promise<CaseWithAuthor>;
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
+  updateCaseHotStatus(id: number, isHot: boolean): Promise<Case>;
   deleteCase(id: number): Promise<void>;
   incrementCaseViews(id: number): Promise<void>;
   
@@ -198,6 +199,7 @@ export class DatabaseStorage implements IStorage {
         systemicReview: cases.systemicReview,
         examination: cases.examination,
         management: cases.management,
+        isHot: cases.isHot,
         author: users,
         isLikedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseLikes} WHERE ${caseLikes.caseId} = ${cases.id} AND ${caseLikes.userId} = ${userId})` : sql<boolean>`false`,
         isFavoritedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseFavorites} WHERE ${caseFavorites.caseId} = ${cases.id} AND ${caseFavorites.userId} = ${userId})` : sql<boolean>`false`,
@@ -271,6 +273,7 @@ export class DatabaseStorage implements IStorage {
         systemicReview: cases.systemicReview,
         examination: cases.examination,
         management: cases.management,
+        isHot: cases.isHot,
         author: users,
       })
       .from(cases)
@@ -308,6 +311,7 @@ export class DatabaseStorage implements IStorage {
           systemicReview: cases.systemicReview,
           examination: cases.examination,
           management: cases.management,
+          isHot: cases.isHot,
           author: users,
         })
         .from(cases)
@@ -374,6 +378,7 @@ export class DatabaseStorage implements IStorage {
         systemicReview: cases.systemicReview,
         examination: cases.examination,
         management: cases.management,
+        isHot: cases.isHot,
         author: users,
       })
       .from(cases)
@@ -394,6 +399,15 @@ export class DatabaseStorage implements IStorage {
     const [updatedCase] = await db
       .update(cases)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(cases.id, id))
+      .returning();
+    return updatedCase;
+  }
+
+  async updateCaseHotStatus(id: number, isHot: boolean): Promise<Case> {
+    const [updatedCase] = await db
+      .update(cases)
+      .set({ isHot, updatedAt: new Date() })
       .where(eq(cases.id, id))
       .returning();
     return updatedCase;
@@ -542,6 +556,7 @@ export class DatabaseStorage implements IStorage {
         systemicReview: cases.systemicReview,
         examination: cases.examination,
         management: cases.management,
+        isHot: cases.isHot,
         author: users,
       })
       .from(caseFavorites)
@@ -683,6 +698,7 @@ export class DatabaseStorage implements IStorage {
         systemicReview: cases.systemicReview,
         examination: cases.examination,
         management: cases.management,
+        isHot: cases.isHot,
         author: users,
       })
       .from(cases)

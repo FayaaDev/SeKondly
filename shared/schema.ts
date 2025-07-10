@@ -74,6 +74,7 @@ export const cases = pgTable("cases", {
   systemicReview: text("systemic_review"),
   examination: text("examination"),
   management: text("management"),
+  isHot: boolean("is_hot").default(false).notNull(),
 });
 
 // Case likes table
