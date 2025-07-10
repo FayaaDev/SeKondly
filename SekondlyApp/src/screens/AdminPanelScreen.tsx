@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Modal, Linking } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from '../lib/queryClient';
 import { API_BASE_URL } from '../config/api';
@@ -53,6 +54,7 @@ export default function AdminPanelScreen() {
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showCaseDetailModal, setShowCaseDetailModal] = useState(false);
   const { user, isLoading } = useAuth();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
 
   // Queries
@@ -194,7 +196,14 @@ export default function AdminPanelScreen() {
       
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#4ECDC4" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Admin Panel</Text>
+        <View style={styles.headerSpacer} />
       </View>
       
       {/* Tab Selector */}
@@ -770,17 +779,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
+  },
   headerTitle: {
     fontSize: 22,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
+    flex: 1,
+  },
+  headerSpacer: {
+    width: 40, // Same width as back button to center the title
   },
   tabContainer: {
     flexDirection: 'row',

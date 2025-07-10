@@ -280,14 +280,29 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Case submission failed:', response.status, errorText);
+        
         let errorMessage = 'Failed to create case';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If not JSON, use the text as error message
-          errorMessage = errorText || errorMessage;
+        
+        // Handle specific error cases
+        if (response.status === 413) {
+          errorMessage = 'One or more images are too large. Please try uploading smaller images or reduce the number of images.';
+        } else if (response.status === 400) {
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || 'Invalid request. Please check your case details.';
+          } catch (e) {
+            errorMessage = 'Invalid request. Please check your case details.';
+          }
+        } else {
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If not JSON, use the text as error message
+            errorMessage = errorText || errorMessage;
+          }
         }
+        
         throw new Error(errorMessage);
       }
       
@@ -322,9 +337,19 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     },
     onError: (error: any) => {
       console.error('Case submission error:', error);
+      
+      let errorTitle = 'Error';
+      let errorMessage = error.message || 'Failed to create case';
+      
+      // Provide helpful suggestions based on the error
+      if (error.message && error.message.includes('too large')) {
+        errorTitle = 'Images Too Large';
+        errorMessage = error.message + '\n\nTips:\n• Try taking new photos with lower quality\n• Use image compression apps\n• Remove some images and try again';
+      }
+      
       showAlert(
-        'Error', 
-        error.message || 'Failed to create case',
+        errorTitle, 
+        errorMessage,
         [{ text: 'OK', onPress: () => {} }],
         'alert-circle',
         '#FF3B30'
@@ -383,17 +408,35 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    showAlert(
-      'Select Image Source',
-      'Choose how you want to add an image',
-      [
-        { text: 'Camera', onPress: openCamera },
-        { text: 'Photo Library', onPress: openImageLibrary },
-        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
-      ],
-      'camera',
-      '#4ECDC4'
-    );
+    // Directly open photo library
+    openImageLibrary();
+  };
+
+  const validateImageSize = async (uri: string): Promise<boolean> => {
+    try {
+      // Get file info to check size
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const sizeInMB = blob.size / (1024 * 1024);
+      
+      // Limit to 4MB per image (conservative limit to avoid 413 errors)
+      if (sizeInMB > 4) {
+        showAlert(
+          'Image Too Large',
+          `This image is ${sizeInMB.toFixed(1)}MB. Please select an image smaller than 4MB.\n\nTips:\n• Take a new photo with lower quality\n• Use the built-in image editor to crop\n• Try a different image`,
+          [{ text: 'OK', onPress: () => {} }],
+          'image',
+          '#FF9500'
+        );
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error validating image size:', error);
+      // If we can't check the size, allow it and let the server handle it
+      return true;
+    }
   };
 
   const openCamera = async () => {
@@ -401,11 +444,18 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       mediaTypes: 'images',
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.5, // Further reduced quality for smaller file size
     });
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
+      
+      // Validate image size before adding
+      const isValidSize = await validateImageSize(asset.uri);
+      if (!isValidSize) {
+        return;
+      }
+      
       const imageAsset: ImageAsset = {
         uri: asset.uri,
         type: 'image/jpeg',
@@ -421,16 +471,41 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       mediaTypes: 'images',
       allowsMultipleSelection: true,
       selectionLimit: remainingSlots,
-      quality: 0.8,
+      quality: 0.5, // Further reduced quality for smaller file size
     });
 
     if (!result.canceled) {
-      const newImages: ImageAsset[] = result.assets.map((asset, index) => ({
-        uri: asset.uri,
-        type: 'image/jpeg',
-        name: `image_${Date.now()}_${index}.jpg`,
-      }));
-      setSelectedImages(prev => [...prev, ...newImages]);
+      const validImages: ImageAsset[] = [];
+      
+      // Validate each selected image
+      for (let i = 0; i < result.assets.length; i++) {
+        const asset = result.assets[i];
+        const isValidSize = await validateImageSize(asset.uri);
+        
+        if (isValidSize) {
+          validImages.push({
+            uri: asset.uri,
+            type: 'image/jpeg',
+            name: `image_${Date.now()}_${i}.jpg`,
+          });
+        }
+      }
+      
+      if (validImages.length > 0) {
+        setSelectedImages(prev => [...prev, ...validImages]);
+      }
+      
+      // Show message if some images were rejected
+      if (validImages.length < result.assets.length) {
+        const rejectedCount = result.assets.length - validImages.length;
+        showAlert(
+          'Some Images Skipped',
+          `${rejectedCount} image(s) were too large and not added. ${validImages.length} image(s) were successfully added.`,
+          [{ text: 'OK', onPress: () => {} }],
+          'information-circle',
+          '#FF9500'
+        );
+      }
     }
   };
 
@@ -949,7 +1024,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                   textAlign: 'center',
                   marginTop: 4,
                 }}>
-                  Up to 3 images
+                  Up to 3 images (max 4MB each)
                 </Text>
               </TouchableOpacity>
 

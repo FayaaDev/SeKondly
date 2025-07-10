@@ -893,7 +893,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </View>
             
             <Text style={styles.accountReviewText}>
-              Your account has been submitted for review. You will receive an SMS once your account is approved.
+              Your account has been submitted for review. You will receive an Email once your account is approved.
             </Text>
             
             <TouchableOpacity
