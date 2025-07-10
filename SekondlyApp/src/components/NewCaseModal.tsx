@@ -91,6 +91,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const [showSpecialtySuggestions, setShowSpecialtySuggestions] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
+  const [showDraftSavedMessage, setShowDraftSavedMessage] = useState(false);
   const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
@@ -98,6 +99,8 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   // Load draft on modal open
   useEffect(() => {
     if (isOpen) {
+      // Reset form first, then load draft
+      resetForm();
       loadDraft();
     }
   }, [isOpen]);
@@ -146,7 +149,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const saveDraft = async () => {
     try {
       if (!title.trim() && !history.trim() && !chiefComplaint.trim()) {
-        Alert.alert('Info', 'Nothing to save as draft');
+        showAlert(
+          'Nothing to Save',
+          'Please add some content before saving as draft.',
+          [{ text: 'OK', onPress: () => {} }],
+          'information-circle',
+          '#FF9500'
+        );
         return;
       }
 
@@ -173,11 +182,18 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       };
 
       await StorageService.setDraftCase(draftData);
-      Alert.alert('Success', 'Draft saved successfully');
+      showBriefMessage('Draft saved successfully');
       setHasDraft(true);
+      showBriefMessage('Draft saved successfully.');
     } catch (error) {
       console.error('Error saving draft:', error);
-      Alert.alert('Error', 'Failed to save draft');
+      showAlert(
+        'Save Failed',
+        'Unable to save draft. Please try again.',
+        [{ text: 'OK', onPress: () => {} }],
+        'alert-circle',
+        '#FF3B30'
+      );
     }
   };
 
@@ -190,19 +206,60 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     }
   };
 
+  const clearDraftAndReset = async () => {
+    showAlert(
+      'Clear Draft',
+      'Are you sure you want to clear your draft and start fresh? This action cannot be undone.',
+      [
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        { 
+          text: 'Clear', 
+          onPress: async () => {
+            await clearDraft();
+            resetForm();
+            showBriefMessage('Draft cleared successfully');
+          },
+          style: 'destructive'
+        },
+      ],
+      'trash',
+      '#FF3B30'
+    );
+  };
+
   const handleClose = () => {
-    // Auto-save draft if there's content
-    if ((title.trim() || history.trim()) && !hasDraft) {
-      Alert.alert(
-        'Save Draft?',
-        'Would you like to save your progress as a draft?',
+    // Check if there's any content that could be saved as draft
+    const hasContent = title.trim() || history.trim() || chiefComplaint.trim() || 
+                      historyOfPresentIllness.trim() || pastMedicalHistory.trim() || 
+                      familyHistory.trim() || drugHistory.trim() || systemicReview.trim() || 
+                      examination.trim() || management.trim() || selectedImages.length > 0;
+    
+    // Auto-save draft if there's content and no existing draft
+    if (hasContent && !hasDraft) {
+      showAlert(
+        'Save Progress?',
+        'You have unsaved changes. Would you like to save them as a draft?',
         [
-          { text: 'Discard', style: 'destructive', onPress: onClose },
-          { text: 'Save Draft', onPress: async () => {
-            await saveDraft();
-            onClose();
-          }},
-        ]
+          { 
+            text: 'Discard', 
+            onPress: async () => {
+              // Clear any existing draft and reset form
+              await clearDraft();
+              resetForm();
+              onClose();
+            },
+            style: 'destructive'
+          },
+          { 
+            text: 'Save Draft', 
+            onPress: async () => {
+              await saveDraft();
+              onClose();
+            }
+          },
+        ],
+        'save',
+        '#FF9500'
       );
     } else {
       onClose();
@@ -259,8 +316,9 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       // Clear draft after successful submission
       await clearDraft();
       
-      onClose();
+      // Reset form first, then close modal
       resetForm();
+      onClose();
     },
     onError: (error: any) => {
       console.error('Case submission error:', error);
@@ -292,12 +350,19 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     setShowSpecialtySuggestions(false);
     setHasDraft(false);
     setDeclarationAccepted(false);
+    setShowDraftSavedMessage(false);
   };
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to upload images.');
+      showAlert(
+        'Permission Required',
+        'Camera roll access is needed to upload images. Please enable it in your device settings.',
+        [{ text: 'OK', onPress: () => {} }],
+        'camera',
+        '#FF9500'
+      );
       return false;
     }
     return true;
@@ -305,21 +370,29 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
 
   const handleImagePicker = async () => {
     if (selectedImages.length >= 3) {
-      Alert.alert('Maximum images', 'You can upload up to 3 images per case.');
+      showAlert(
+        'Maximum Images Reached',
+        'You can upload up to 3 images per case.',
+        [{ text: 'OK', onPress: () => {} }],
+        'image',
+        '#FF9500'
+      );
       return;
     }
 
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    Alert.alert(
-      'Select Image',
+    showAlert(
+      'Select Image Source',
       'Choose how you want to add an image',
       [
         { text: 'Camera', onPress: openCamera },
         { text: 'Photo Library', onPress: openImageLibrary },
-        { text: 'Cancel', style: 'cancel' },
-      ]
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+      ],
+      'camera',
+      '#4ECDC4'
     );
   };
 
@@ -507,12 +580,31 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Error', 'Unable to open the document. Please check your internet connection.');
+        showAlert(
+          'Connection Error',
+          'Unable to open the document. Please check your internet connection and try again.',
+          [{ text: 'OK', onPress: () => {} }],
+          'globe',
+          '#FF3B30'
+        );
       }
     } catch (error) {
       console.error('Error opening patient rights document:', error);
-      Alert.alert('Error', 'Unable to open the document.');
+      showAlert(
+        'Error',
+        'Unable to open the document. Please try again later.',
+        [{ text: 'OK', onPress: () => {} }],
+        'alert-circle',
+        '#FF3B30'
+      );
     }
+  };
+
+  const showBriefMessage = (message: string) => {
+    setShowDraftSavedMessage(true);
+    setTimeout(() => {
+      setShowDraftSavedMessage(false);
+    }, 2000); // Show for 2 seconds
   };
 
   return (
@@ -523,6 +615,35 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+          {/* Brief Message Notification */}
+          {showDraftSavedMessage && (
+            <View style={{
+              position: 'absolute',
+              top: Platform.OS === 'ios' ? 100 : 60,
+              left: 20,
+              right: 20,
+              backgroundColor: '#4ECDC4',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              zIndex: 1000,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}>
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                fontWeight: '500',
+                textAlign: 'center',
+              }}>
+                Draft saved successfully
+              </Text>
+            </View>
+          )}
+          
           {/* Header */}
           <View style={{
             flexDirection: 'row',
@@ -552,20 +673,31 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                 New Case
               </Text>
               {hasDraft && (
-                <View style={{
-                  backgroundColor: '#FF9500',
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 4,
-                }}>
-                  <Text style={{
-                    fontSize: 10,
-                    color: '#FFFFFF',
-                    fontWeight: '600',
+                <>
+                  <View style={{
+                    backgroundColor: '#FF9500',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
                   }}>
-                    DRAFT
-                  </Text>
-                </View>
+                    <Text style={{
+                      fontSize: 10,
+                      color: '#FFFFFF',
+                      fontWeight: '600',
+                    }}>
+                      DRAFT
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={clearDraftAndReset}>
+                    <Text style={{
+                      fontSize: 12,
+                      color: '#FF3B30',
+                      fontWeight: '500',
+                    }}>
+                      Clear
+                    </Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
             
