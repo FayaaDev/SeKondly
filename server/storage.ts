@@ -218,7 +218,13 @@ export class DatabaseStorage implements IStorage {
       const followingUsers = await this.getUserFollowing(userId);
       const followingUserIds = new Set(followingUsers.map(user => user.id));
 
-      if (followingUserIds.size > 0) {
+      // If user is following less than 10 users, return all cases by recency (no prioritization)
+      if (followingUserIds.size < 10) {
+        return allCases; // Already sorted by creation date
+      }
+
+      // For users following 10+ people, prioritize followed users' cases
+      if (followingUserIds.size >= 10) {
         // Separate cases into two groups: from followed users and others
         const casesFromFollowed: CaseWithAuthor[] = [];
         const casesFromOthers: CaseWithAuthor[] = [];

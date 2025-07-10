@@ -562,15 +562,23 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
 
   const handleSpecialtyInputFocus = () => {
     setShowSpecialtySuggestions(specialtyInput.length > 0);
+    // Scroll to the specialty section with some extra space for the dropdown
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd();
-    }, 300);
+      scrollViewRef.current?.scrollToEnd(true);
+    }, 100);
   };
 
   const selectSpecialty = (specialty: string) => {
     setSelectedSpecialty(specialty);
     setSpecialtyInput(specialty);
     setShowSpecialtySuggestions(false);
+  };
+
+  const addCustomSpecialty = () => {
+    if (specialtyInput.trim()) {
+      setSelectedSpecialty(specialtyInput.trim());
+      setShowSpecialtySuggestions(false);
+    }
   };
 
   const openPatientRightsDocument = async () => {
@@ -737,13 +745,10 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             }}
             keyboardShouldPersistTaps="handled"
             enableOnAndroid={true}
-            extraScrollHeight={20}
-            onTouchStart={() => {
-              if (!showSpecialtySuggestions) {
-                setShowSpecialtySuggestions(false);
-              }
-            }}
-            scrollEnabled={!showSpecialtySuggestions}
+            extraScrollHeight={showSpecialtySuggestions && (filteredSpecialties.length > 0 || specialtyInput.trim().length > 0) ? 200 : 20}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
           >
             {/* Case Format Selection */}
             <View style={{ marginBottom: 24 }}>
@@ -996,7 +1001,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             </View>
 
             {/* Specialty Selection */}
-            <View style={{ marginBottom: 32, position: 'relative', zIndex: 1000 }}>
+            <View style={{ marginBottom: showSpecialtySuggestions && (filteredSpecialties.length > 0 || specialtyInput.trim().length > 0) ? 180 : 32, position: 'relative' }}>
               <Text style={{
                 fontSize: 17,
                 fontWeight: '600',
@@ -1007,27 +1012,13 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
               </Text>
               
               <View style={{ position: 'relative' }}>
-                {/* Backdrop for suggestions */}
-                {showSpecialtySuggestions && (
-                  <TouchableOpacity
-                    style={{
-                      position: 'absolute',
-                      top: -1000,
-                      left: -1000,
-                      right: -1000,
-                      bottom: -1000,
-                      zIndex: 999,
-                    }}
-                    onPress={() => setShowSpecialtySuggestions(false)}
-                    activeOpacity={1}
-                  />
-                )}
-                
                 <TextInput
                   style={{
                     borderWidth: 1,
                     borderColor: showSpecialtySuggestions ? '#4ECDC4' : '#E5E5E7',
-                    borderRadius: 12,
+                    borderRadius: showSpecialtySuggestions ? 12 : 12,
+                    borderBottomLeftRadius: showSpecialtySuggestions ? 0 : 12,
+                    borderBottomRightRadius: showSpecialtySuggestions ? 0 : 12,
                     paddingHorizontal: 16,
                     paddingVertical: 16,
                     fontSize: 16,
@@ -1037,6 +1028,12 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                   value={specialtyInput}
                   onChangeText={handleSpecialtyInputChange}
                   onFocus={handleSpecialtyInputFocus}
+                  onBlur={() => {
+                    // Delay hiding suggestions to allow for touch events on the dropdown
+                    setTimeout(() => {
+                      setShowSpecialtySuggestions(false);
+                    }, 200);
+                  }}
                 />
                 
                 {selectedSpecialty && !showSpecialtySuggestions && (
@@ -1055,22 +1052,22 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                   </TouchableOpacity>
                 )}
                 
-                {showSpecialtySuggestions && filteredSpecialties.length > 0 && (
+                {showSpecialtySuggestions && (filteredSpecialties.length > 0 || specialtyInput.trim().length > 0) && (
                   <View style={{
                     position: 'absolute',
-                    bottom: '100%',
+                    top: '100%',
                     left: 0,
                     right: 0,
                     backgroundColor: '#FFFFFF',
                     borderWidth: 1,
                     borderColor: '#E5E5E7',
-                    borderBottomWidth: 0,
-                    borderTopLeftRadius: 12,
-                    borderTopRightRadius: 12,
+                    borderTopWidth: 0,
+                    borderBottomLeftRadius: 12,
+                    borderBottomRightRadius: 12,
                     maxHeight: 150,
                     zIndex: 1001,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -2 },
+                    shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.1,
                     shadowRadius: 4,
                     elevation: 5,
@@ -1082,26 +1079,52 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                       keyboardShouldPersistTaps="always"
                       scrollEventThrottle={16}
                     >
-                      {filteredSpecialties.map((item) => (
-                        <TouchableOpacity
-                          key={item}
-                          style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            borderBottomWidth: filteredSpecialties.indexOf(item) === filteredSpecialties.length - 1 ? 0 : 1,
-                            borderBottomColor: '#F2F2F7',
-                          }}
-                          onPress={() => selectSpecialty(item)}
-                          activeOpacity={0.6}
-                        >
-                          <Text style={{
-                            fontSize: 16,
-                            color: '#1C1C1E',
-                          }}>
-                            {item}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                      {filteredSpecialties.length > 0 ? (
+                        filteredSpecialties.map((item) => (
+                          <TouchableOpacity
+                            key={item}
+                            style={{
+                              paddingHorizontal: 16,
+                              paddingVertical: 12,
+                              borderBottomWidth: filteredSpecialties.indexOf(item) === filteredSpecialties.length - 1 ? 0 : 1,
+                              borderBottomColor: '#F2F2F7',
+                            }}
+                            onPress={() => selectSpecialty(item)}
+                            activeOpacity={0.6}
+                          >
+                            <Text style={{
+                              fontSize: 16,
+                              color: '#1C1C1E',
+                            }}>
+                              {item}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        // Show "Add custom specialty" option when no matches found
+                        specialtyInput.trim().length > 0 && (
+                          <TouchableOpacity
+                            style={{
+                              paddingHorizontal: 16,
+                              paddingVertical: 12,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 8,
+                            }}
+                            onPress={addCustomSpecialty}
+                            activeOpacity={0.6}
+                          >
+                            <Ionicons name="add-circle" size={16} color="#4ECDC4" />
+                            <Text style={{
+                              fontSize: 16,
+                              color: '#4ECDC4',
+                              fontWeight: '500',
+                            }}>
+                              Add "{specialtyInput.trim()}"
+                            </Text>
+                          </TouchableOpacity>
+                        )
+                      )}
                     </ScrollView>
                   </View>
                 )}
