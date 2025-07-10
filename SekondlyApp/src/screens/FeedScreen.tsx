@@ -89,6 +89,7 @@ export default function FeedScreen() {
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [pagerKey, setPagerKey] = useState(0); // Add key to force PagerView re-render
   
   // Animated values for smooth tab transitions
   const translateX = useSharedValue(0);
@@ -277,12 +278,17 @@ export default function FeedScreen() {
   useEffect(() => {
     setCurrentPageIndex(0);
     // Reset both pagers to first page when tab or filters change
-    if (allPagerRef.current) {
-      allPagerRef.current.setPage(0);
-    }
-    if (specialtyPagerRef.current) {
-      specialtyPagerRef.current.setPage(0);
-    }
+    const resetPagers = () => {
+      if (allPagerRef.current) {
+        allPagerRef.current.setPage(0);
+      }
+      if (specialtyPagerRef.current) {
+        specialtyPagerRef.current.setPage(0);
+      }
+    };
+    
+    // Add a small delay to ensure pagers are ready
+    setTimeout(resetPagers, 50);
   }, [filteredCases.length, activeTab, selectedSpecialty, titleSearchKeyword, doctorNameSearch]);
 
   // Use MEDICAL_SPECIALTIES for the list
@@ -457,10 +463,21 @@ export default function FeedScreen() {
     setRefreshing(true);
     try {
       await refetchCases();
+      // Reset to first case after refresh with a slight delay to ensure pager is ready
+      setCurrentPageIndex(0);
+      // Force PagerView to re-render by changing the key
+      setPagerKey(prev => prev + 1);
+      setTimeout(() => {
+        if (activeTab === 'all' && allPagerRef.current) {
+          allPagerRef.current.setPage(0);
+        } else if (activeTab === 'specialty' && specialtyPagerRef.current) {
+          specialtyPagerRef.current.setPage(0);
+        }
+      }, 100);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchCases]);
+  }, [refetchCases, activeTab]);
 
   const renderLoadingSkeleton = () => (
     <View style={styles.container}>
@@ -531,6 +548,7 @@ export default function FeedScreen() {
               style={styles.pagerView}
               initialPage={0}
               orientation="vertical"
+              key={`${tabType}-${casesData.length}-${pagerKey}`}
               onPageSelected={(e) => setCurrentPageIndex(e.nativeEvent.position)}
               onPageScrollStateChanged={(e) => {
                 console.log(`Vertical (${tabType}) page scroll state:`, e.nativeEvent.pageScrollState);
@@ -628,12 +646,26 @@ export default function FeedScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => setShowSearchModal(true)}
-        >
-          <Ionicons name="search" size={24} color="#4ECDC4" />
-        </TouchableOpacity>
+        <View style={styles.headerLeftButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setShowSearchModal(true)}
+          >
+            <Ionicons name="search" size={24} color="#4ECDC4" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onRefresh}
+            disabled={refreshing}
+          >
+            <Ionicons 
+              name={refreshing ? "hourglass" : "refresh-circle"} 
+              size={24} 
+              color={refreshing ? "#8E8E93" : "#4ECDC4"} 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tabs */}
@@ -997,13 +1029,18 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
+  },
+  headerLeftButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   headerTitle: {
     fontSize: 20,
