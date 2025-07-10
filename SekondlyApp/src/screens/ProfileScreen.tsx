@@ -276,7 +276,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.settingItem} onPress={handleSubmitTicket}>
             <View style={styles.settingContent}>
               <Ionicons name="help-circle-outline" size={20} color="#007AFF" />
-              <Text style={[styles.settingText, styles.submitTicketText]}>Submit Ticket</Text>
+              <Text style={[styles.settingText, styles.submitTicketText]}>Contact us</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
           </TouchableOpacity>

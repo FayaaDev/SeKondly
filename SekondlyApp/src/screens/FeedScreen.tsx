@@ -99,15 +99,46 @@ export default function FeedScreen() {
   
   const { user } = useAuth();
 
-  // Show disclaimer every time user accesses the feed (on sign-in)
+  // Show disclaimer on sign-in (unless user chose not to show it again)
   useEffect(() => {
-    if (user?.isApproved) {
-      setShowDisclaimer(true);
-    }
+    const checkDisclaimerPreference = async () => {
+      if (user?.isApproved) {
+        try {
+          const settings = await StorageService.getAppSettings();
+          if (!settings?.disclaimer?.hideDisclaimer) {
+            setShowDisclaimer(true);
+          }
+        } catch (error) {
+          console.error('Error checking disclaimer preference:', error);
+          setShowDisclaimer(true);
+        }
+      }
+    };
+    
+    checkDisclaimerPreference();
   }, [user?.isApproved]);
 
   const handleDisclaimerAccept = () => {
     setShowDisclaimer(false);
+  };
+
+  const handleDisclaimerDontShowAgain = async () => {
+    try {
+      const currentSettings = await StorageService.getAppSettings();
+      if (currentSettings) {
+        const updatedSettings = {
+          ...currentSettings,
+          disclaimer: {
+            hideDisclaimer: true,
+          },
+        };
+        await StorageService.setAppSettings(updatedSettings);
+      }
+      setShowDisclaimer(false);
+    } catch (error) {
+      console.error('Error saving disclaimer preference:', error);
+      setShowDisclaimer(false);
+    }
   };
 
   // Query for cases
@@ -937,12 +968,21 @@ export default function FeedScreen() {
               All SeKondly users are verified licensed physicians. Content on SeKondly is for discussion purposes only and should not replace the standard of care or serve as the sole guide for clinical judgment.
             </Text>
             
-            <TouchableOpacity
-              style={styles.disclaimerButton}
-              onPress={handleDisclaimerAccept}
-            >
-              <Text style={styles.disclaimerButtonText}>I Understand</Text>
-            </TouchableOpacity>
+            <View style={styles.disclaimerButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.disclaimerButton, styles.disclaimerSecondaryButton]}
+                onPress={handleDisclaimerAccept}
+              >
+                <Text style={styles.disclaimerSecondaryButtonText}>Ok</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.disclaimerButton, styles.disclaimerPrimaryButton]}
+                onPress={handleDisclaimerDontShowAgain}
+              >
+                <Text style={styles.disclaimerPrimaryButtonText}>Ok, Don't show this again</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1554,11 +1594,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
+  disclaimerButtonsContainer: {
+    flexDirection: 'column',
+    gap: 12,
+  },
   disclaimerButton: {
-    backgroundColor: '#4ECDC4',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  disclaimerPrimaryButton: {
+    backgroundColor: '#4ECDC4',
+  },
+  disclaimerSecondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+  },
+  disclaimerPrimaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disclaimerSecondaryButtonText: {
+    color: '#4ECDC4',
+    fontSize: 16,
+    fontWeight: '600',
   },
   disclaimerButtonText: {
     color: '#FFFFFF',

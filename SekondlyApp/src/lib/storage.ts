@@ -50,6 +50,9 @@ interface AppSettings {
     showEmail: boolean;
     showInstitution: boolean;
   };
+  disclaimer: {
+    hideDisclaimer: boolean;
+  };
 }
 
 interface SearchHistoryItem {
@@ -173,6 +176,9 @@ export class StorageService {
         profileVisible: true,
         showEmail: false,
         showInstitution: true,
+      },
+      disclaimer: {
+        hideDisclaimer: false,
       },
     };
     

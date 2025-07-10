@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   KeyboardAvoidingView,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -353,6 +354,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             onPress={() => setCurrentScreen('signup')}
           >
             <Text style={styles.secondaryButtonText}>Create Account</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.contactButton]}
+            onPress={() => {
+              Linking.openURL('https://sekondly.app').catch((err) => {
+                console.error('Failed to open URL:', err);
+                Alert.alert('Error', 'Could not open website. Please try again.');
+              });
+            }}
+          >
+            <Text style={styles.contactButtonText}>Contact us</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -991,6 +1004,11 @@ const styles = {
     borderWidth: 1,
     borderColor: '#4ECDC4',
   },
+  contactButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
   fullWidthButton: {
     marginTop: 24,
   },
@@ -1001,6 +1019,11 @@ const styles = {
   },
   secondaryButtonText: {
     color: '#4ECDC4',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  contactButtonText: {
+    color: '#007AFF',
     fontSize: 18,
     fontWeight: '600',
   },
