@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { useAuth } from '../hooks/useAuth';
-import { MEDICAL_SPECIALTIES, FELLOWSHIPS } from '../types/shared';
+import { MEDICAL_SPECIALTIES, FELLOWSHIPS, MEDICAL_LEVELS } from '../types/shared';
 
 // Use centralized medical specialties for board certifications
 
@@ -14,14 +14,16 @@ export default function EditProfileScreen({ navigation }: any) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    phone: '',
+    email: '',
     boardCertification: '',
     fellowship: '',
+    medicalLevel: '',
     yearsOfExperience: '',
     workplace: '',
   });
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
   const [showFellowshipPicker, setShowFellowshipPicker] = useState(false);
+  const [showMedicalLevelPicker, setShowMedicalLevelPicker] = useState(false);
   const [specialtySearch, setSpecialtySearch] = useState('');
   const [fellowshipSearch, setFellowshipSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -32,9 +34,10 @@ export default function EditProfileScreen({ navigation }: any) {
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        phone: user.phone || '',
+        email: user.email || '',
         boardCertification: user.specialty || '',
         fellowship: user.fellowship || '',
+        medicalLevel: user.level || '',
         yearsOfExperience: user.experience ? String(user.experience) : '',
         workplace: user.institution || '',
       });
@@ -75,15 +78,21 @@ export default function EditProfileScreen({ navigation }: any) {
     setShowFellowshipPicker(false);
   };
 
+  const selectMedicalLevel = (level: string) => {
+    updateFormData('medicalLevel', level);
+    setShowMedicalLevelPicker(false);
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       // Map form fields to backend fields
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
-        phone: data.phone,
+        email: data.email,
         specialty: data.boardCertification,
         fellowship: data.fellowship,
+        level: data.medicalLevel,
         experience: data.yearsOfExperience,
         institution: data.workplace,
       };
@@ -108,7 +117,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
   const handleSave = () => {
     // Validation
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.phone.trim() || !formData.boardCertification.trim() || !formData.yearsOfExperience.trim() || !formData.workplace.trim()) {
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.boardCertification.trim() || !formData.medicalLevel.trim() || !formData.yearsOfExperience.trim() || !formData.workplace.trim()) {
       Alert.alert('Missing Fields', 'Please fill in all required fields.');
       return;
     }
@@ -152,13 +161,14 @@ export default function EditProfileScreen({ navigation }: any) {
             />
           </View>
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Phone Number *</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Email Address *</Text>
             <TextInput
               style={{ borderWidth: 1, borderColor: '#D1D1D6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, backgroundColor: '#FFFFFF' }}
-              value={formData.phone}
-              onChangeText={(text) => updateFormData('phone', text)}
-              placeholder="Enter your phone number"
-              keyboardType="phone-pad"
+              value={formData.email}
+              onChangeText={(text) => updateFormData('email', text)}
+              placeholder="Enter your email address"
+              keyboardType="email-address"
+              autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
@@ -195,6 +205,18 @@ export default function EditProfileScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Medical Level *</Text>
+            <TouchableOpacity
+              style={{ borderWidth: 1, borderColor: '#D1D1D6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#FFFFFF', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              onPress={() => setShowMedicalLevelPicker(true)}
+            >
+              <Text style={{ fontSize: 16, color: formData.medicalLevel ? '#000' : '#8E8E93' }}>
+                {formData.medicalLevel || 'Select your medical level'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#999" />
+            </TouchableOpacity>
+          </View>
+          <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 }}>Years of Experience *</Text>
             <TextInput
               style={{ borderWidth: 1, borderColor: '#D1D1D6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, backgroundColor: '#FFFFFF' }}
@@ -216,12 +238,18 @@ export default function EditProfileScreen({ navigation }: any) {
               autoCorrect={false}
             />
           </View>
+          {/* Support Message */}
+          <View style={{ marginTop: 24, padding: 16, backgroundColor: '#FFF3CD', borderRadius: 8, borderWidth: 1, borderColor: '#FFEAA7' }}>
+            <Text style={{ fontSize: 14, color: '#856404', textAlign: 'center', lineHeight: 20 }}>
+              Please contact support to update your profile information.
+            </Text>
+          </View>
+          
           <TouchableOpacity
-            style={{ marginTop: 32, backgroundColor: '#4ECDC4', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
-            onPress={handleSave}
-            disabled={isSaving}
+            style={{ marginTop: 16, backgroundColor: '#D1D1D6', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
+            disabled={true}
           >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{isSaving ? 'Saving...' : 'Save Changes'}</Text>
+            <Text style={{ color: '#8E8E93', fontSize: 16, fontWeight: '600' }}>Save Changes</Text>
           </TouchableOpacity>
         </ScrollView>
         {/* Board Certification Picker Modal */}
@@ -332,6 +360,38 @@ export default function EditProfileScreen({ navigation }: any) {
                     <Text style={{ color: '#8E8E93', textAlign: 'center' }}>No fellowships found</Text>
                   </View>
                 )}
+              </ScrollView>
+            </View>
+          </SafeAreaView>
+        </Modal>
+        {/* Medical Level Picker Modal */}
+        <Modal
+          visible={showMedicalLevelPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA', backgroundColor: '#FFFFFF' }}>
+              <TouchableOpacity onPress={() => setShowMedicalLevelPicker(false)}>
+                <Text style={{ color: '#4ECDC4', fontSize: 18 }}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: '#000' }}>Medical Level</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <View style={{ padding: 16, backgroundColor: '#FFFFFF' }}>
+              <ScrollView keyboardShouldPersistTaps="handled">
+                {MEDICAL_LEVELS.map((level: string) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' }}
+                    onPress={() => selectMedicalLevel(level)}
+                  >
+                    <Text style={{ fontSize: 16, color: '#000' }}>{level}</Text>
+                    {formData.medicalLevel === level && (
+                      <Ionicons name="checkmark" size={20} color="#4ECDC4" />
+                    )}
+                  </TouchableOpacity>
+                ))}
               </ScrollView>
             </View>
           </SafeAreaView>

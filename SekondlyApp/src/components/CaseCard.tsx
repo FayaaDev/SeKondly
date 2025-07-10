@@ -20,7 +20,7 @@ import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
 import { useCustomAlert } from "./CustomAlert";
-import type { CaseWithAuthor } from "../types/schema";
+import type { CaseWithAuthor } from "../types/shared";
 
 interface CaseCardProps {
   case: CaseWithAuthor;
@@ -353,9 +353,9 @@ export default function CaseCard({
                 )}
               </View>
               <View style={styles.badgesContainer}>
-                {(caseData.author as any)?.level && (
+                {caseData.author?.level && (
                   <View style={styles.levelBadge}>
-                    <Text style={styles.levelBadgeText}>{(caseData.author as any)?.level}</Text>
+                    <Text style={styles.levelBadgeText}>{caseData.author.level}</Text>
                   </View>
                 )}
                 <View style={styles.specialtyBadge}>
