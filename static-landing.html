@@ -17,10 +17,73 @@
             color: #333;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+            padding: 0 2rem;
+        }
+        
+        .navbar-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ECDC4;
+            text-decoration: none;
+        }
+        
+        .navbar-nav {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar-nav a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .navbar-nav a:hover,
+        .navbar-nav a.active {
+            color: #4ECDC4;
+        }
+        
+        .main-content {
+            margin-top: 80px;
+        }
+        
+        .section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 0;
+        }
+        
+        .section:nth-child(even) {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
         
         .container {
@@ -158,11 +221,68 @@
         }
         
         .support-section {
-            margin: 4rem 0;
             padding: 3rem 2rem;
             background: rgba(255, 255, 255, 0.7);
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .faq-section {
+            padding: 3rem 2rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .faq-item {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 1.5rem;
+        }
+        
+        .faq-question {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .faq-answer {
+            color: #666;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+        
+        .faq-toggle {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .faq-item.active .faq-toggle {
+            transform: rotate(45deg);
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 3rem;
+            text-align: center;
         }
         
         .support-title {
@@ -270,9 +390,29 @@
         }
         
         @media (max-width: 768px) {
+            .navbar-content {
+                padding: 0 1rem;
+            }
+            
+            .navbar-nav {
+                gap: 1rem;
+            }
+            
+            .navbar-nav a {
+                font-size: 0.9rem;
+            }
+            
             .container {
                 margin: 1rem;
                 padding: 1.5rem;
+            }
+            
+            .section {
+                padding: 2rem 0;
+            }
+            
+            .section-title {
+                font-size: 2rem;
             }
             
             h1 {
@@ -288,7 +428,8 @@
                 align-items: center;
             }
             
-            .support-section {
+            .support-section,
+            .faq-section {
                 margin: 2rem 0;
                 padding: 2rem 1rem;
             }
@@ -304,100 +445,187 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo"></div>
-        
-        <h1>SeKondly</h1>
-        <p class="tagline">Medical Case Consultation Platform</p>
-        
-        <p class="description">
-            Connect with medical professionals worldwide. Share complex cases, get expert opinions, 
-            and collaborate on challenging diagnoses. Join a community of healthcare providers 
-            dedicated to improving patient outcomes through knowledge sharing.
-        </p>
-        
-        <div class="coming-soon">
-            📱 Mobile App Coming Soon
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="#" class="navbar-logo">SeKondly</a>
+            <ul class="navbar-nav">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="#support" class="nav-link">Support</a></li>
+            </ul>
         </div>
-        
-        <div class="download-section">
-            <h3 class="download-title">Download SeKondly Mobile App</h3>
-            <div class="download-buttons">
-                <a href="#" class="download-btn ios" onclick="alert('iOS app will be available soon on the App Store!')">
-                    <span>📱</span>
-                    <div>
-                        <div style="font-size: 0.8rem;">Download for</div>
-                        <div>iOS</div>
+    </nav>
+    
+    <main class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="section">
+            <div class="container">
+                <div class="logo"></div>
+                
+                <h1>SeKondly</h1>
+                <p class="tagline">Medical Case Consultation Platform</p>
+                
+                <p class="description">
+                    Connect with medical professionals worldwide. Share complex cases, get expert opinions, 
+                    and collaborate on challenging diagnoses. Join a community of healthcare providers 
+                    dedicated to improving patient outcomes through knowledge sharing.
+                </p>
+                
+                <div class="coming-soon">
+                    📱 Mobile App Coming Soon
+                </div>
+                
+                <div class="download-section">
+                    <h3 class="download-title">Download SeKondly Mobile App</h3>
+                    <div class="download-buttons">
+                        <a href="#" class="download-btn ios" onclick="alert('iOS app will be available soon on the App Store!')">
+                            <span>📱</span>
+                            <div>
+                                <div style="font-size: 0.8rem;">Download for</div>
+                                <div>iOS</div>
+                            </div>
+                        </a>
+                        <a href="#" class="download-btn android" onclick="alert('Android app will be available soon on Google Play!')">
+                            <span>🤖</span>
+                            <div>
+                                <div style="font-size: 0.8rem;">Download for</div>
+                                <div>Android</div>
+                            </div>
+                        </a>
                     </div>
-                </a>
-                <a href="#" class="download-btn android" onclick="alert('Android app will be available soon on Google Play!')">
-                    <span>🤖</span>
-                    <div>
-                        <div style="font-size: 0.8rem;">Download for</div>
-                        <div>Android</div>
+                </div>
+                
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">🏥</div>
+                        <h3>Medical Cases</h3>
+                        <p>Share and discuss complex medical cases with healthcare professionals worldwide</p>
                     </div>
-                </a>
+                    <div class="feature">
+                        <div class="feature-icon">👨‍⚕️</div>
+                        <h3>Expert Consultation</h3>
+                        <p>Get second opinions from specialists across different medical fields</p>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
         
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">🏥</div>
-                <h3>Medical Cases</h3>
-                <p>Share and discuss complex medical cases with healthcare professionals worldwide</p>
+        <!-- FAQ Section -->
+        <section id="faq" class="section">
+            <div class="faq-section">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-subtitle">Find answers to common questions about SeKondly</p>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        What is SeKondly?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        SeKondly is a medical case consultation platform that connects healthcare professionals worldwide. It allows doctors to share complex cases, get expert opinions, and collaborate on challenging diagnoses to improve patient outcomes.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        Who can use SeKondly?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        SeKondly is designed for licensed medical professionals, including doctors, specialists, residents, and medical students. All users must complete a verification process to ensure the platform maintains high professional standards.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        Is SeKondly free to use?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, SeKondly is free to use for all verified medical professionals. We believe in making medical knowledge sharing accessible to improve patient care worldwide.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        How do I verify my medical credentials?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        After signing up, you'll need to provide your medical license number, institution affiliation, and other relevant credentials. Our verification team reviews all submissions to ensure platform security and professionalism.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        How is patient privacy protected?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Patient privacy is our top priority. All case discussions must be completely de-identified, with no personal information, names, or identifiable details. We use advanced encryption and follow strict HIPAA compliance guidelines.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        When will the mobile app be available?
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        The SeKondly mobile app is currently in development. We expect to release it on both iOS and Android platforms in the coming months. Sign up for updates to be notified when it becomes available.
+                    </div>
+                </div>
             </div>
-            <div class="feature">
-                <div class="feature-icon">👨‍⚕️</div>
-                <h3>Expert Consultation</h3>
-                <p>Get second opinions from specialists across different medical fields</p>
-            </div>
-        </div>
+        </section>
         
-        <div class="support-section">
-            <h3 class="support-title">Need Help? Contact Support</h3>
-            <p class="support-description">Have questions, suggestions, or need assistance? We're here to help!</p>
-            
-            <form id="supportForm" class="support-form">
-                <div class="form-group">
-                    <input type="text" id="name" name="name" placeholder="Your Name" required>
-                </div>
+        <!-- Support Section -->
+        <section id="support" class="section">
+            <div class="support-section">
+                <h2 class="section-title">Need Help? Contact Support</h2>
+                <p class="section-subtitle">Have questions, suggestions, or need assistance? We're here to help!</p>
                 
-                <div class="form-group">
-                    <input type="email" id="email" name="email" placeholder="Your Email" required>
-                </div>
+                <form id="supportForm" class="support-form">
+                    <div class="form-group">
+                        <input type="text" id="name" name="name" placeholder="Your Name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" placeholder="Your Email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" id="title" name="title" placeholder="Subject/Title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <select id="reason" name="reason" required>
+                            <option value="">Select reason for contact</option>
+                            <option value="question">Ask a Question</option>
+                            <option value="feature">Request a Feature</option>
+                            <option value="bug">Report a Bug</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <textarea id="content" name="content" placeholder="Please describe your question, feature request, or bug report..." rows="5" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Submit Support Request</button>
+                </form>
                 
-                <div class="form-group">
-                    <input type="text" id="title" name="title" placeholder="Subject/Title" required>
+                <div id="ticketConfirmation" class="ticket-confirmation" style="display: none;">
+                    <div class="confirmation-icon">✅</div>
+                    <h4>Support Request Submitted Successfully!</h4>
+                    <p>Your ticket number is: <strong id="ticketNumber"></strong></p>
+                    <p>We'll respond to your email within 24 hours.</p>
                 </div>
-                
-                <div class="form-group">
-                    <select id="reason" name="reason" required>
-                        <option value="">Select reason for contact</option>
-                        <option value="question">Ask a Question</option>
-                        <option value="feature">Request a Feature</option>
-                        <option value="bug">Report a Bug</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <textarea id="content" name="content" placeholder="Please describe your question, feature request, or bug report..." rows="5" required></textarea>
-                </div>
-                
-                <button type="submit" class="submit-btn">Submit Support Request</button>
-            </form>
-            
-            <div id="ticketConfirmation" class="ticket-confirmation" style="display: none;">
-                <div class="confirmation-icon">✅</div>
-                <h4>Support Request Submitted Successfully!</h4>
-                <p>Your ticket number is: <strong id="ticketNumber"></strong></p>
-                <p>We'll respond to your email within 24 hours.</p>
             </div>
-        </div>
-        
-        <footer>
-            <p>&copy; 2025 SeKondly. All rights reserved. | Empowering healthcare through collaboration | <a href="/privacy" style="color: #4ECDC4; text-decoration: none;">Privacy Policy</a></p>
-        </footer>
-    </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 SeKondly. All rights reserved. | Empowering healthcare through collaboration | <a href="/privacy" style="color: #4ECDC4; text-decoration: none;">Privacy Policy</a></p>
+    </footer>
     
     <script>
         // Handle form submission
@@ -492,6 +720,79 @@
             anotherRequestBtn.style.padding = '0.5rem 1rem';
             anotherRequestBtn.onclick = showFormAgain;
             confirmation.appendChild(anotherRequestBtn);
+        });
+        
+        // Navigation functionality
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all links
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Scroll to section
+                const targetId = this.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // FAQ toggle functionality
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const faqAnswer = faqItem.querySelector('.faq-answer');
+            const faqToggle = faqItem.querySelector('.faq-toggle');
+            
+            if (faqItem.classList.contains('active')) {
+                faqItem.classList.remove('active');
+                faqAnswer.style.display = 'none';
+                faqToggle.textContent = '+';
+            } else {
+                // Close other open FAQs
+                document.querySelectorAll('.faq-item.active').forEach(item => {
+                    item.classList.remove('active');
+                    item.querySelector('.faq-answer').style.display = 'none';
+                    item.querySelector('.faq-toggle').textContent = '+';
+                });
+                
+                // Open clicked FAQ
+                faqItem.classList.add('active');
+                faqAnswer.style.display = 'block';
+                faqToggle.textContent = '×';
+            }
+        }
+        
+        // Smooth scrolling and section detection
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    
+                    // Update active navigation link
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, {
+            threshold: 0.6
+        });
+        
+        // Observe all sections
+        document.querySelectorAll('.section').forEach(section => {
+            observer.observe(section);
         });
     </script>
 </body>
