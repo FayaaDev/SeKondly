@@ -13,6 +13,7 @@ import {
   Share,
   Dimensions,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -116,16 +117,19 @@ const LongCaseDetailModal = ({
   // Like mutation
   const likeCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
+      console.log('Attempting to like comment with ID:', commentId);
       return await apiRequest("POST", `/api/comments/${commentId}/like`);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Like comment success:', data);
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
     },
     onError: (error) => {
+      console.error('Like comment error:', error);
       if (!handleAuthError(error)) {
-        Alert.alert("Error", "Failed to like comment");
+        Alert.alert("Error", "Failed to agree with comment");
       }
     },
   });
@@ -334,19 +338,40 @@ const LongCaseDetailModal = ({
               {/* Image Gallery */}
               {renderImageGallery()}
 
-              {/* Comments Section */}
+              {/* Medical-focused Comments Section */}
               {comments.length > 0 && (
                 <View style={styles.commentsSection}>
+                  <View style={styles.discussionHeader}>
+                    <View style={styles.discussionTitleRow}>
+                      <View style={styles.discussionIconContainer}>
+                        <Ionicons name="medical" size={20} color="#4ECDC4" />
+                      </View>
+                      <Text style={styles.commentsTitle}>Medical Discussion</Text>
+                      <View style={styles.participantsCounter}>
+                        <Ionicons name="people-outline" size={16} color="#536471" />
+                        <Text style={styles.participantsText}>
+                          {comments.length > 0 ? `${new Set(comments.map((c: CommentWithAuthor) => c.authorId)).size} participants` : '0 participants'}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    {comments.length > 0 && (
+                      <View style={styles.discussionStats}>
+                        <View style={styles.statItem}>
+                          <Ionicons name="chatbubbles-outline" size={14} color="#059669" />
+                          <Text style={styles.statText}>{comments.length} insights</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+
                   {comments.map((comment: CommentWithAuthor) => (
-                    <View key={comment.id} style={styles.commentContainer}>
-                      <TouchableOpacity 
-                        style={styles.authorSection}
-                        onPress={() => onProfilePress?.(comment.author.id)}
-                      >
-                        <View style={styles.commentAvatarContainer}>
+                    <View key={comment.id} style={styles.commentCard}>
+                      <View style={styles.commentHeader}>
+                        <TouchableOpacity style={styles.commentAvatar}>
                           {comment.author.profileImageUrl ? (
                             <ExpoImage
-                              source={{ uri: `${API_BASE_URL}${comment.author.profileImageUrl}` }}
+                              source={{ uri: getFullImageUrl(comment.author.profileImageUrl) }}
                               style={styles.commentAvatarImage}
                               contentFit="cover"
                             />
@@ -355,86 +380,99 @@ const LongCaseDetailModal = ({
                               {getInitials(comment.author.firstName, comment.author.lastName)}
                             </Text>
                           )}
-                        </View>
+                        </TouchableOpacity>
+                        
                         <View style={styles.commentMainContent}>
-                          <View style={styles.commentNameRow}>
-                            <Text style={styles.commentAuthorName}>
-                              {comment.author.firstName} {comment.author.lastName}
-                            </Text>
-                            <Text style={styles.commentHandle}>@{comment.author.username}</Text>
-                            <Text style={styles.commentDot}>·</Text>
-                            <Text style={styles.commentTime}>
-                              {formatTimeAgo(comment.createdAt!)}
-                            </Text>
+                          <View style={styles.commentAuthorInfo}>
+                            <View style={styles.commentNameRow}>
+                              <Text style={styles.commentAuthorName}>
+                                Dr. {comment.author.firstName} {comment.author.lastName}
+                              </Text>
+                              <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt!)}</Text>
+                            </View>
+                            <View style={styles.commentCredentialsBadges}>
+                              <View style={styles.commentSpecialtyBadge}>
+                                <Ionicons name="medical" size={10} color="#4ECDC4" />
+                                <Text style={styles.commentSpecialtyText}>{comment.author.specialty}</Text>
+                              </View>
+                              {(comment.author as any)?.level && (
+                                <View style={styles.commentLevelBadge}>
+                                  <Ionicons name="ribbon" size={10} color="#059669" />
+                                  <Text style={styles.commentLevelText}>{(comment.author as any)?.level}</Text>
+                                </View>
+                              )}
+                            </View>
                           </View>
-                          <Text style={styles.commentContent}>{comment.content}</Text>
+                          
+                          <View style={styles.commentContentContainer}>
+                            <Text style={styles.commentContent}>{comment.content}</Text>
+                          </View>
+                          
+                          {/* Medical-focused Comment Actions */}
                           <View style={styles.commentActions}>
                             <TouchableOpacity 
                               style={styles.commentActionButton}
                               onPress={() => handleReply(comment.author.username!)}
                             >
-                              <View style={styles.actionIconContainer}>
-                                <Ionicons name="chatbubble-outline" size={20} color="#536471" />
+                              <View style={styles.medicalActionIcon}>
+                                <Ionicons name="chatbubble-outline" size={16} color="#4ECDC4" />
                               </View>
-                              <Text style={styles.commentActionCount}>Reply</Text>
+                              <Text style={styles.commentActionLabel}>Reply</Text>
                             </TouchableOpacity>
+                            
                             <TouchableOpacity 
                               style={styles.commentActionButton}
-                              onPress={() => likeCommentMutation.mutate(comment.id.toString())}
+                              onPress={() => {
+                                console.log('Agree button pressed for comment:', comment.id);
+                                likeCommentMutation.mutate(comment.id.toString());
+                              }}
                             >
-                              <View 
-                                style={[
-                                  styles.actionIconContainer,
-                                  comment.liked && styles.actionIconContainerLiked
-                                ]}
-                              >
+                              <View style={[
+                                styles.medicalActionIcon,
+                                (comment as any).isLikedByUser && styles.medicalActionIconActive
+                              ]}>
                                 <Ionicons 
-                                  name={comment.liked ? "heart" : "heart-outline"}
-                                  size={20}
-                                  color={comment.liked ? "#F91880" : "#536471"}
+                                  name={(comment as any).isLikedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
+                                  size={16} 
+                                  color={(comment as any).isLikedByUser ? "#22C55E" : "#4ECDC4"} 
                                 />
                               </View>
-                              {comment.likesCount! > 0 && (
-                                <Text 
-                                  style={[
-                                    styles.commentActionCount,
-                                    comment.liked && styles.commentActionCountLiked
-                                  ]}
-                                >
-                                  {comment.likesCount}
-                                </Text>
-                              )}
+                              <Text style={[
+                                styles.commentActionLabel,
+                                (comment as any).isLikedByUser && styles.commentActionLabelActive
+                              ]}>
+                                {((comment as any).likesCount || 0) > 0 ? (comment as any).likesCount : 'Agree'}
+                              </Text>
                             </TouchableOpacity>
                           </View>
                         </View>
-                      </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </View>
               )}
             </ScrollView>
 
-            {/* Add Comment Section */}
+            {/* Medical-focused Add Comment */}
             <View style={styles.addCommentContainer}>
               {replyingTo && (
                 <View style={styles.replyIndicator}>
-                  <Text style={styles.replyText}>
-                    Replying to @{replyingTo}
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.cancelReplyButton}
-                    onPress={cancelReply}
-                  >
-                    <Ionicons name="close" size={20} color="#536471" />
+                  <View style={styles.replyIconContainer}>
+                    <Ionicons name="return-down-forward" size={14} color="#4ECDC4" />
+                  </View>
+                  <Text style={styles.replyText}>Replying to Dr. {replyingTo}</Text>
+                  <TouchableOpacity onPress={cancelReply} style={styles.cancelReplyButton}>
+                    <Ionicons name="close" size={16} color="#536471" />
                   </TouchableOpacity>
                 </View>
               )}
+              
               <View style={styles.commentInputRow}>
                 <View style={styles.currentUserAvatar}>
                   {currentUser?.profileImageUrl ? (
                     <ExpoImage
                       source={{ uri: `${API_BASE_URL}${currentUser.profileImageUrl}` }}
-                      style={styles.commentAvatarImage}
+                      style={styles.currentUserAvatarImage}
                       contentFit="cover"
                     />
                   ) : (
@@ -443,33 +481,74 @@ const LongCaseDetailModal = ({
                     </Text>
                   )}
                 </View>
+                
                 <View style={styles.addCommentInputContainer}>
+                  {/* Helper tags positioned above the input */}
+                  <View style={styles.commentHelperTags}>
+                    <TouchableOpacity 
+                      style={styles.helperTag}
+                      onPress={() => setNewComment(prev => prev + "#diagnosis ")}
+                    >
+                      <Text style={styles.helperTagText}>#diagnosis</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.helperTag}
+                      onPress={() => setNewComment(prev => prev + "#treatment ")}
+                    >
+                      <Text style={styles.helperTagText}>#treatment</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.helperTag}
+                      onPress={() => setNewComment(prev => prev + "#experience ")}
+                    >
+                      <Text style={styles.helperTagText}>#experience</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
                   <TextInput
                     ref={commentInputRef}
                     style={styles.commentInput}
-                    placeholder="Add your comment..."
-                    multiline
+                    placeholder={replyingTo ? "Share your medical insights in response..." : ""}
+                    placeholderTextColor="#94A3B8"
                     value={newComment}
                     onChangeText={setNewComment}
                     onFocus={handleCommentInputFocus}
+                    multiline
+                    textAlignVertical="top"
+                    maxLength={500}
                   />
+                  <View style={styles.commentInputFooter}>
+                    <Text style={[
+                      styles.characterCount,
+                      newComment.length > 450 && styles.characterCountWarning,
+                      newComment.length > 500 && styles.characterCountError
+                    ]}>
+                      {newComment.length}/500
+                    </Text>
+                  </View>
                 </View>
+                
                 <TouchableOpacity
                   style={[
                     styles.sendButton,
-                    !newComment.trim() && styles.sendButtonDisabled
+                    (!newComment.trim() || addCommentMutation.isPending || newComment.length > 500) && styles.sendButtonDisabled
                   ]}
                   onPress={handleAddComment}
-                  disabled={!newComment.trim()}
+                  disabled={!newComment.trim() || addCommentMutation.isPending || newComment.length > 500}
                 >
-                  <Text 
-                    style={[
-                      styles.sendButtonText,
-                      !newComment.trim() && styles.sendButtonTextDisabled
-                    ]}
-                  >
-                    Send
-                  </Text>
+                  {addCommentMutation.isPending ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="send" size={16} color="#fff" />
+                      <Text style={[
+                        styles.sendButtonText,
+                        (!newComment.trim() || addCommentMutation.isPending || newComment.length > 500) && styles.sendButtonTextDisabled
+                      ]}>
+                        Post
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -690,7 +769,171 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: "#EFF3F4",
+    backgroundColor: "#fff",
   },
+  
+  // Medical discussion styles
+  discussionHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: "#FAFBFC",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  discussionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  discussionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E6F7FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  commentsTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1E293B",
+    flex: 1,
+  },
+  participantsCounter: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  participantsText: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+    marginLeft: 4,
+  },
+  discussionStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  
+  // Updated comment card styles
+  commentCard: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  commentAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1D9BF0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    overflow: "hidden",
+  },
+  commentAuthorInfo: {
+    marginBottom: 8,
+  },
+  commentNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  commentCredentialsBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  commentSpecialtyBadge: {
+    backgroundColor: "#E6F7FF",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  commentSpecialtyText: {
+    fontSize: 11,
+    color: "#4ECDC4",
+    fontWeight: "600",
+  },
+  commentLevelBadge: {
+    backgroundColor: "#F0FDF4",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  commentLevelText: {
+    fontSize: 11,
+    color: "#059669",
+    fontWeight: "600",
+  },
+  commentContentContainer: {
+    backgroundColor: "#FAFBFC",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  
+  // Medical action icons
+  medicalActionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F0F9FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  medicalActionIconActive: {
+    backgroundColor: "#F0FDF4",
+  },
+  commentActionLabel: {
+    fontSize: 13,
+    color: "#4ECDC4",
+    fontWeight: "500",
+  },
+  commentActionLabelActive: {
+    color: "#22C55E",
+  },
+
   commentContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -719,11 +962,7 @@ const styles = StyleSheet.create({
   commentMainContent: {
     flex: 1,
   },
-  commentNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 2,
-  },
+
   commentAuthorName: {
     fontSize: 15,
     fontWeight: "700",
@@ -793,11 +1032,11 @@ const styles = StyleSheet.create({
   addCommentContainer: {
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#EFF3F4",
+    borderTopColor: "#E2E8F0",
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === "ios" ? 34 : 12,
-    minHeight: 80, // Ensure minimum visible height
+    paddingTop: 16,
+    paddingBottom: Platform.OS === "ios" ? 34 : 16,
+    maxHeight: Platform.OS === "ios" ? 200 : 180,
   },
   replyIndicator: {
     flexDirection: "row",
@@ -842,26 +1081,27 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     fontSize: 16,
-    color: "#0F1419",
+    color: "#1E293B",
     lineHeight: 22,
     minHeight: 44,
-    maxHeight: 80,
+    maxHeight: 88,
     paddingVertical: 12,
     paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E1E8ED",
-    borderRadius: 22,
-    backgroundColor: "#F7F9FA",
+    borderColor: "#E2E8F0",
   },
   sendButton: {
     backgroundColor: "#4ECDC4",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    height: 40,
-    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 70,
+    gap: 6,
+    minWidth: 80,
+    justifyContent: "center",
   },
   sendButtonDisabled: {
     backgroundColor: "#A8E6E0",
@@ -874,6 +1114,58 @@ const styles = StyleSheet.create({
   sendButtonTextDisabled: {
     color: "#fff",
     opacity: 0.7,
+  },
+  
+  // Medical input styles from CaseDetailModal
+  replyIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#F0F9FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  currentUserAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  commentHelperTags: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+    flexWrap: "wrap",
+  },
+  helperTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#E6F7FF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#B8E6FF",
+  },
+  helperTagText: {
+    fontSize: 12,
+    color: "#4ECDC4",
+    fontWeight: "600",
+  },
+  commentInputFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  characterCountWarning: {
+    color: "#F59E0B",
+  },
+  characterCountError: {
+    color: "#EF4444",
   },
 });
 

@@ -872,6 +872,31 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Like/unlike comment
+  app.post("/api/comments/:id/like", isAuthenticated, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const userId = req.user?.id || "mock-user-1";
+      
+      // For now, just return a success response
+      // In a real implementation, you would:
+      // 1. Check if the user already liked this comment
+      // 2. Add or remove the like from the database
+      // 3. Return the updated like count and status
+      
+      console.log(`User ${userId} liked comment ${commentId}`);
+      
+      res.json({ 
+        success: true, 
+        liked: true, 
+        likesCount: 1 // This should come from the database
+      });
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      res.status(500).json({ message: "Failed to like comment" });
+    }
+  });
+
   // Favorite/unfavorite case
   app.post("/api/cases/:id/favorite", isAuthenticated, async (req, res) => {
     try {

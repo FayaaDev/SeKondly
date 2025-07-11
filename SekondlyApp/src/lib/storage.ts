@@ -183,7 +183,25 @@ export class StorageService {
     };
     
     const settings = await this.getItem<AppSettings>(STORAGE_KEYS.APP_SETTINGS);
-    return settings || defaultSettings;
+    if (!settings) return defaultSettings;
+    
+    // Merge with defaults to ensure all properties are present
+    return {
+      ...defaultSettings,
+      ...settings,
+      notifications: {
+        ...defaultSettings.notifications,
+        ...settings.notifications,
+      },
+      privacy: {
+        ...defaultSettings.privacy,
+        ...settings.privacy,
+      },
+      disclaimer: {
+        ...defaultSettings.disclaimer,
+        ...settings.disclaimer,
+      },
+    };
   }
 
   // Search History Methods

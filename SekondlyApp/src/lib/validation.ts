@@ -58,6 +58,7 @@ const testTypeCompatibility = () => {
     systemicReview: null,
     examination: null,
     management: null,
+    isHot: false,
   };
   
   // Test CaseComment type

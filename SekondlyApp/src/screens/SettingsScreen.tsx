@@ -28,6 +28,9 @@ interface AppSettings {
     showEmail: boolean;
     showInstitution: boolean;
   };
+  disclaimer: {
+    hideDisclaimer: boolean;
+  };
 }
 
 /**
