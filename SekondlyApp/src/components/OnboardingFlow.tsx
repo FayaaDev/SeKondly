@@ -41,6 +41,20 @@ interface OnboardingFlowProps {
 
 type OnboardingScreen = 'welcome' | 'signin' | 'signup' | 'professional' | 'credentials';
 
+// Helper function to check password strength
+const checkPasswordStrength = (password: string) => {
+  const hasMinLength = password.length >= 6;
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  
+  return {
+    hasMinLength,
+    hasNumber,
+    hasSpecialChar,
+    isValid: hasMinLength && hasNumber && hasSpecialChar
+  };
+};
+
 // Use centralized medical specialties for board certifications
 
 /**
@@ -197,10 +211,26 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       Alert.alert('Password Mismatch', 'Passwords do not match.');
       return false;
     }
+    
+    // Strong password validation
     if (formData.password.length < 6) {
       Alert.alert('Password Too Short', 'Password must be at least 6 characters long.');
       return false;
     }
+    
+    const hasNumber = /\d/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+    
+    if (!hasNumber) {
+      Alert.alert('Password Invalid', 'Password must contain at least one number.');
+      return false;
+    }
+    
+    if (!hasSpecialChar) {
+      Alert.alert('Password Invalid', 'Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"\\|,.<>/?).'); 
+      return false;
+    }
+    
     return true;
   };
 
@@ -514,6 +544,56 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              <View style={styles.passwordRequirementsContainer}>
+                {formData.password.length > 0 && (
+                  <View style={styles.passwordChecks}>
+                    <View style={styles.passwordCheck}>
+                      <Ionicons 
+                        name={checkPasswordStrength(formData.password).hasMinLength ? "checkmark-circle" : "close-circle"} 
+                        size={16} 
+                        color={checkPasswordStrength(formData.password).hasMinLength ? "#34C759" : "#FF3B30"} 
+                      />
+                      <Text style={[
+                        styles.passwordCheckText,
+                        { color: checkPasswordStrength(formData.password).hasMinLength ? "#34C759" : "#FF3B30" }
+                      ]}>
+                        At least 6 characters
+                      </Text>
+                    </View>
+                    <View style={styles.passwordCheck}>
+                      <Ionicons 
+                        name={checkPasswordStrength(formData.password).hasNumber ? "checkmark-circle" : "close-circle"} 
+                        size={16} 
+                        color={checkPasswordStrength(formData.password).hasNumber ? "#34C759" : "#FF3B30"} 
+                      />
+                      <Text style={[
+                        styles.passwordCheckText,
+                        { color: checkPasswordStrength(formData.password).hasNumber ? "#34C759" : "#FF3B30" }
+                      ]}>
+                        Contains a number
+                      </Text>
+                    </View>
+                    <View style={styles.passwordCheck}>
+                      <Ionicons 
+                        name={checkPasswordStrength(formData.password).hasSpecialChar ? "checkmark-circle" : "close-circle"} 
+                        size={16} 
+                        color={checkPasswordStrength(formData.password).hasSpecialChar ? "#34C759" : "#FF3B30"} 
+                      />
+                      <Text style={[
+                        styles.passwordCheckText,
+                        { color: checkPasswordStrength(formData.password).hasSpecialChar ? "#34C759" : "#FF3B30" }
+                      ]}>
+                        Contains a special character
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {formData.password.length === 0 && (
+                  <Text style={styles.passwordRequirements}>
+                    Password must be at least 6 characters and include a number and special character
+                  </Text>
+                )}
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
@@ -1100,6 +1180,27 @@ const styles = {
     paddingVertical: 16,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
+  },
+  passwordRequirements: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  passwordRequirementsContainer: {
+    marginTop: 4,
+  },
+  passwordChecks: {
+    gap: 4,
+  },
+  passwordCheck: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  passwordCheckText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   pickerButton: {
     borderWidth: 1,
