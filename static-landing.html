@@ -433,6 +433,210 @@
             display: inline-block;
         }
         
+        /* Gallery Section Styles */
+        .gallery-container {
+            max-width: 1400px;
+            margin: 3rem auto 0;
+            padding: 0 1rem;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .gallery-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            aspect-ratio: 9/16;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(78, 205, 196, 0.25);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+        
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            color: white;
+            padding: 2rem 1.5rem 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-item:hover .gallery-overlay {
+            transform: translateY(0);
+        }
+        
+        .gallery-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .gallery-description {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        
+        .gallery-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(78, 205, 196, 0.9);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Lightbox Styles */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .lightbox.active {
+            display: flex;
+        }
+        
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .lightbox img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .lightbox-prev {
+            left: 2rem;
+        }
+        
+        .lightbox-next {
+            right: 2rem;
+        }
+        
+        .lightbox-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .lightbox-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .lightbox-description {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        /* Dark theme adjustments */
+        body.dark-theme .gallery-item {
+            background: #2d2d2d;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-theme .gallery-item:hover {
+            box-shadow: 0 20px 40px rgba(78, 205, 196, 0.3);
+        }
+        
         .support-section {
             padding: 3rem;
             background: #ffffff;
@@ -733,6 +937,20 @@
                 grid-template-columns: 1fr;
             }
             
+            .screenshots-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .screenshot-item img {
+                max-height: 300px;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+            
             .navbar-logo {
                 font-size: 1.5rem;
             }
@@ -776,6 +994,34 @@
             .theme-icon {
                 font-size: 1rem;
             }
+            
+            .screenshots-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .screenshot-item img {
+                max-height: 250px;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .lightbox-nav {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
+            
+            .lightbox-prev {
+                left: 1rem;
+            }
+            
+            .lightbox-next {
+                right: 1rem;
+            }
         }
     </style>
 </head>
@@ -786,6 +1032,7 @@
             <div class="navbar-right">
                 <ul class="navbar-nav">
                     <li><a href="#home" class="nav-link active">Home</a></li>
+                    <li><a href="#screenshots" class="nav-link">Gallery</a></li>
                     <li><a href="#faq" class="nav-link">FAQ</a></li>
                     <li><a href="#support" class="nav-link">Support</a></li>
                 </ul>
@@ -847,6 +1094,86 @@
                 </div>
             </div>
         </section>
+        
+        <!-- Gallery Section -->
+        <section id="screenshots" class="section">
+            <div class="container">
+                <h2 class="section-title">App Gallery</h2>
+                <p class="section-subtitle">Explore SeKondly's interface and features</p>
+                
+                <div class="gallery-container">
+                    <div class="gallery-grid" id="galleryGrid">
+                        <div class="gallery-item" data-category="core user" data-index="0">
+                            <img src="/uploads/HotCase.png" alt="SeKondly home feed" loading="lazy">
+                            <div class="gallery-badge">New</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">Home Feed</div>
+                                <div class="gallery-description">Browse medical cases shared by healthcare professionals worldwide</div>
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" data-category="core" data-index="1">
+                            <img src="/uploads/CaseCard.png" alt="SeKondly case details" loading="lazy">
+                            <div class="gallery-badge">Featured</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">Case Details</div>
+                                <div class="gallery-description">Detailed view of medical cases with comprehensive patient information</div>
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" data-category="core" data-index="2">
+                            <img src="/uploads/Discussion.png" alt="SeKondly case discussion" loading="lazy">
+                            <div class="gallery-badge">Popular</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">Case Discussion</div>
+                                <div class="gallery-description">Collaborate with colleagues and share medical insights</div>
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" data-category="user" data-index="3">
+                            <img src="/uploads/UserProfile.png" alt="SeKondly user profile" loading="lazy">
+                            <div class="gallery-badge">Profile</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">User Profile</div>
+                                <div class="gallery-description">Manage your professional profile and credentials</div>
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" data-category="core" data-index="4">
+                            <img src="/uploads/NewCase.png" alt="SeKondly case creation" loading="lazy">
+                            <div class="gallery-badge">Create</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">Create Case</div>
+                                <div class="gallery-description">Share your own medical cases with the community</div>
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" data-category="user" data-index="6">
+                            <img src="/uploads/SearchBar.png" alt="SeKondly search functionality" loading="lazy">
+                            <div class="gallery-badge">Search</div>
+                            <div class="gallery-overlay">
+                                <div class="gallery-title">Search & Filter</div>
+                                <div class="gallery-description">Find specific cases and filter by specialty or criteria</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Lightbox -->
+        <div class="lightbox" id="lightbox">
+            <div class="lightbox-content">
+                <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+                <button class="lightbox-nav lightbox-prev" onclick="previousImage()">&#8249;</button>
+                <button class="lightbox-nav lightbox-next" onclick="nextImage()">&#8250;</button>
+                <img id="lightboxImage" src="" alt="">
+                <div class="lightbox-info">
+                    <div class="lightbox-title" id="lightboxTitle"></div>
+                    <div class="lightbox-description" id="lightboxDescription"></div>
+                </div>
+            </div>
+        </div>
         
         <!-- FAQ Section -->
         <section id="faq" class="section">
@@ -1181,6 +1508,9 @@
             
             // Initialize theme
             initializeTheme();
+            
+            // Initialize gallery
+            initializeGallery();
         });
         
         // Theme Toggle Functionality
@@ -1205,6 +1535,91 @@
                 const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
                 localStorage.setItem('theme', currentTheme);
             });
+        }
+        
+        // Gallery functionality
+        let currentImageIndex = 0;
+        const galleryImages = [];
+        
+        function initializeGallery() {
+            // Collect all gallery items
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            galleryItems.forEach((item, index) => {
+                const img = item.querySelector('img');
+                const title = item.querySelector('.gallery-title').textContent;
+                const description = item.querySelector('.gallery-description').textContent;
+                
+                galleryImages.push({
+                    src: img.src,
+                    alt: img.alt,
+                    title: title,
+                    description: description
+                });
+                
+                // Add click event to open lightbox
+                item.addEventListener('click', () => openLightbox(index));
+            });
+            
+            // Lightbox keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (document.getElementById('lightbox').classList.contains('active')) {
+                    if (e.key === 'Escape') closeLightbox();
+                    if (e.key === 'ArrowLeft') previousImage();
+                    if (e.key === 'ArrowRight') nextImage();
+                }
+            });
+            
+            // Close lightbox when clicking outside image
+            document.getElementById('lightbox').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeLightbox();
+                }
+            });
+        }
+        
+        function openLightbox(index) {
+            currentImageIndex = index;
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxTitle = document.getElementById('lightboxTitle');
+            const lightboxDescription = document.getElementById('lightboxDescription');
+            
+            const imageData = galleryImages[index];
+            lightboxImage.src = imageData.src;
+            lightboxImage.alt = imageData.alt;
+            lightboxTitle.textContent = imageData.title;
+            lightboxDescription.textContent = imageData.description;
+            
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function previousImage() {
+            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateLightboxImage();
+        }
+        
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+            updateLightboxImage();
+        }
+        
+        function updateLightboxImage() {
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxTitle = document.getElementById('lightboxTitle');
+            const lightboxDescription = document.getElementById('lightboxDescription');
+            
+            const imageData = galleryImages[currentImageIndex];
+            lightboxImage.src = imageData.src;
+            lightboxImage.alt = imageData.alt;
+            lightboxTitle.textContent = imageData.title;
+            lightboxDescription.textContent = imageData.description;
         }
     </script>
 </body>
