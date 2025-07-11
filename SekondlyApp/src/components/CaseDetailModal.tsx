@@ -343,6 +343,15 @@ export default function CaseDetailModal({
     setSelectedCommentId(null);
   };
 
+  const handleProfilePressFromAgreers = (userId: string) => {
+    // Close the agreers modal first
+    handleCloseCommentAgreers();
+    // Close the main case modal
+    onClose();
+    // Navigate to profile
+    onProfilePress?.(userId);
+  };
+
   // Check if current user is the author
   const isAuthor = currentUser?.id === caseData?.authorId;
 
@@ -570,31 +579,31 @@ export default function CaseDetailModal({
                   color={(item as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
                 />
               </View>
-              <TouchableOpacity 
-                style={styles.agreeCountButton}
-                onPress={(e) => {
-                  e.stopPropagation();
+              <Text style={[
+                styles.commentActionLabel,
+                (item as any).isAgreedByUser && styles.commentActionLabelActive
+              ]}>
+                {(() => {
                   const count = (item as any).agreesCount || 0;
                   if (count > 0) {
-                    handleShowCommentAgreers(item.id.toString());
+                    return `Agree (${count})`;
                   }
-                }}
-              >
-                <Text style={[
-                  styles.commentActionLabel,
-                  (item as any).isAgreedByUser && styles.commentActionLabelActive
-                ]}>
-                  {(() => {
-                    const count = (item as any).agreesCount || 0;
-                    if (count > 0) {
-                      return count.toString();
-                    }
-                    return 'Agree';
-                  })()}
-                </Text>
-              </TouchableOpacity>
+                  return 'Agree';
+                })()}
+              </Text>
             </TouchableOpacity>
           </View>
+          
+          {/* Show Agreed List Button - positioned below action buttons */}
+          {(item as any).agreesCount > 0 && (
+            <TouchableOpacity 
+              style={styles.showAgreersButton}
+              onPress={() => handleShowCommentAgreers(item.id.toString())}
+            >
+              <Ionicons name="people-outline" size={12} color="#4ECDC4" />
+              <Text style={styles.showAgreersText}>See who agreed with this</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -925,7 +934,7 @@ export default function CaseDetailModal({
         visible={showCommentAgreers}
         commentId={selectedCommentId}
         onClose={handleCloseCommentAgreers}
-        onProfilePress={onProfilePress}
+        onProfilePress={handleProfilePressFromAgreers}
       />
       
       {/* Custom Alert Component */}
@@ -1617,6 +1626,26 @@ const styles = StyleSheet.create({
     // Make the count clickable without affecting the icon
   },
   
+  agreeCountButtonClickable: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  
+  commentActionLabelClickable: {
+    color: "#1E40AF",
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  
+  clickableIndicator: {
+    opacity: 0.7,
+  },
+  
   // Updated input styles for medical theme
   replyIconContainer: {
     width: 20,
@@ -1656,5 +1685,22 @@ const styles = StyleSheet.create({
   },
   characterCountError: {
     color: "#EF4444",
+  },
+  showAgreersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 8,
+    marginLeft: 52, // Align with comment content (avatar width + margin)
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  showAgreersText: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    marginLeft: 4,
+    fontWeight: '600',
   },
 });

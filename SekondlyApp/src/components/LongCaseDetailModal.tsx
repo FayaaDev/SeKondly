@@ -211,13 +211,24 @@ const LongCaseDetailModal = ({
   };
 
   const handleShowCommentAgreers = (commentId: string) => {
+    console.log('LongCaseDetailModal - handleShowCommentAgreers called with commentId:', commentId);
     setSelectedCommentId(commentId);
     setShowCommentAgreers(true);
+    console.log('LongCaseDetailModal - showCommentAgreers set to true');
   };
 
   const handleCloseCommentAgreers = () => {
     setShowCommentAgreers(false);
     setSelectedCommentId(null);
+  };
+
+  const handleProfilePressFromAgreers = (userId: string) => {
+    // Close the agreers modal first
+    handleCloseCommentAgreers();
+    // Close the main case modal
+    onClose();
+    // Navigate to profile
+    onProfilePress?.(userId);
   };
 
   const nextImage = () => {
@@ -487,31 +498,34 @@ const LongCaseDetailModal = ({
                                   color={(comment as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
                                 />
                               </View>
-                              <TouchableOpacity 
-                                style={styles.agreeCountButton}
-                                onPress={(e) => {
-                                  e.stopPropagation();
+                              <Text style={[
+                                styles.commentActionLabel,
+                                (comment as any).isAgreedByUser && styles.commentActionLabelActive
+                              ]}>
+                                {(() => {
                                   const count = (comment as any).agreesCount || 0;
                                   if (count > 0) {
-                                    handleShowCommentAgreers(comment.id.toString());
+                                    return `Agree (${count})`;
                                   }
-                                }}
-                              >
-                                <Text style={[
-                                  styles.commentActionLabel,
-                                  (comment as any).isAgreedByUser && styles.commentActionLabelActive
-                                ]}>
-                                  {(() => {
-                                    const count = (comment as any).agreesCount || 0;
-                                    if (count > 0) {
-                                      return count.toString();
-                                    }
-                                    return 'Agree';
-                                  })()}
-                                </Text>
-                              </TouchableOpacity>
+                                  return 'Agree';
+                                })()}
+                              </Text>
                             </TouchableOpacity>
                           </View>
+                          
+                          {/* Show Agreed List Button - positioned below action buttons */}
+                          {(comment as any).agreesCount > 0 && (
+                            <TouchableOpacity 
+                              style={styles.showAgreersButton}
+                              onPress={() => {
+                                console.log('LongCaseDetailModal - List button pressed for comment:', comment.id);
+                                handleShowCommentAgreers(comment.id.toString());
+                              }}
+                            >
+                              <Ionicons name="people-outline" size={12} color="#4ECDC4" />
+                              <Text style={styles.showAgreersText}>See who agreed with this</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                       </View>
                     </View>
@@ -619,18 +633,19 @@ const LongCaseDetailModal = ({
                 </TouchableOpacity>
               </View>
             </View>
+          
+          {/* Comment Agreers Modal */}
+          <CommentAgreersModal
+            visible={showCommentAgreers}
+            commentId={selectedCommentId}
+            onClose={handleCloseCommentAgreers}
+            onProfilePress={handleProfilePressFromAgreers}
+            useOverlay={true}
+          />
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
       {renderImageGalleryModal()}
-      
-      {/* Comment Agreers Modal */}
-      <CommentAgreersModal
-        visible={showCommentAgreers}
-        commentId={selectedCommentId}
-        onClose={handleCloseCommentAgreers}
-        onProfilePress={onProfilePress}
-      />
     </>
   );
 };
@@ -1012,6 +1027,26 @@ const styles = StyleSheet.create({
   agreeCountButton: {
     // Make the count clickable without affecting the icon
   },
+  
+  agreeCountButtonClickable: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  
+  commentActionLabelClickable: {
+    color: "#1E40AF",
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  
+  clickableIndicator: {
+    opacity: 0.7,
+  },
 
   commentContainer: {
     paddingHorizontal: 16,
@@ -1245,6 +1280,23 @@ const styles = StyleSheet.create({
   },
   characterCountError: {
     color: "#EF4444",
+  },
+  showAgreersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 8,
+    marginLeft: 52, // Align with comment content (avatar width + margin)
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  showAgreersText: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    marginLeft: 4,
+    fontWeight: '600',
   },
 });
 

@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ interface CommentAgreersModalProps {
   onClose: () => void;
   commentId: string | null;
   onProfilePress?: (userId: string) => void;
+  useOverlay?: boolean; // New prop to use overlay instead of modal
 }
 
 interface CommentAgreeer {
@@ -43,7 +45,8 @@ export default function CommentAgreersModal({
   visible, 
   onClose, 
   commentId,
-  onProfilePress 
+  onProfilePress,
+  useOverlay = false
 }: CommentAgreersModalProps): React.ReactElement | null {
   
   // Fetch comment agreers
@@ -55,6 +58,14 @@ export default function CommentAgreersModal({
   });
 
   const agreers = agreersData?.agreers || [];
+  
+  console.log('CommentAgreersModal render:', { 
+    visible, 
+    commentId, 
+    agreersCount: agreers.length,
+    isLoading,
+    modalStackLevel: 'CommentAgreersModal received props'
+  });
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
     if (!firstName && !lastName) return "U";
@@ -62,52 +73,41 @@ export default function CommentAgreersModal({
   };
 
   const handleProfilePress = (userId: string) => {
+    console.log('Profile pressed in CommentAgreersModal:', userId);
+    console.log('onProfilePress function exists:', !!onProfilePress);
     onProfilePress?.(userId);
-    onClose();
   };
 
   if (!commentId) return null;
 
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerIconContainer}>
-              <Ionicons name="checkmark-circle" size={24} color="#22C55E" />
+  const modalContent = (
+    <TouchableWithoutFeedback onPress={onClose}>
+      <View style={useOverlay ? styles.overlayBackground : styles.modalOverlay}>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.modalContainer}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View style={styles.headerIconContainer}>
+                  <Ionicons name="people" size={20} color="#4ECDC4" />
+                </View>
+                <Text style={styles.headerTitle}>Agreed ({agreers.length})</Text>
+              </View>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.headerTitle}>Medical Agreement</Text>
-          </View>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={28} color="#333" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Content */}
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          <View style={styles.statsContainer}>
-            <Text style={styles.statsTitle}>
-              {agreers.length} {agreers.length === 1 ? 'medical professional agrees' : 'medical professionals agree'}
-            </Text>
-            <Text style={styles.statsSubtitle}>
-              Healthcare professionals who found this insight valuable
-            </Text>
-          </View>
-
+            {/* Content */}
+            <ScrollView 
+              style={styles.content}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollViewContent}
+              keyboardShouldPersistTaps="handled"
+            >
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#4ECDC4" />
-              <Text style={styles.loadingText}>Loading agreement details...</Text>
             </View>
           ) : agreers.length > 0 ? (
             <View style={styles.agreersContainer}>
@@ -115,7 +115,12 @@ export default function CommentAgreersModal({
                 <TouchableOpacity 
                   key={agreeer.id}
                   style={styles.agreeerCard}
-                  onPress={() => handleProfilePress(agreeer.id)}
+                  onPress={() => {
+                    console.log('TouchableOpacity pressed for user:', agreeer.id);
+                    handleProfilePress(agreeer.id);
+                  }}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <View style={styles.agreeerAvatar}>
                     {agreeer.profileImageUrl ? (
@@ -137,12 +142,12 @@ export default function CommentAgreersModal({
                     </Text>
                     <View style={styles.agreeerCredentials}>
                       <View style={styles.specialtyBadge}>
-                        <Ionicons name="medical" size={12} color="#4ECDC4" />
+                        <Ionicons name="medical" size={10} color="#4ECDC4" />
                         <Text style={styles.specialtyText}>{agreeer.specialty}</Text>
                       </View>
                       {agreeer.level && (
                         <View style={styles.levelBadge}>
-                          <Ionicons name="ribbon" size={12} color="#059669" />
+                          <Ionicons name="ribbon" size={10} color="#059669" />
                           <Text style={styles.levelText}>{agreeer.level}</Text>
                         </View>
                       )}
@@ -150,39 +155,84 @@ export default function CommentAgreersModal({
                   </View>
                   
                   <View style={styles.agreementIndicator}>
-                    <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                    <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
                   </View>
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
             <View style={styles.emptyContainer}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="people-outline" size={48} color="#E1E8ED" />
-              </View>
+              <Ionicons name="people-outline" size={32} color="#E1E8ED" />
               <Text style={styles.emptyTitle}>No agreements yet</Text>
-              <Text style={styles.emptyText}>
-                Be the first medical professional to agree with this insight
-              </Text>
             </View>
           )}
         </ScrollView>
-      </SafeAreaView>
+          </View>
+        </TouchableWithoutFeedback>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+
+  if (useOverlay) {
+    return visible ? modalContent : null;
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      {modalContent}
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  overlayBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    zIndex: 1000,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    maxHeight: '60%',
+    width: '100%',
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#EFF3F4",
   },
@@ -192,10 +242,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0FDF4",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E6F7FF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -209,51 +259,27 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   content: {
-    flex: 1,
+    maxHeight: 300,
   },
   scrollViewContent: {
-    paddingBottom: 20,
-  },
-  statsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    backgroundColor: "#FAFBFC",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  statsTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1E293B",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  statsSubtitle: {
-    fontSize: 14,
-    color: "#64748B",
-    textAlign: "center",
-  },
-  loadingContainer: {
-    paddingVertical: 60,
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#64748B",
-    marginTop: 16,
-    fontWeight: "500",
+    paddingBottom: 16,
   },
   agreersContainer: {
-    paddingTop: 16,
+    paddingTop: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
   },
   agreeerCard: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
+    minHeight: 60,
   },
   agreeerAvatar: {
     width: 50,
@@ -291,29 +317,29 @@ const styles = StyleSheet.create({
   },
   specialtyBadge: {
     backgroundColor: "#E6F7FF",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 2,
   },
   specialtyText: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#4ECDC4",
     fontWeight: "600",
   },
   levelBadge: {
     backgroundColor: "#F0FDF4",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 2,
   },
   levelText: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#059669",
     fontWeight: "600",
   },
@@ -321,30 +347,15 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   emptyContainer: {
-    paddingVertical: 60,
+    paddingVertical: 40,
     paddingHorizontal: 24,
     alignItems: "center",
   },
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#F8FAFC",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1E293B",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyText: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "600",
     color: "#64748B",
+    marginTop: 12,
     textAlign: "center",
-    lineHeight: 20,
   },
 });
