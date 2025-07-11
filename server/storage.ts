@@ -3,6 +3,7 @@ import {
   cases,
   caseLikes,
   caseComments,
+  commentAgrees,
   caseFavorites,
   documents,
   notifications,
@@ -17,6 +18,7 @@ import {
   type CaseComment,
   type InsertComment,
   type CommentWithAuthor,
+  type CommentAgree,
   type CaseFavorite,
   type Document,
   type InsertDocument,
@@ -50,7 +52,13 @@ export interface IStorage {
   unlikeCase(caseId: number, userId: string): Promise<void>;
   getCaseLike(caseId: number, userId: string): Promise<CaseLike | undefined>;
   addComment(commentData: InsertComment): Promise<CommentWithAuthor>;
-  getCaseComments(caseId: number): Promise<CommentWithAuthor[]>;
+  getCaseComments(caseId: number, userId?: string): Promise<CommentWithAuthor[]>;
+  
+  // Comment agree operations
+  agreeWithComment(commentId: number, userId: string): Promise<CommentAgree>;
+  disagreeWithComment(commentId: number, userId: string): Promise<void>;
+  getCommentAgree(commentId: number, userId: string): Promise<CommentAgree | undefined>;
+  getCommentAgreers(commentId: number): Promise<User[]>;
   
   // Favorites operations
   favoriteCase(caseId: number, userId: string): Promise<CaseFavorite>;
@@ -490,7 +498,7 @@ export class DatabaseStorage implements IStorage {
     return commentWithAuthor;
   }
 
-  async getCaseComments(caseId: number): Promise<CommentWithAuthor[]> {
+  async getCaseComments(caseId: number, userId?: string): Promise<CommentWithAuthor[]> {
     return await db
       .select({
         id: caseComments.id,
@@ -500,11 +508,66 @@ export class DatabaseStorage implements IStorage {
         createdAt: caseComments.createdAt,
         updatedAt: caseComments.updatedAt,
         author: users,
+        // Add agree information
+        isAgreedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${commentAgrees} WHERE ${commentAgrees.commentId} = ${caseComments.id} AND ${commentAgrees.userId} = ${userId})` : sql<boolean>`false`,
+        agreesCount: sql<number>`(SELECT COUNT(*) FROM ${commentAgrees} WHERE ${commentAgrees.commentId} = ${caseComments.id})`,
       })
       .from(caseComments)
       .innerJoin(users, eq(caseComments.userId, users.id))
       .where(eq(caseComments.caseId, caseId))
       .orderBy(desc(caseComments.createdAt));
+  }
+
+  // Comment agree operations
+  async agreeWithComment(commentId: number, userId: string): Promise<CommentAgree> {
+    const [agree] = await db
+      .insert(commentAgrees)
+      .values({ commentId, userId })
+      .returning();
+    return agree;
+  }
+
+  async disagreeWithComment(commentId: number, userId: string): Promise<void> {
+    await db
+      .delete(commentAgrees)
+      .where(and(eq(commentAgrees.commentId, commentId), eq(commentAgrees.userId, userId)));
+  }
+
+  async getCommentAgree(commentId: number, userId: string): Promise<CommentAgree | undefined> {
+    const [agree] = await db
+      .select()
+      .from(commentAgrees)
+      .where(and(eq(commentAgrees.commentId, commentId), eq(commentAgrees.userId, userId)));
+    return agree;
+  }
+
+  async getCommentAgreers(commentId: number): Promise<User[]> {
+    return await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        specialty: users.specialty,
+        level: users.level,
+        profileImageUrl: users.profileImageUrl,
+        email: users.email,
+        username: users.username,
+        password: users.password,
+        phone: users.phone,
+        fellowship: users.fellowship,
+        experience: users.experience,
+        institution: users.institution,
+        isApproved: users.isApproved,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        approvedAt: users.approvedAt,
+        approvedBy: users.approvedBy,
+      })
+      .from(commentAgrees)
+      .innerJoin(users, eq(commentAgrees.userId, users.id))
+      .where(eq(commentAgrees.commentId, commentId))
+      .orderBy(desc(commentAgrees.createdAt));
   }
 
   // Favorites operations

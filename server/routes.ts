@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCaseSchema, insertCommentSchema, insertDocumentSchema, User } from "@shared/schema";
+import { insertCaseSchema, insertCommentSchema, insertDocumentSchema, User, commentAgrees, users } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -864,7 +864,8 @@ Please respond to: ${validatedData.email}
   app.get("/api/cases/:id/comments", isAuthenticated, async (req, res) => {
     try {
       const caseId = parseInt(req.params.id);
-      const comments = await storage.getCaseComments(caseId);
+      const userId = req.user?.id || "mock-user-1";
+      const comments = await storage.getCaseComments(caseId, userId);
       res.json(comments);
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -878,19 +879,36 @@ Please respond to: ${validatedData.email}
       const commentId = parseInt(req.params.id);
       const userId = req.user?.id || "mock-user-1";
       
-      // For now, just return a success response
-      // In a real implementation, you would:
-      // 1. Check if the user already agreed with this comment
-      // 2. Add or remove the agreement from the database
-      // 3. Return the updated agreement count and status
+      // Check if the user already agreed with this comment
+      const existingAgree = await storage.getCommentAgree(commentId, userId);
       
-      console.log(`User ${userId} agreed with comment ${commentId}`);
-      
-      res.json({ 
-        success: true, 
-        isAgreedByUser: true, 
-        agreesCount: 1 // This should come from the database
-      });
+      if (existingAgree) {
+        // User already agreed, so disagree (remove the agreement)
+        await storage.disagreeWithComment(commentId, userId);
+        console.log(`User ${userId} disagreed with comment ${commentId}`);
+        
+        // Get updated count
+        const agreers = await storage.getCommentAgreers(commentId);
+        
+        res.json({ 
+          success: true, 
+          isAgreedByUser: false, 
+          agreesCount: agreers.length
+        });
+      } else {
+        // User hasn't agreed yet, so add agreement
+        await storage.agreeWithComment(commentId, userId);
+        console.log(`User ${userId} agreed with comment ${commentId}`);
+        
+        // Get updated count
+        const agreers = await storage.getCommentAgreers(commentId);
+        
+        res.json({ 
+          success: true, 
+          isAgreedByUser: true, 
+          agreesCount: agreers.length
+        });
+      }
     } catch (error) {
       console.error("Error agreeing with comment:", error);
       res.status(500).json({ message: "Failed to agree with comment" });
@@ -902,36 +920,15 @@ Please respond to: ${validatedData.email}
     try {
       const commentId = parseInt(req.params.id);
       
-      // For now, return mock data
-      // In a real implementation, you would:
-      // 1. Query the commentAgrees table joined with users table
-      // 2. Return user profiles who agreed with this comment
+      // Get actual users who agreed with this comment
+      const agreers = await storage.getCommentAgreers(commentId);
       
-      const mockAgreers = [
-        {
-          id: "mock-user-1",
-          firstName: "Sarah",
-          lastName: "Johnson",
-          specialty: "Cardiology",
-          level: "Consultant",
-          profileImageUrl: null,
-        },
-        {
-          id: "mock-user-2", 
-          firstName: "Michael",
-          lastName: "Chen",
-          specialty: "Emergency Medicine",
-          level: "Resident",
-          profileImageUrl: null,
-        }
-      ];
-      
-      console.log(`Fetching users who agreed with comment ${commentId}`);
+      console.log(`Fetching ${agreers.length} users who agreed with comment ${commentId}`);
       
       res.json({ 
         success: true,
-        agreers: mockAgreers,
-        count: mockAgreers.length
+        agreers: agreers,
+        count: agreers.length
       });
     } catch (error) {
       console.error("Error fetching comment agreers:", error);
