@@ -67,8 +67,8 @@ export type CaseWithAuthor = Case & {
 
 export type CommentWithAuthor = CaseComment & {
   author: User;
-  liked?: boolean;
-  likesCount?: number;
+  isAgreedByUser?: boolean;
+  agreesCount?: number;
   authorId: string;
 };
 

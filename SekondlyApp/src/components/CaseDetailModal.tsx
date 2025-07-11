@@ -24,6 +24,7 @@ import { apiRequest } from "../lib/queryClient";
 import { handleAuthError } from "../lib/authUtils";
 import { API_BASE_URL } from "../config/api";
 import ImageGalleryModal from "./ImageGalleryModal";
+import CommentAgreersModal from "./CommentAgreersModal";
 import { useCustomAlert } from "./CustomAlert";
 import { useAuth } from "../hooks/useAuth";
 import type { CaseWithAuthor, CommentWithAuthor, CaseFormat } from "../types/schema";
@@ -72,6 +73,8 @@ export default function CaseDetailModal({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [showImageManagement, setShowImageManagement] = useState(false);
+  const [showCommentAgreers, setShowCommentAgreers] = useState(false);
+  const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
@@ -144,20 +147,57 @@ export default function CaseDetailModal({
     },
   });
 
-  // Like comment mutation
-  const likeCommentMutation = useMutation({
+  // Agree with comment mutation
+  const agreeCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      console.log('Attempting to like comment with ID:', commentId);
-      return await apiRequest("POST", `/api/comments/${commentId}/like`);
+      console.log('Attempting to agree with comment ID:', commentId);
+      return await apiRequest("POST", `/api/comments/${commentId}/agree`);
+    },
+    onMutate: async (commentId: string) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ 
+        queryKey: ["/api/cases", caseData?.id, "comments"] 
+      });
+
+      // Snapshot the previous value
+      const previousComments = queryClient.getQueryData(["/api/cases", caseData?.id, "comments"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/cases", caseData?.id, "comments"], (old: any) => {
+        if (!old) return old;
+        return old.map((comment: any) => {
+          if (comment.id.toString() === commentId) {
+            const currentCount = comment.agreesCount || 0;
+            const isCurrentlyAgreed = comment.isAgreedByUser || false;
+            return {
+              ...comment,
+              isAgreedByUser: !isCurrentlyAgreed,
+              agreesCount: isCurrentlyAgreed ? Math.max(0, currentCount - 1) : currentCount + 1
+            };
+          }
+          return comment;
+        });
+      });
+
+      // Return a context object with the snapshot
+      return { previousComments };
     },
     onSuccess: (data) => {
-      console.log('Like comment success:', data);
+      console.log('Agree comment success:', data);
+      // Refetch to ensure we have the latest data
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData?.id, "comments"] 
       });
     },
-    onError: (error) => {
-      console.error('Like comment error:', error);
+    onError: (error, commentId, context) => {
+      console.error('Agree comment error:', error);
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousComments) {
+        queryClient.setQueryData(
+          ["/api/cases", caseData?.id, "comments"], 
+          context.previousComments
+        );
+      }
       if (!handleAuthError(error)) {
         showAlert(
           "Error", 
@@ -291,6 +331,16 @@ export default function CaseDetailModal({
       onProfilePress?.(caseData.author.id);
       onClose();
     }
+  };
+
+  const handleShowCommentAgreers = (commentId: string) => {
+    setSelectedCommentId(commentId);
+    setShowCommentAgreers(true);
+  };
+
+  const handleCloseCommentAgreers = () => {
+    setShowCommentAgreers(false);
+    setSelectedCommentId(null);
   };
 
   // Check if current user is the author
@@ -507,25 +557,42 @@ export default function CaseDetailModal({
               style={styles.commentActionButton}
               onPress={() => {
                 console.log('Agree button pressed for comment:', item.id);
-                likeCommentMutation.mutate(item.id.toString());
+                agreeCommentMutation.mutate(item.id.toString());
               }}
             >
               <View style={[
                 styles.medicalActionIcon,
-                (item as any).isLikedByUser && styles.medicalActionIconActive
+                (item as any).isAgreedByUser && styles.medicalActionIconActive
               ]}>
                 <Ionicons 
-                  name={(item as any).isLikedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
+                  name={(item as any).isAgreedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
                   size={16} 
-                  color={(item as any).isLikedByUser ? "#22C55E" : "#4ECDC4"} 
+                  color={(item as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
                 />
               </View>
-              <Text style={[
-                styles.commentActionLabel,
-                (item as any).isLikedByUser && styles.commentActionLabelActive
-              ]}>
-                {((item as any).likesCount || 0) > 0 ? (item as any).likesCount : 'Agree'}
-              </Text>
+              <TouchableOpacity 
+                style={styles.agreeCountButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  const count = (item as any).agreesCount || 0;
+                  if (count > 0) {
+                    handleShowCommentAgreers(item.id.toString());
+                  }
+                }}
+              >
+                <Text style={[
+                  styles.commentActionLabel,
+                  (item as any).isAgreedByUser && styles.commentActionLabelActive
+                ]}>
+                  {(() => {
+                    const count = (item as any).agreesCount || 0;
+                    if (count > 0) {
+                      return count.toString();
+                    }
+                    return 'Agree';
+                  })()}
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
         </View>
@@ -851,6 +918,14 @@ export default function CaseDetailModal({
         images={caseData?.imageUrls?.map(url => getFullImageUrl(url)) || []}
         initialIndex={currentImageIndex}
         onClose={() => setShowImageGallery(false)}
+      />
+      
+      {/* Comment Agreers Modal */}
+      <CommentAgreersModal
+        visible={showCommentAgreers}
+        commentId={selectedCommentId}
+        onClose={handleCloseCommentAgreers}
+        onProfilePress={onProfilePress}
       />
       
       {/* Custom Alert Component */}
@@ -1536,6 +1611,10 @@ const styles = StyleSheet.create({
   },
   commentActionLabelActive: {
     color: "#22C55E",
+  },
+  
+  agreeCountButton: {
+    // Make the count clickable without affecting the icon
   },
   
   // Updated input styles for medical theme

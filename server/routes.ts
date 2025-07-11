@@ -872,28 +872,70 @@ Please respond to: ${validatedData.email}
     }
   });
 
-  // Like/unlike comment
-  app.post("/api/comments/:id/like", isAuthenticated, async (req, res) => {
+  // Agree/disagree with comment
+  app.post("/api/comments/:id/agree", isAuthenticated, async (req, res) => {
     try {
       const commentId = parseInt(req.params.id);
       const userId = req.user?.id || "mock-user-1";
       
       // For now, just return a success response
       // In a real implementation, you would:
-      // 1. Check if the user already liked this comment
-      // 2. Add or remove the like from the database
-      // 3. Return the updated like count and status
+      // 1. Check if the user already agreed with this comment
+      // 2. Add or remove the agreement from the database
+      // 3. Return the updated agreement count and status
       
-      console.log(`User ${userId} liked comment ${commentId}`);
+      console.log(`User ${userId} agreed with comment ${commentId}`);
       
       res.json({ 
         success: true, 
-        liked: true, 
-        likesCount: 1 // This should come from the database
+        isAgreedByUser: true, 
+        agreesCount: 1 // This should come from the database
       });
     } catch (error) {
-      console.error("Error liking comment:", error);
-      res.status(500).json({ message: "Failed to like comment" });
+      console.error("Error agreeing with comment:", error);
+      res.status(500).json({ message: "Failed to agree with comment" });
+    }
+  });
+
+  // Get users who agreed with a comment
+  app.get("/api/comments/:id/agrees", isAuthenticated, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      
+      // For now, return mock data
+      // In a real implementation, you would:
+      // 1. Query the commentAgrees table joined with users table
+      // 2. Return user profiles who agreed with this comment
+      
+      const mockAgreers = [
+        {
+          id: "mock-user-1",
+          firstName: "Sarah",
+          lastName: "Johnson",
+          specialty: "Cardiology",
+          level: "Consultant",
+          profileImageUrl: null,
+        },
+        {
+          id: "mock-user-2", 
+          firstName: "Michael",
+          lastName: "Chen",
+          specialty: "Emergency Medicine",
+          level: "Resident",
+          profileImageUrl: null,
+        }
+      ];
+      
+      console.log(`Fetching users who agreed with comment ${commentId}`);
+      
+      res.json({ 
+        success: true,
+        agreers: mockAgreers,
+        count: mockAgreers.length
+      });
+    } catch (error) {
+      console.error("Error fetching comment agreers:", error);
+      res.status(500).json({ message: "Failed to fetch comment agreers" });
     }
   });
 

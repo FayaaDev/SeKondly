@@ -95,6 +95,14 @@ export const caseComments = pgTable("case_comments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Comment agrees table
+export const commentAgrees = pgTable("comment_agrees", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Case favorites table
 export const caseFavorites = pgTable("case_favorites", {
   id: serial("id").primaryKey(),
@@ -189,6 +197,17 @@ export const caseCommentsRelations = relations(caseComments, ({ one }) => ({
   }),
   user: one(users, {
     fields: [caseComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const commentAgreesRelations = relations(commentAgrees, ({ one }) => ({
+  comment: one(caseComments, {
+    fields: [commentAgrees.commentId],
+    references: [caseComments.id],
+  }),
+  user: one(users, {
+    fields: [commentAgrees.userId],
     references: [users.id],
   }),
 }));
@@ -322,6 +341,8 @@ export type CaseLike = typeof caseLikes.$inferSelect;
 export type CaseComment = typeof caseComments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 
+export type CommentAgree = typeof commentAgrees.$inferSelect;
+
 export type CaseFavorite = typeof caseFavorites.$inferSelect;
 
 export type Document = typeof documents.$inferSelect;
@@ -344,6 +365,8 @@ export type CaseWithAuthor = Case & {
 
 export type CommentWithAuthor = CaseComment & {
   author: User;
+  isAgreedByUser?: boolean;
+  agreesCount?: number;
 };
 
 export type UserWithFollowStats = User & {

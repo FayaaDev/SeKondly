@@ -23,6 +23,7 @@ import { apiRequest } from '../lib/queryClient';
 import { handleAuthError } from '../lib/authUtils';
 import { useAuth } from '../hooks/useAuth';
 import ImageGalleryModal from './ImageGalleryModal';
+import CommentAgreersModal from './CommentAgreersModal';
 import type { CaseWithAuthor, CommentWithAuthor } from '../types/schema';
 import { API_BASE_URL } from '../config/api';
 
@@ -72,6 +73,8 @@ const LongCaseDetailModal = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [showCommentAgreers, setShowCommentAgreers] = useState(false);
+  const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -114,20 +117,57 @@ const LongCaseDetailModal = ({
     },
   });
 
-  // Like mutation
-  const likeCommentMutation = useMutation({
+  // Agree with comment mutation
+  const agreeCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      console.log('Attempting to like comment with ID:', commentId);
-      return await apiRequest("POST", `/api/comments/${commentId}/like`);
+      console.log('Attempting to agree with comment ID:', commentId);
+      return await apiRequest("POST", `/api/comments/${commentId}/agree`);
+    },
+    onMutate: async (commentId: string) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ 
+        queryKey: ["/api/cases", caseData.id, "comments"] 
+      });
+
+      // Snapshot the previous value
+      const previousComments = queryClient.getQueryData(["/api/cases", caseData.id, "comments"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/cases", caseData.id, "comments"], (old: any) => {
+        if (!old) return old;
+        return old.map((comment: any) => {
+          if (comment.id.toString() === commentId) {
+            const currentCount = comment.agreesCount || 0;
+            const isCurrentlyAgreed = comment.isAgreedByUser || false;
+            return {
+              ...comment,
+              isAgreedByUser: !isCurrentlyAgreed,
+              agreesCount: isCurrentlyAgreed ? Math.max(0, currentCount - 1) : currentCount + 1
+            };
+          }
+          return comment;
+        });
+      });
+
+      // Return a context object with the snapshot
+      return { previousComments };
     },
     onSuccess: (data) => {
-      console.log('Like comment success:', data);
+      console.log('Agree comment success:', data);
+      // Refetch to ensure we have the latest data
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
     },
-    onError: (error) => {
-      console.error('Like comment error:', error);
+    onError: (error, commentId, context) => {
+      console.error('Agree comment error:', error);
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousComments) {
+        queryClient.setQueryData(
+          ["/api/cases", caseData.id, "comments"], 
+          context.previousComments
+        );
+      }
       if (!handleAuthError(error)) {
         Alert.alert("Error", "Failed to agree with comment");
       }
@@ -168,6 +208,16 @@ const LongCaseDetailModal = ({
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 500);
+  };
+
+  const handleShowCommentAgreers = (commentId: string) => {
+    setSelectedCommentId(commentId);
+    setShowCommentAgreers(true);
+  };
+
+  const handleCloseCommentAgreers = () => {
+    setShowCommentAgreers(false);
+    setSelectedCommentId(null);
   };
 
   const nextImage = () => {
@@ -424,25 +474,42 @@ const LongCaseDetailModal = ({
                               style={styles.commentActionButton}
                               onPress={() => {
                                 console.log('Agree button pressed for comment:', comment.id);
-                                likeCommentMutation.mutate(comment.id.toString());
+                                agreeCommentMutation.mutate(comment.id.toString());
                               }}
                             >
                               <View style={[
                                 styles.medicalActionIcon,
-                                (comment as any).isLikedByUser && styles.medicalActionIconActive
+                                (comment as any).isAgreedByUser && styles.medicalActionIconActive
                               ]}>
                                 <Ionicons 
-                                  name={(comment as any).isLikedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
+                                  name={(comment as any).isAgreedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
                                   size={16} 
-                                  color={(comment as any).isLikedByUser ? "#22C55E" : "#4ECDC4"} 
+                                  color={(comment as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
                                 />
                               </View>
-                              <Text style={[
-                                styles.commentActionLabel,
-                                (comment as any).isLikedByUser && styles.commentActionLabelActive
-                              ]}>
-                                {((comment as any).likesCount || 0) > 0 ? (comment as any).likesCount : 'Agree'}
-                              </Text>
+                              <TouchableOpacity 
+                                style={styles.agreeCountButton}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  const count = (comment as any).agreesCount || 0;
+                                  if (count > 0) {
+                                    handleShowCommentAgreers(comment.id.toString());
+                                  }
+                                }}
+                              >
+                                <Text style={[
+                                  styles.commentActionLabel,
+                                  (comment as any).isAgreedByUser && styles.commentActionLabelActive
+                                ]}>
+                                  {(() => {
+                                    const count = (comment as any).agreesCount || 0;
+                                    if (count > 0) {
+                                      return count.toString();
+                                    }
+                                    return 'Agree';
+                                  })()}
+                                </Text>
+                              </TouchableOpacity>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -556,6 +623,14 @@ const LongCaseDetailModal = ({
         </KeyboardAvoidingView>
       </Modal>
       {renderImageGalleryModal()}
+      
+      {/* Comment Agreers Modal */}
+      <CommentAgreersModal
+        visible={showCommentAgreers}
+        commentId={selectedCommentId}
+        onClose={handleCloseCommentAgreers}
+        onProfilePress={onProfilePress}
+      />
     </>
   );
 };
@@ -932,6 +1007,10 @@ const styles = StyleSheet.create({
   },
   commentActionLabelActive: {
     color: "#22C55E",
+  },
+  
+  agreeCountButton: {
+    // Make the count clickable without affecting the icon
   },
 
   commentContainer: {
