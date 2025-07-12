@@ -7,7 +7,9 @@ import {
   SafeAreaView, 
   StyleSheet, 
   TextInput,
-  ScrollView 
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -45,7 +47,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSearch }) 
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <KeyboardAvoidingView 
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <View style={styles.header}>
           <Text style={styles.title}>Search Cases</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#4ECDC4" />
@@ -119,6 +126,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSearch }) 
             </TouchableOpacity>
           )}
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );

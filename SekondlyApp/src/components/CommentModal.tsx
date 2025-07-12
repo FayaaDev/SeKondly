@@ -156,7 +156,7 @@ export default function CommentModal({
         <KeyboardAvoidingView 
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           {/* Header */}
           <View style={styles.header}>
@@ -188,6 +188,8 @@ export default function CommentModal({
                 renderItem={renderComment}
                 keyExtractor={(item) => item.id.toString()}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
                 contentContainerStyle={styles.commentsList}
               />
             )}
@@ -386,12 +388,12 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === "ios" ? 12 : 12,
+    paddingVertical: 16,
+    paddingBottom: Platform.OS === "ios" ? 20 : 20,
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
     backgroundColor: "#f8f9fa",
-    minHeight: 80, // Ensure minimum visible height
+    minHeight: 90, // Increased minimum visible height
   },
   inputWrapper: {
     flexDirection: "row",

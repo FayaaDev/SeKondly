@@ -87,6 +87,31 @@ export default function CaseDetailModal({
     }
   }, [replyingTo]);
 
+  // Add keyboard event listeners for better handling
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        // Scroll to bottom when keyboard shows with proper delay
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, Platform.OS === 'ios' ? 50 : 200);
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        // Optional: Handle keyboard hide if needed
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
   // Fetch case comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
     queryKey: ["/api/cases", caseData?.id, "comments"],
@@ -320,10 +345,10 @@ export default function CaseDetailModal({
   };
 
   const handleCommentInputFocus = () => {
-    // Add a longer delay to ensure keyboard is fully open
+    // Scroll to bottom when input is focused and keyboard shows
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 500);
+    }, Platform.OS === 'ios' ? 200 : 400);
   };
 
   const handleProfilePress = () => {
@@ -618,12 +643,12 @@ export default function CaseDetailModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
-      >
-        <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView 
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.authorSection} onPress={handleProfilePress}>
@@ -672,6 +697,7 @@ export default function CaseDetailModal({
             style={styles.content}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
             contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.scrollViewContent}
           >
@@ -849,28 +875,6 @@ export default function CaseDetailModal({
               </View>
               
               <View style={styles.addCommentInputContainer}>
-                {/* Helper tags positioned above the input */}
-                <View style={styles.commentHelperTags}>
-                  <TouchableOpacity 
-                    style={styles.helperTag}
-                    onPress={() => setNewComment(prev => prev + "#diagnosis ")}
-                  >
-                    <Text style={styles.helperTagText}>#diagnosis</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.helperTag}
-                    onPress={() => setNewComment(prev => prev + "#treatment ")}
-                  >
-                    <Text style={styles.helperTagText}>#treatment</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.helperTag}
-                    onPress={() => setNewComment(prev => prev + "#experience ")}
-                  >
-                    <Text style={styles.helperTagText}>#experience</Text>
-                  </TouchableOpacity>
-                </View>
-                
                 <TextInput
                   ref={commentInputRef}
                   style={styles.commentInput}
@@ -918,8 +922,8 @@ export default function CaseDetailModal({
               </TouchableOpacity>
             </View>
           </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
-      </KeyboardAvoidingView>
       
       {/* Image Gallery Modal */}
       <ImageGalleryModal
@@ -1028,7 +1032,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 20, // Add bottom padding to ensure comments are reachable
+    paddingBottom: 150, // Increased bottom padding to ensure comments are reachable above keyboard
   },
   caseDetails: {
     paddingHorizontal: 16,
@@ -1390,8 +1394,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#E2E8F0",
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-    maxHeight: Platform.OS === "ios" ? 200 : 180,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    minHeight: Platform.OS === "ios" ? 120 : 100,
   },
   replyIndicator: {
     flexDirection: "row",

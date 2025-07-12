@@ -87,6 +87,31 @@ const LongCaseDetailModal = ({
     }
   }, [replyingTo]);
 
+  // Add keyboard event listeners for better handling
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        // Scroll to bottom when keyboard shows with proper delay
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, Platform.OS === 'ios' ? 50 : 200);
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        // Optional: Handle keyboard hide if needed
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
   // Fetch case comments
   const { data: comments = [] } = useQuery({
     queryKey: ["/api/cases", caseData.id, "comments"],
@@ -205,9 +230,10 @@ const LongCaseDetailModal = ({
   };
 
   const handleCommentInputFocus = () => {
+    // Scroll to bottom when input is focused and keyboard shows
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 500);
+    }, Platform.OS === 'ios' ? 200 : 400);
   };
 
   const handleShowCommentAgreers = (commentId: string) => {
@@ -306,6 +332,7 @@ const LongCaseDetailModal = ({
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 40}
         >
           <SafeAreaView style={styles.container}>
             {/* Header */}
@@ -343,6 +370,8 @@ const LongCaseDetailModal = ({
               ref={scrollViewRef}
               style={styles.content}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
               contentInsetAdjustmentBehavior="automatic"
               contentContainerStyle={styles.scrollViewContent}
             >
@@ -564,28 +593,6 @@ const LongCaseDetailModal = ({
                 </View>
                 
                 <View style={styles.addCommentInputContainer}>
-                  {/* Helper tags positioned above the input */}
-                  <View style={styles.commentHelperTags}>
-                    <TouchableOpacity 
-                      style={styles.helperTag}
-                      onPress={() => setNewComment(prev => prev + "#diagnosis ")}
-                    >
-                      <Text style={styles.helperTagText}>#diagnosis</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.helperTag}
-                      onPress={() => setNewComment(prev => prev + "#treatment ")}
-                    >
-                      <Text style={styles.helperTagText}>#treatment</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.helperTag}
-                      onPress={() => setNewComment(prev => prev + "#experience ")}
-                    >
-                      <Text style={styles.helperTagText}>#experience</Text>
-                    </TouchableOpacity>
-                  </View>
-                  
                   <TextInput
                     ref={commentInputRef}
                     style={styles.commentInput}
@@ -676,7 +683,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 120,
+    paddingBottom: 150,
   },
 
   // Author Section Styles
@@ -1149,8 +1156,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#E2E8F0",
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-    maxHeight: Platform.OS === "ios" ? 200 : 180,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    minHeight: Platform.OS === "ios" ? 120 : 100,
   },
   replyIndicator: {
     flexDirection: "row",
