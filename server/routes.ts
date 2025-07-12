@@ -1118,29 +1118,33 @@ Please respond to: ${validatedData.email}
   // Login endpoint
   app.post("/api/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { email, password } = req.body;
       
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // TODO: Implement actual authentication logic
-      // For now, we'll create a mock response
-      const mockUser = {
-        id: "mock-user-1",
-        email: username,
-        firstName: "John",
-        lastName: "Doe",
-        specialty: "Cardiology",
-        isApproved: true,
-        isAdmin: false,
-      };
+      // Find user by email
+      const user = await storage.getUserByEmailOrUsername(email);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // TODO: Implement proper password hashing and verification
+      // For now, we'll do a simple password comparison
+      if (user.password !== password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Remove password from user object before sending response
+      const { password: _, ...userWithoutPassword } = user;
 
       // TODO: Generate actual JWT token
       const mockToken = "mock-jwt-token-" + Date.now();
 
       res.json({
-        user: mockUser,
+        user: userWithoutPassword,
         token: mockToken,
         message: "Login successful"
       });

@@ -1394,8 +1394,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#E2E8F0",
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: Platform.OS === "ios" ? 40 : 24,
-    minHeight: Platform.OS === "ios" ? 120 : 100,
+    paddingBottom: Platform.OS === "ios" ? 16 : 12,
+    minHeight: Platform.OS === "ios" ? 80 : 70,
   },
   replyIndicator: {
     flexDirection: "row",
@@ -1419,6 +1419,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
+    paddingBottom: 4,
   },
   currentUserAvatar: {
     width: 40,
