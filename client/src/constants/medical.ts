@@ -115,7 +115,6 @@ export const MEDICAL_SPECIALTIES = [
   "Pediatric Rheumatology",
   "Pediatric Stem Cell Transplantation",
   "Pediatric Surgery",
-  "Pediatric Surgery",
   "Pediatric Urology",
   "Pediatrics",
   "Pediatrics Diploma",
