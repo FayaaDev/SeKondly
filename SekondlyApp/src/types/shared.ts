@@ -89,7 +89,6 @@ export const MEDICAL_SPECIALTIES = [
   "Adult & Pediatric Orthopedic Spinal Surgery",
   "Adult Allergy & Immunology",
   "Adult Critical Care",
-  "Adult Critical Care",
   "Adult Echocardiography",
   "Adult Endocrinology & Metabolism",
   "Adult Gastroenterology",
