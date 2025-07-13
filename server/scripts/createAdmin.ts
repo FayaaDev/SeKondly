@@ -9,7 +9,6 @@ async function createAdmin() {
       lastName: 'User',
       phone: '1234567890',
       specialty: 'Internal Medicine',
-      fellowship: null,
       experience: '10',
       institution: null,
       medicalBoard: 'Internal Medicine',

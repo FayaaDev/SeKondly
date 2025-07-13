@@ -37,7 +37,6 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
   // Medical professional fields
   phone: varchar("phone"),
-  fellowship: varchar("fellowship"),
   experience: varchar("experience"),
   institution: varchar("institution"),
   specialty: varchar("specialty"),

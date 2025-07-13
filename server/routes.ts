@@ -548,7 +548,6 @@ Please respond to: ${validatedData.email}
           isAdmin: true,
           profileImageUrl: null,
           phone: null,
-          fellowship: null,
           level: "Consultant",
           experience: "10+ years",
           institution: "Medical Center",
@@ -1166,7 +1165,6 @@ Please respond to: ${validatedData.email}
         email,
         password,
         boardCertification,
-        fellowship,
         level,
         yearsOfExperience,
         workplace
@@ -1220,7 +1218,6 @@ Please respond to: ${validatedData.email}
         lastName: lastName || '',
         phone: null, // Remove phone as it's no longer collected
         specialty: boardCertification || '',
-        fellowship: fellowship || null,
         level: level || null,
         experience: yearsOfExperience || '',
         institution: workplace || null,

@@ -25,7 +25,6 @@ const editProfileSchema = z.object({
   institution: z.string().min(1, "Institution is required"),
   specialty: z.string().min(1, "Specialty is required"),
   experience: z.string().min(1, "Experience is required"),
-  fellowship: z.string().optional(),
 });
 
 type EditProfileData = z.infer<typeof editProfileSchema>;
@@ -48,7 +47,6 @@ export default function EditProfile() {
       institution: user?.institution || "",
       specialty: user?.specialty || "",
       experience: user?.experience || "",
-      fellowship: user?.fellowship || "",
     },
   });
 
@@ -62,7 +60,6 @@ export default function EditProfile() {
         institution: user.institution || "",
         specialty: user.specialty || "",
         experience: user.experience || "",
-        fellowship: user.fellowship || "",
       });
     }
   });
@@ -269,14 +266,6 @@ export default function EditProfile() {
                     {form.formState.errors.experience.message}
                   </p>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fellowship">Fellowship</Label>
-                <Input
-                  id="fellowship"
-                  {...form.register("fellowship")}
-                  placeholder="Fellowship training (optional)"
-                />
               </div>
             </div>
 

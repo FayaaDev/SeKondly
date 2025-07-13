@@ -60,7 +60,6 @@ export default function Landing() {
     
     const profileData = {
       phone: formData.get("phone"),
-      fellowship: formData.get("fellowship"),
       experience: formData.get("experience"),
       specialty: formData.get("specialty"),
       institution: formData.get("institution"),
@@ -135,17 +134,6 @@ export default function Landing() {
                 placeholder="+1 (555) 123-4567"
                 className="w-full px-4 py-3 border border-ios-gray-light rounded-xl"
                 required
-              />
-            </div>
-            <div>
-              <Label htmlFor="fellowship" className="block text-sm font-medium text-gray-700 mb-2">
-                Fellowship (Optional)
-              </Label>
-              <Input
-                id="fellowship"
-                name="fellowship"
-                placeholder="Cardiology, Neurology, etc."
-                className="w-full px-4 py-3 border border-ios-gray-light rounded-xl"
               />
             </div>
             

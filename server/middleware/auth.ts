@@ -39,7 +39,6 @@ declare global {
         isAdmin?: boolean | null;
         profileImageUrl?: string | null;
         phone?: string | null;
-        fellowship?: string | null;
         experience?: string | null;
         institution?: string | null;
         createdAt?: Date | null;
@@ -64,7 +63,6 @@ declare module 'express-session' {
       isAdmin?: boolean | null;
       profileImageUrl?: string | null;
       phone?: string | null;
-      fellowship?: string | null;
       experience?: string | null;
       institution?: string | null;
       createdAt?: Date | null;
