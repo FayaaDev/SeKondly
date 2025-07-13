@@ -23,6 +23,7 @@ import StorageService from '../lib/storage';
 import { API_BASE_URL } from '../config/api';
 import { MEDICAL_SPECIALTIES } from '../types/shared';
 import { useCustomAlert } from './CustomAlert';
+import VoiceRecordButtonEnhanced from './VoiceRecordButtonEnhanced';
 
 interface DraftCase {
   title?: string;
@@ -934,9 +935,34 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                     fontSize: 16,
                     backgroundColor: '#FFFFFF',
                     height: 120,
+                    marginBottom: 12,
                   }}
                   placeholderTextColor="#8E8E93"
                 />
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}>
+                  <VoiceRecordButtonEnhanced
+                    onTranscriptionComplete={(text: string) => {
+                      const currentText = history.trim();
+                      const newText = currentText 
+                        ? `${currentText}\n\n${text}`
+                        : text;
+                      setHistory(newText);
+                    }}
+                  />
+                  <Text style={{
+                    fontSize: 12,
+                    color: '#8E8E93',
+                    textAlign: 'center',
+                    flex: 1,
+                  }}>
+                    Don't feel like typing? Record your case with Whisper. OpenAI's State of the art audio-to-text generator. 
+                  </Text>
+                </View>
               </View>
             ) : (
               /* Long Case Fields */
@@ -976,9 +1002,34 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                         fontSize: 16,
                         backgroundColor: '#FFFFFF',
                         height: 100,
+                        marginBottom: 12,
                       }}
                       placeholderTextColor="#8E8E93"
                     />
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}>
+                      <VoiceRecordButtonEnhanced
+                        onTranscriptionComplete={(text: string) => {
+                          const currentText = field.value.trim();
+                          const newText = currentText 
+                            ? `${currentText}\n\n${text}`
+                            : text;
+                          field.setter(newText);
+                        }}
+                      />
+                      <Text style={{
+                        fontSize: 12,
+                        color: '#8E8E93',
+                        textAlign: 'center',
+                        flex: 1,
+                      }}>
+                        Record voice notes for {field.label.toLowerCase()}
+                      </Text>
+                    </View>
                   </View>
                 ))}
               </>

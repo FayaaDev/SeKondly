@@ -21,6 +21,7 @@
         "NSCameraUsageDescription": "This app uses the camera to capture medical images and documents for case discussions.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload medical images and documents.",
         "NSDocumentPickerUsageDescription": "This app needs to access documents for uploading medical files and credentials.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record voice notes for medical case descriptions using voice-to-text functionality.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
