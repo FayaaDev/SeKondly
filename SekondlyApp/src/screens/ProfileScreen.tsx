@@ -128,7 +128,9 @@ export default function ProfileScreen() {
     try {
       setRefreshing(true);
       
+      console.log("Starting account deletion process...");
       const response = await apiRequest("DELETE", "/api/delete-account");
+      console.log("Delete account response:", response);
       
       if (response) {
         Alert.alert(
@@ -142,11 +144,23 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error("Error deleting account:", error);
-      Alert.alert(
-        "Error",
-        "Failed to delete account. Please try again or contact support.",
-        [{ text: "OK" }]
-      );
+      // Check if it's an authentication error - user might already be signed out
+      if (error instanceof Error && error.message.includes("Authentication failed")) {
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please sign in again and try deleting your account.",
+          [{ 
+            text: "OK", 
+            onPress: () => signOut()
+          }]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          `Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or contact support.`,
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setRefreshing(false);
     }

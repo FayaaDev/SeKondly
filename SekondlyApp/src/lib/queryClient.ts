@@ -3,7 +3,7 @@ import StorageService from "./storage";
 import { API_BASE_URL } from "../config/api";
 
 /**
- * Enhanced QueryClient with AsyncStorage integration
+ * Enhanced QueryClient with session-based authentication
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,23 +27,21 @@ export const queryClient = new QueryClient({
   },
 });
 
-// API request helper function with AsyncStorage integration
+// API request helper function with session-based authentication
 export async function apiRequest(
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
   url: string,
   data?: any
 ): Promise<any> {
   try {
-    const authToken = await StorageService.getAuthToken();
     const isFormData = data instanceof FormData;
     
     const config: RequestInit = {
       method,
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(authToken && { Authorization: `Bearer ${authToken}` }),
       },
-      credentials: "include",
+      credentials: "include", // Use session-based authentication
     };
 
     if (data && method !== "GET") {
