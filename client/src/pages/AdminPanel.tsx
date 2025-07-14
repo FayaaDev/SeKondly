@@ -845,10 +845,6 @@ export default function AdminPanel() {
                       <span className="ml-2 font-medium">{selectedUser.specialty || 'Not provided'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Fellowship:</span>
-                      <span className="ml-2 font-medium">{selectedUser.fellowship || 'Not provided'}</span>
-                    </div>
-                    <div>
                       <span className="text-gray-600">Experience:</span>
                       <span className="ml-2 font-medium">{selectedUser.experience || 'Not provided'}</span>
                     </div>

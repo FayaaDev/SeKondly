@@ -1616,6 +1616,27 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Immediate account deletion endpoint
+  app.delete("/api/delete-account", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Delete the user and all associated data
+      await storage.deleteUser(userId);
+
+      console.log(`User account ${userId} has been permanently deleted`);
+
+      res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   // Test SMTP connection endpoint (for debugging)
   app.get("/api/test-smtp", async (req, res) => {
     try {

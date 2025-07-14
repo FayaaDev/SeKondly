@@ -42,7 +42,6 @@ export default function ProfileScreen() {
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   
   const { user, signOut } = useAuth();
   const navigation = useNavigation();
@@ -111,7 +110,46 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = () => {
-    setShowDeleteAccountModal(true);
+    Alert.alert(
+      "Delete Account",
+      "⚠️ WARNING: This action will permanently delete your account and ALL associated data. This step CANNOT be undone.\n\nAre you absolutely sure you want to delete your account?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete Account", 
+          style: "destructive",
+          onPress: confirmDeleteAccount
+        }
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      setRefreshing(true);
+      
+      const response = await apiRequest("DELETE", "/api/delete-account");
+      
+      if (response) {
+        Alert.alert(
+          "Account Deleted",
+          "Your account has been permanently deleted.",
+          [{ 
+            text: "OK", 
+            onPress: () => signOut()
+          }]
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      Alert.alert(
+        "Error",
+        "Failed to delete account. Please try again or contact support.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleSubmitTicket = () => {
@@ -195,11 +233,6 @@ export default function ProfileScreen() {
           {user?.level && (
             <Text style={styles.userLevel}>
               {user?.level}
-            </Text>
-          )}
-          {user?.fellowship && (
-            <Text style={styles.userFellowship}>
-              {user?.fellowship}
             </Text>
           )}
           <Text style={styles.userExperienceInstitution}>
@@ -339,40 +372,6 @@ export default function ProfileScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-
-      {/* Delete Account Modal */}
-      <Modal
-        visible={showDeleteAccountModal}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setShowDeleteAccountModal(false)}
-      >
-        <View style={styles.deleteAccountOverlay}>
-          <View style={styles.deleteAccountContainer}>
-            <View style={styles.deleteAccountHeader}>
-              <Ionicons name="trash-outline" size={32} color="#FF3B30" />
-              <Text style={styles.deleteAccountTitle}>Delete Account</Text>
-            </View>
-            
-            <Text style={styles.deleteAccountModalText}>
-              To delete your account, please send an email to{' '}
-              <Text style={styles.deleteAccountEmail}>admin@sekondly.app</Text>
-              {' '}
-            </Text>
-            
-            <Text style={styles.deleteAccountSubText}>
-              Our admin team will process your request and confirm the deletion.
-            </Text>
-            
-            <TouchableOpacity
-              style={styles.deleteAccountButton}
-              onPress={() => setShowDeleteAccountModal(false)}
-            >
-              <Text style={styles.deleteAccountButtonText}>Got it</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -449,13 +448,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     lineHeight: 18,
-  },
-  userFellowship: {
-    fontSize: 13,
-    color: "#000000",
-    marginBottom: 8,
-    textAlign: "center",
-    fontStyle: "italic",
   },
   userDetails: {
     fontSize: 14,
@@ -571,66 +563,5 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 16,
     fontWeight: "500",
-  },
-  // Delete Account Modal Styles
-  deleteAccountOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  deleteAccountContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  deleteAccountHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  deleteAccountTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  deleteAccountModalText: {
-    fontSize: 16,
-    color: '#1C1C1E',
-    lineHeight: 24,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  deleteAccountEmail: {
-    fontSize: 16,
-    color: '#4ECDC4',
-    fontWeight: '600',
-  },
-  deleteAccountSubText: {
-    fontSize: 14,
-    color: '#8E8E93',
-    lineHeight: 20,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  deleteAccountButton: {
-    backgroundColor: '#4ECDC4',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  deleteAccountButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

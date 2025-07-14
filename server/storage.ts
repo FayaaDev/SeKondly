@@ -28,7 +28,7 @@ import {
   type HiddenSpecialty,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, count, sql, or, notInArray } from "drizzle-orm";
+import { eq, desc, and, count, sql, or, notInArray, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -346,7 +346,7 @@ export class DatabaseStorage implements IStorage {
       .insert(cases)
       .values({
         ...caseData,
-        format, // Use the validated format
+        format: format, // Use the validated format
         chiefComplaint: caseData.chiefComplaint || null,
         historyOfPresentIllness: caseData.historyOfPresentIllness || null,
         pastMedicalHistory: caseData.pastMedicalHistory || null,
@@ -733,6 +733,60 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
+  async deleteUser(id: string): Promise<void> {
+    // Delete all user-related data in the correct order to avoid foreign key conflicts
+    
+    // 1. Delete comment agrees for comments by this user
+    await db.delete(commentAgrees)
+      .where(eq(commentAgrees.userId, id));
+    
+    // 2. Delete comment agrees for comments made by this user (via subquery)
+    const userComments = await db.select({ id: caseComments.id })
+      .from(caseComments)
+      .where(eq(caseComments.userId, id));
+    
+    if (userComments.length > 0) {
+      const commentIds = userComments.map(c => c.id);
+      await db.delete(commentAgrees)
+        .where(inArray(commentAgrees.commentId, commentIds));
+    }
+    
+    // 3. Delete user's comments
+    await db.delete(caseComments)
+      .where(eq(caseComments.userId, id));
+    
+    // 4. Delete user's case likes
+    await db.delete(caseLikes)
+      .where(eq(caseLikes.userId, id));
+    
+    // 5. Delete user's case favorites
+    await db.delete(caseFavorites)
+      .where(eq(caseFavorites.userId, id));
+    
+    // 6. Delete user's notifications (both sent and received)
+    await db.delete(notifications)
+      .where(or(eq(notifications.userId, id), eq(notifications.fromUserId, id)));
+    
+    // 7. Delete user's documents
+    await db.delete(documents)
+      .where(eq(documents.userId, id));
+    
+    // 8. Delete user's hidden specialties
+    await db.delete(hiddenSpecialties)
+      .where(eq(hiddenSpecialties.userId, id));
+    
+    // 9. Delete user's follow relationships (both as follower and following)
+    await db.delete(userFollows)
+      .where(or(eq(userFollows.followerId, id), eq(userFollows.followingId, id)));
+    
+    // 10. Delete user's cases (this will also cascade to related data)
+    await db.delete(cases)
+      .where(eq(cases.authorId, id));
+    
+    // 11. Finally, delete the user record
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   async getPendingCases(): Promise<CaseWithAuthor[]> {
     return await db
       .select({
@@ -769,7 +823,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveCase(id: number, approvedBy: string): Promise<Case> {
-    const [caseRecord] = await db
+    const [approvedCase] = await db
       .update(cases)
       .set({
         isApproved: true,
@@ -778,7 +832,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(cases.id, id))
       .returning();
-    return caseRecord;
+    return approvedCase;
   }
 
   async rejectCase(id: number): Promise<void> {

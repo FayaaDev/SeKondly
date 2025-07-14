@@ -83,7 +83,6 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
       boardCertification: formData.get('specialty') as string,
-      fellowship: formData.get('fellowship') as string,
       yearsOfExperience: formData.get('experience') as string,
     };
 
@@ -312,18 +311,6 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                   <SelectItem value="psychiatry">Psychiatry</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="fellowship" className="text-sm font-medium text-gray-700">
-                Fellowship (Optional)
-              </Label>
-              <Input
-                id="fellowship"
-                name="fellowship"
-                className="mt-1"
-                placeholder="e.g., Interventional Cardiology"
-              />
             </div>
             
             <div>
