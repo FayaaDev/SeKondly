@@ -1,0 +1,57 @@
+{
+  "subject": "Welcome to SeKondly - Your Account is Being Reviewed",
+  "from": {
+    "name": "SeKondly Team",
+    "email": "admin@sekondly.app"
+  },
+  "content": {
+    "greeting": "Dear Dr. {{firstName}} {{lastName}},",
+    "title": "Welcome to SeKondly! 🎉",
+    "introduction": "Thank you for joining our community of medical professionals. We're excited to have you as part of our platform where healthcare experts collaborate, share knowledge, and discuss complex medical cases.",
+    "nextSteps": {
+      "title": "What happens next:",
+      "steps": [
+        "✅ Your account has been created successfully",
+        "⏳ Our medical verification team is currently reviewing your credentials",
+        "📧 You'll receive an email notification once your account is approved (typically 1-2 business days)",
+        "🔐 Once approved, you can sign in and start contributing to our medical community"
+      ]
+    },
+    "features": {
+      "title": "What you can do once approved:",
+      "items": [
+        "Share and discuss interesting medical cases",
+        "Get second opinions from specialists across different fields",
+        "Connect with fellow medical professionals",
+        "Access our growing library of educational cases",
+        "Participate in professional medical discussions"
+      ]
+    },
+    "support": {
+      "text": "If you have any questions or need assistance, please don't hesitate to contact our support team by visiting",
+      "linkText": "our support page",
+      "linkUrl": "https://sekondly.app/static-landing.html"
+    },
+    "closing": {
+      "message": "Welcome to the future of medical collaboration!",
+      "signature": "Best regards,",
+      "teamName": "The SeKondly Team"
+    },
+    "footer": {
+      "sentTo": "This email was sent to {{userEmail}}",
+      "brandLine": "SeKondly - Empowering healthcare through collaboration",
+      "websiteText": "Website:",
+      "websiteUrl": "https://sekondly.app"
+    }
+  },
+  "styling": {
+    "primaryColor": "#4ECDC4",
+    "backgroundColor": "#f8f9fa",
+    "cardBackground": "white",
+    "textColor": "#333",
+    "lightBackground": "#f8f9fa",
+    "secondaryBackground": "#e8f5f4",
+    "footerColor": "#888",
+    "borderColor": "#eee"
+  }
+}

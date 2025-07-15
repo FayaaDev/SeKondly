@@ -1,0 +1,52 @@
+{
+  "subject": "🎉 Your SeKondly Account Has Been Approved!",
+  "from": {
+    "name": "SeKondly Team",
+    "email": "admin@sekondly.app"
+  },
+  "content": {
+    "greeting": "Dear Dr. {{firstName}} {{lastName}},",
+    "title": "Account Approved! 🎉",
+    "announcement": "Great news! Your SeKondly account has been approved! 🎉",
+    "introduction": "We're excited to see you contribute to our growing community of medical professionals!",
+    "nextSteps": {
+      "title": "Here's how to get started:",
+      "steps": [
+        "Visit https://sekondly.app and sign in with your registered email and password",
+        "Complete your profile to help colleagues find and connect with you", 
+        "Start exploring cases or share your first case with the community",
+        "Connect with other professionals in your field"
+      ]
+    },
+    "callToAction": {
+      "text": "Sign In to SeKondly",
+      "url": "https://sekondly.app"
+    },
+    "support": {
+      "text": "If you need any help getting started or have questions, please visit our",
+      "linkText": "support page",
+      "linkUrl": "https://sekondly.app/static-landing.html"
+    },
+    "closing": {
+      "message": "Welcome to SeKondly!",
+      "signature": "Best regards,",
+      "teamName": "The SeKondly Team"
+    },
+    "footer": {
+      "sentTo": "This email was sent to {{userEmail}}",
+      "brandLine": "SeKondly - Empowering healthcare through collaboration",
+      "websiteText": "Website:",
+      "websiteUrl": "https://sekondly.app"
+    }
+  },
+  "styling": {
+    "primaryColor": "#4ECDC4",
+    "approvalColor": "#28a745",
+    "backgroundColor": "#f8f9fa",
+    "cardBackground": "white",
+    "textColor": "#333",
+    "lightBackground": "#d4edda",
+    "footerColor": "#888",
+    "borderColor": "#eee"
+  }
+}

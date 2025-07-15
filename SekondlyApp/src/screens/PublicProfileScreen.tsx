@@ -231,12 +231,6 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
             {profileUser.specialty}
           </Text>
           
-          {profileUser.fellowship && (
-            <Text style={styles.userFellowship}>
-              {profileUser.fellowship}
-            </Text>
-          )}
-          
           <Text style={styles.userExperienceInstitution}>
             {profileUser.experience && (
               <>
@@ -464,13 +458,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8E8E93',
     marginBottom: 4,
-  },
-  userFellowship: {
-    fontSize: 14,
-    color: '#000000',
-    marginBottom: 8,
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
   userExperience: {
     fontSize: 14,

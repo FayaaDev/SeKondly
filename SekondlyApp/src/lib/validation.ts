@@ -24,7 +24,6 @@ const testTypeCompatibility = () => {
     level: 'Consultant',
     institution: null,
     experience: null,
-    fellowship: null,
     isApproved: true,
     isAdmin: false,
     createdAt: new Date(),
