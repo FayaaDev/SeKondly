@@ -97,6 +97,28 @@ export function serveStatic(app: Express) {
   // Serve uploads directory for images
   app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
 
+  // Define web app routes that should serve the React app
+  const webAppRoutes = [
+    '/admin',
+    '/admin-login', 
+    '/admin-panel',
+    '/profile',
+    '/user',
+    '/edit-profile',
+    '/notification-settings'
+  ];
+
+  // Serve React app for web app routes
+  webAppRoutes.forEach(route => {
+    app.get(`${route}*`, (_req, res) => {
+      if (fs.existsSync(distPath)) {
+        res.sendFile(path.resolve(distPath, "index.html"));
+      } else {
+        res.status(404).send('Web app not built. Run `npm run build` first.');
+      }
+    });
+  });
+
   // Route for web app (if needed for specific paths like /app)
   app.get('/app*', (_req, res) => {
     if (fs.existsSync(distPath)) {
@@ -106,8 +128,13 @@ export function serveStatic(app: Express) {
     }
   });
 
-  // Serve the static landing page for all other routes
-  app.use("*", (_req, res) => {
+  // Serve the static landing page for the root route and other unmatched routes
+  app.use("*", (req, res) => {
+    // If it's an API route, skip to next middleware
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    
     if (fs.existsSync(staticLandingPath)) {
       res.sendFile(staticLandingPath);
     } else {
