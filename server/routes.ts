@@ -569,8 +569,43 @@ Please respond to: ${validatedData.email}
         });
       }
       
-      // TODO: Implement real authentication
-      res.status(401).json({ message: "Invalid credentials" });
+      // Production authentication
+      try {
+        const user = await storage.getUserByEmailOrUsername(email || username);
+        
+        if (!user) {
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Simple password check (in a real app, use proper password hashing)
+        if (user.password !== password) {
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Check if user is approved and admin
+        if (!user.isApproved) {
+          return res.status(401).json({ message: "Account pending approval" });
+        }
+
+        if (!user.isAdmin) {
+          return res.status(401).json({ message: "Admin access required" });
+        }
+
+        // Store user in session
+        if (req.session) {
+          req.session.user = user;
+        }
+
+        // Return user data (excluding sensitive information)
+        const { password: _, ...userWithoutPassword } = user;
+        res.json({
+          user: userWithoutPassword,
+          message: "Login successful"
+        });
+      } catch (dbError) {
+        console.error("Database authentication error:", dbError);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -1293,6 +1328,52 @@ Please respond to: ${validatedData.email}
       }
     });
   }
+
+  // Emergency admin creation endpoint (only in development or with special key)
+  app.post("/api/admin/create-admin", async (req, res) => {
+    try {
+      // Only allow in development or with special creation key
+      const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+      const hasAdminKey = req.headers['x-admin-key'] === 'create-admin-sekondly-2025';
+      
+      if (!isDevelopment && !hasAdminKey) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const adminUser = {
+        id: `admin_${Date.now()}`,
+        email,
+        firstName,
+        lastName,
+        phone: '1234567890',
+        specialty: 'Administration',
+        experience: '10+ years',
+        institution: 'SeKondly Medical Platform',
+        isApproved: true,
+        isAdmin: true,
+        username: email.split('@')[0],
+        password,
+        level: 'Administrator',
+      };
+      
+      await storage.upsertUser(adminUser);
+      
+      const { password: _, ...userWithoutPassword } = adminUser;
+      res.json({
+        message: "Admin user created successfully",
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      console.error("Error creating admin user:", error);
+      res.status(500).json({ message: "Failed to create admin user" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

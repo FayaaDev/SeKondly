@@ -97,6 +97,16 @@ export function serveStatic(app: Express) {
   // Serve uploads directory for images
   app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
 
+  // Serve favicon from client/public directory
+  const faviconPath = path.resolve(__dirname, "..", "client", "public", "favicon.png");
+  app.get('/favicon.png', (_req, res) => {
+    if (fs.existsSync(faviconPath)) {
+      res.sendFile(faviconPath);
+    } else {
+      res.status(404).send('Favicon not found');
+    }
+  });
+
   // Define web app routes that should serve the React app
   const webAppRoutes = [
     '/admin',

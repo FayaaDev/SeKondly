@@ -43,6 +43,16 @@ export default function AdminPanel() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
+  // Set page title for admin panel
+  useEffect(() => {
+    document.title = "SeKondly Admin Panel";
+    
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = "SeKondly";
+    };
+  }, []);
+
 
   const { data: pendingUsers = [], isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ["/api/admin/pending-users"],
