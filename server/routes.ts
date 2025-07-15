@@ -1375,6 +1375,69 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // === ADMIN PANEL ENDPOINTS FOR CASES ===
+
+  // Get user documents (for admin review)
+  app.get("/api/admin/user-documents/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userDocuments = await storage.getUserDocuments(userId);
+      res.json(userDocuments);
+    } catch (error) {
+      console.error("Error fetching user documents:", error);
+      res.status(500).json({ message: "Failed to fetch user documents" });
+    }
+  });
+
+  // Get pending cases
+  app.get("/api/admin/pending-cases", async (req, res) => {
+    try {
+      const pendingCases = await storage.getPendingCases();
+      res.json(pendingCases);
+    } catch (error) {
+      console.error("Error fetching pending cases:", error);
+      res.status(500).json({ message: "Failed to fetch pending cases" });
+    }
+  });
+
+  // Approve case
+  app.post("/api/admin/approve-case/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const adminId = req.session?.user?.id || 'system';
+      const approvedCase = await storage.approveCase(caseId, adminId);
+      res.json(approvedCase);
+    } catch (error) {
+      console.error("Error approving case:", error);
+      res.status(500).json({ message: "Failed to approve case" });
+    }
+  });
+
+  // Reject case
+  app.delete("/api/admin/reject-case/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      await storage.rejectCase(caseId);
+      res.json({ message: 'Case rejected successfully' });
+    } catch (error) {
+      console.error("Error rejecting case:", error);
+      res.status(500).json({ message: "Failed to reject case" });
+    }
+  });
+
+  // Toggle hot case status
+  app.post("/api/admin/toggle-hot-case/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const { isHot } = req.body;
+      const updatedCase = await storage.updateCaseHotStatus(caseId, isHot);
+      res.json(updatedCase);
+    } catch (error) {
+      console.error("Error toggling hot case:", error);
+      res.status(500).json({ message: "Failed to toggle hot case status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
