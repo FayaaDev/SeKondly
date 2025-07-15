@@ -155,6 +155,33 @@ export const hiddenSpecialties = pgTable("hidden_specialties", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Notification tokens table
+export const notificationTokens = pgTable("notification_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  token: text("token").notNull(),
+  platform: varchar("platform", { enum: ['ios', 'android'] }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notification preferences table
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique(),
+  caseLikes: boolean("case_likes").default(true),
+  caseComments: boolean("case_comments").default(true),
+  newFollowers: boolean("new_followers").default(true),
+  caseApprovals: boolean("case_approvals").default(true),
+  mentions: boolean("mentions").default(true),
+  weeklyDigest: boolean("weekly_digest").default(false),
+  pushNotifications: boolean("push_notifications").default(true),
+  emailNotifications: boolean("email_notifications").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   cases: many(cases),
@@ -260,6 +287,20 @@ export const hiddenSpecialtiesRelations = relations(hiddenSpecialties, ({ one })
   }),
 }));
 
+export const notificationTokensRelations = relations(notificationTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -326,6 +367,18 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertNotificationTokenSchema = createInsertSchema(notificationTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -349,6 +402,12 @@ export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type NotificationToken = typeof notificationTokens.$inferSelect;
+export type InsertNotificationToken = z.infer<typeof insertNotificationTokenSchema>;
+
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
 
 export type UserFollow = typeof userFollows.$inferSelect;
 

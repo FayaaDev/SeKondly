@@ -199,10 +199,13 @@ app.get('/api/users/:userId/follow-status', async (req, res) => {
     const userId = req.params.userId;
     const currentUserId = req.session?.user?.id;
     
-    const [followersCount, followingCount] = await Promise.all([
-      storage.getFollowersCount(userId),
-      storage.getFollowingCount(userId)
+    const [followers, following] = await Promise.all([
+      storage.getUserFollowers(userId),
+      storage.getUserFollowing(userId)
     ]);
+    
+    const followersCount = followers.length;
+    const followingCount = following.length;
     
     const isFollowing = currentUserId ? await storage.isFollowing(currentUserId, userId) : false;
     

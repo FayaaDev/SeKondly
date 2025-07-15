@@ -9,6 +9,8 @@ import {
   notifications,
   userFollows,
   hiddenSpecialties,
+  notificationTokens,
+  notificationPreferences,
   type User,
   type UpsertUser,
   type Case,
@@ -24,6 +26,10 @@ import {
   type InsertDocument,
   type Notification,
   type InsertNotification,
+  type NotificationToken,
+  type InsertNotificationToken,
+  type NotificationPreferences,
+  type InsertNotificationPreferences,
   type UserFollow,
   type HiddenSpecialty,
 } from "@shared/schema";
@@ -53,6 +59,7 @@ export interface IStorage {
   getCaseLike(caseId: number, userId: string): Promise<CaseLike | undefined>;
   addComment(commentData: InsertComment): Promise<CommentWithAuthor>;
   getCaseComments(caseId: number, userId?: string): Promise<CommentWithAuthor[]>;
+  getCommentById(commentId: number): Promise<CommentWithAuthor | undefined>;
   
   // Comment agree operations
   agreeWithComment(commentId: number, userId: string): Promise<CommentAgree>;
@@ -102,11 +109,15 @@ export interface IStorage {
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
   getUserFollowers(userId: string): Promise<User[]>;
   getUserFollowing(userId: string): Promise<User[]>;
-  getFollowersCount(userId: string): Promise<number>;
-  getFollowingCount(userId: string): Promise<number>;
-  
-  // Hidden specialties operations
-  hideSpecialty(userId: string, specialty: string): Promise<HiddenSpecialty>;
+
+  // Notification token operations
+  registerNotificationToken(data: InsertNotificationToken): Promise<NotificationToken>;
+  getUserNotificationTokens(userId: string): Promise<NotificationToken[]>;
+  deactivateNotificationToken(userId: string, token: string): Promise<void>;
+
+  // Notification preference operations
+  updateNotificationPreferences(userId: string, preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | null>;
   getUserHiddenSpecialties(userId: string): Promise<string[]>;
 }
 
@@ -516,6 +527,26 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(users, eq(caseComments.userId, users.id))
       .where(eq(caseComments.caseId, caseId))
       .orderBy(desc(caseComments.createdAt));
+  }
+
+  async getCommentById(commentId: number): Promise<CommentWithAuthor | undefined> {
+    const [comment] = await db
+      .select({
+        id: caseComments.id,
+        caseId: caseComments.caseId,
+        userId: caseComments.userId,
+        content: caseComments.content,
+        createdAt: caseComments.createdAt,
+        updatedAt: caseComments.updatedAt,
+        author: users,
+        isAgreedByUser: sql<boolean>`false`,
+        agreesCount: sql<number>`(SELECT COUNT(*) FROM ${commentAgrees} WHERE ${commentAgrees.commentId} = ${caseComments.id})`,
+      })
+      .from(caseComments)
+      .innerJoin(users, eq(caseComments.userId, users.id))
+      .where(eq(caseComments.id, commentId));
+    
+    return comment;
   }
 
   // Comment agree operations
@@ -942,66 +973,82 @@ export class DatabaseStorage implements IStorage {
 
   async getUserFollowing(userId: string): Promise<User[]> {
     const following = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        username: users.username,
-        password: users.password,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-        specialty: users.specialty,
-        experience: users.experience,
-        institution: users.institution,
-        isApproved: users.isApproved,
-        isAdmin: users.isAdmin,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-        phone: users.phone,
-        level: users.level,
-        approvedAt: users.approvedAt,
-        approvedBy: users.approvedBy,
-      })
+      .select()
       .from(userFollows)
       .innerJoin(users, eq(userFollows.followingId, users.id))
       .where(eq(userFollows.followerId, userId));
-    return following;
+    return following.map(row => row.users);
   }
 
-  async getFollowersCount(userId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(userFollows)
-      .where(eq(userFollows.followingId, userId));
-    return result.count;
-  }
+  // Notification token operations
+  async registerNotificationToken(data: InsertNotificationToken): Promise<NotificationToken> {
+    // First deactivate existing tokens for this user/token combination
+    await this.deactivateNotificationToken(data.userId, data.token);
 
-  async getFollowingCount(userId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(userFollows)
-      .where(eq(userFollows.followerId, userId));
-    return result.count;
-  }
-
-  async hideSpecialty(userId: string, specialty: string): Promise<HiddenSpecialty> {
-    const [hiddenSpecialty] = await db
-      .insert(hiddenSpecialties)
+    // Insert new active token
+    const [token] = await db
+      .insert(notificationTokens)
       .values({
-        userId,
-        specialty,
+        ...data,
+        isActive: true,
       })
-      .onConflictDoNothing()
       .returning();
-    return hiddenSpecialty;
+    return token;
+  }
+
+  async getUserNotificationTokens(userId: string): Promise<NotificationToken[]> {
+    return await db
+      .select()
+      .from(notificationTokens)
+      .where(and(
+        eq(notificationTokens.userId, userId),
+        eq(notificationTokens.isActive, true)
+      ));
+  }
+
+  async deactivateNotificationToken(userId: string, token: string): Promise<void> {
+    await db
+      .update(notificationTokens)
+      .set({ isActive: false })
+      .where(and(
+        eq(notificationTokens.userId, userId),
+        eq(notificationTokens.token, token)
+      ));
+  }
+
+  // Notification preference operations
+  async updateNotificationPreferences(userId: string, preferences: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const [updatedPreferences] = await db
+      .insert(notificationPreferences)
+      .values({
+        ...preferences,
+        userId,
+      })
+      .onConflictDoUpdate({
+        target: notificationPreferences.userId,
+        set: {
+          ...preferences,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return updatedPreferences;
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | null> {
+    const [preferences] = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    return preferences || null;
   }
 
   async getUserHiddenSpecialties(userId: string): Promise<string[]> {
-    const results = await db
+    const hiddenSpecialtiesList = await db
       .select({ specialty: hiddenSpecialties.specialty })
       .from(hiddenSpecialties)
       .where(eq(hiddenSpecialties.userId, userId));
-    return results.map(r => r.specialty);
+    return hiddenSpecialtiesList.map(h => h.specialty);
   }
 
   async getAdminStats(): Promise<{

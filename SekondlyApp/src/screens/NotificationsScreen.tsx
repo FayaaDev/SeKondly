@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useNotifications } from "../hooks/useNotifications";
 import { apiRequest, CacheManager } from "../lib/queryClient";
 import type { Notification } from "../types/schema";
 
@@ -35,6 +36,7 @@ export default function NotificationsScreen() {
   const [cachedNotifications, setCachedNotifications] = useState<any[]>([]);
   
   const { user } = useAuth();
+  const { markAsRead, isRegistered, pushToken, error: notificationError } = useNotifications();
 
   // Load cached notifications on mount
   useEffect(() => {
@@ -114,6 +116,14 @@ export default function NotificationsScreen() {
         !notification.isRead && styles.unreadNotification
       ]}
       activeOpacity={0.7}
+      onPress={async () => {
+        // Mark notification as read when tapped
+        if (!notification.isRead) {
+          await markAsRead(notification.id);
+        }
+        // Handle navigation based on notification type
+        // This can be expanded to navigate to specific screens
+      }}
     >
       <View style={styles.iconContainer}>
         <Ionicons name="notifications" size={16} color="#FFFFFF" />
@@ -159,6 +169,24 @@ export default function NotificationsScreen() {
             <Text style={styles.unreadBadgeText}>
               {unreadCount.count > 9 ? "9+" : unreadCount.count}
             </Text>
+          </View>
+        )}
+        
+        {/* Show notification registration status for debugging */}
+        {__DEV__ && (
+          <View style={styles.debugInfo}>
+            <Text style={styles.debugText}>
+              {isRegistered ? '✅ Push registered' : '⚠️ Push not registered'}
+            </Text>
+            <Text style={styles.debugText}>
+              📱 API: {notifications.length} notifications loaded
+            </Text>
+            <Text style={styles.debugText}>
+              👤 User: {user?.isApproved ? 'Approved' : 'Not approved'}
+            </Text>
+            {notificationError && (
+              <Text style={styles.debugErrorText}>Error: {notificationError}</Text>
+            )}
           </View>
         )}
       </View>
@@ -341,5 +369,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     marginBottom: 32,
+  },
+  debugInfo: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 8,
+    borderRadius: 4,
+  },
+  debugText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+  debugErrorText: {
+    color: '#FF6B6B',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginTop: 2,
   },
 });

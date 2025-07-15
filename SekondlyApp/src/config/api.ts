@@ -20,9 +20,13 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:5001';
   }
   
-  // For iOS/Android - connect to production deployment
-  // Using HTTPS with SSL certificates
-  return 'https://sekondly.app';
+  // For iOS/Android - use local development server for testing notifications
+  // Replace with your machine's IP address
+  // To find your IP: ifconfig | grep "inet " | grep -v 127.0.0.1
+  return 'http://192.168.0.205:5001'; // Update this with your actual IP
+  
+  // For production testing, uncomment this line:
+  // return 'https://sekondly.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

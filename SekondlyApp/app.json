@@ -22,6 +22,7 @@
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload medical images and documents.",
         "NSDocumentPickerUsageDescription": "This app needs to access documents for uploading medical files and credentials.",
         "NSMicrophoneUsageDescription": "This app uses the microphone to record voice notes for medical case descriptions using voice-to-text functionality.",
+        "NSUserNotificationsUsageDescription": "This app uses notifications to inform you about case updates, comments, and other important medical discussions.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -39,6 +40,9 @@
       "eas": {
         "projectId": "59188267-3b91-4fec-a72a-0b5f38f47cb7"
       }
-    }
+    },
+    "plugins": [
+      "expo-notifications"
+    ]
   }
 }

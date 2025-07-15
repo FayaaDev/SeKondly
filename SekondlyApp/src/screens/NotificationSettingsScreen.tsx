@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { useNotifications } from '../hooks/useNotifications';
+import { apiRequest } from '../lib/queryClient';
 
 const initialPreferences = {
   caseLikes: true,
@@ -16,6 +19,30 @@ const initialPreferences = {
 export default function NotificationSettingsScreen({ navigation }: any) {
   const [preferences, setPreferences] = useState(initialPreferences);
   const [isSaving, setIsSaving] = useState(false);
+  const { updatePreferences, isRegistered } = useNotifications();
+
+  // Fetch current preferences from backend
+  const { data: currentPreferences, isLoading } = useQuery({
+    queryKey: ['/api/notifications/preferences'],
+    queryFn: () => apiRequest('GET', '/api/notifications/preferences'),
+    retry: false,
+  });
+
+  // Update local state when backend preferences are loaded
+  useEffect(() => {
+    if (currentPreferences) {
+      setPreferences({
+        caseLikes: currentPreferences.caseLikes ?? true,
+        caseComments: currentPreferences.caseComments ?? true,
+        newFollowers: currentPreferences.newFollowers ?? true,
+        caseApprovals: currentPreferences.caseApprovals ?? true,
+        mentions: currentPreferences.mentions ?? true,
+        weeklyDigest: currentPreferences.weeklyDigest ?? false,
+        pushNotifications: currentPreferences.pushNotifications ?? true,
+        emailNotifications: currentPreferences.emailNotifications ?? false,
+      });
+    }
+  }, [currentPreferences]);
 
   const handleToggle = (key: keyof typeof preferences) => {
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -23,10 +50,20 @@ export default function NotificationSettingsScreen({ navigation }: any) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const success = await updatePreferences(preferences);
+      
+      if (success) {
+        Alert.alert('Settings saved', 'Your notification preferences have been updated.');
+      } else {
+        Alert.alert('Error', 'Failed to save notification preferences. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
       setIsSaving(false);
-      Alert.alert('Settings saved', 'Your notification preferences have been updated.');
-    }, 800);
+    }
   };
 
   const NotificationItem = ({ icon, title, description, prefKey }: { icon: any; title: string; description: string; prefKey: keyof typeof preferences }) => (
@@ -58,6 +95,23 @@ export default function NotificationSettingsScreen({ navigation }: any) {
         <View style={{ width: 36 }} />
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Registration Status */}
+        {__DEV__ && (
+          <View style={styles.statusSection}>
+            <Text style={styles.sectionTitle}>Push Notification Status</Text>
+            <View style={styles.statusItem}>
+              <Ionicons 
+                name={isRegistered ? "checkmark-circle" : "alert-circle"} 
+                size={20} 
+                color={isRegistered ? "#4ECDC4" : "#FF6B6B"} 
+              />
+              <Text style={styles.statusText}>
+                {isRegistered ? 'Push notifications are active' : 'Push notifications not registered'}
+              </Text>
+            </View>
+          </View>
+        )}
+        
         {/* Activity Notifications */}
         <Text style={styles.sectionTitle}>Activity Notifications</Text>
         <NotificationItem icon="heart-outline" title="Case Likes" description="When someone likes your medical cases" prefKey="caseLikes" />
@@ -179,4 +233,20 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 16,
   },
-}); 
+  statusSection: {
+    marginBottom: 16,
+  },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '500',
+  },
+});
