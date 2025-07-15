@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Users, FileText, Check, X, Eye, Settings, LogOut, Shield, TrendingUp, Clock, Download, Stethoscope } from "lucide-react";
+import { ChevronLeft, Users, FileText, Check, X, Eye, Settings, LogOut, Shield, TrendingUp, Clock, Download, Stethoscope, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -18,6 +18,7 @@ interface CaseForReview {
   specialty: string;
   format: 'short' | 'long';
   createdAt: string;
+  isHot: boolean;
   author: {
     id: string;
     firstName: string;
@@ -188,6 +189,27 @@ export default function AdminPanel() {
     },
   });
 
+  const toggleHotCaseMutation = useMutation({
+    mutationFn: async (caseId: number) => {
+      await apiRequest("POST", `/api/cases/${caseId}/hot`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      toast({
+        title: "Hot Status Updated",
+        description: "The case hot status has been updated.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mock auth - no error handling needed
 
   if (isLoading) {
@@ -208,13 +230,22 @@ export default function AdminPanel() {
           <Shield className="w-16 h-16 text-gray-400 mx-auto mb-6" />
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-8">You don't have administrator privileges to access this panel.</p>
-          <Button 
-            onClick={() => setLocation("/")}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Return to Home
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              onClick={() => setLocation("/admin-login")}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Sign In as Administrator
+            </Button>
+            <Button 
+              onClick={() => setLocation("/")}
+              variant="outline"
+              className="w-full"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Return to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -317,13 +348,13 @@ export default function AdminPanel() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Check className="w-6 h-6 text-yellow-600" />
+                  <Stethoscope className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Pending</p>
-                  <p className="text-2xl font-bold text-gray-900">{pendingUsers.length + pendingDocuments.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Pending Cases</p>
+                  <p className="text-2xl font-bold text-gray-900">{pendingCases.length}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Combined actions needed
+                    {pendingCases.length === 0 ? "All reviewed" : "Need review"}
                   </p>
                 </div>
               </div>
@@ -334,13 +365,13 @@ export default function AdminPanel() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <Settings className="w-6 h-6 text-purple-600" />
+                  <Check className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Current View</p>
-                  <p className="text-2xl font-bold text-gray-900 capitalize">{currentTab}</p>
+                  <p className="text-sm font-medium text-gray-600">Total Pending</p>
+                  <p className="text-2xl font-bold text-gray-900">{pendingUsers.length + pendingDocuments.length + pendingCases.length}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Active section
+                    All actions needed
                   </p>
                 </div>
               </div>
@@ -665,6 +696,11 @@ export default function AdminPanel() {
                                 <Badge variant={caseItem.format === 'long' ? 'default' : 'outline'}>
                                   {caseItem.format === 'long' ? 'Long Case' : 'Short Case'}
                                 </Badge>
+                                {caseItem.isHot && (
+                                  <Badge className="bg-red-100 text-red-700 border-red-200">
+                                    🔥 Hot Case
+                                  </Badge>
+                                )}
                                 <span className="text-sm text-gray-500">
                                   {new Date(caseItem.createdAt).toLocaleDateString()}
                                 </span>
@@ -686,6 +722,15 @@ export default function AdminPanel() {
                               >
                                 <Eye className="w-4 h-4 mr-1" />
                                 View
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => toggleHotCaseMutation.mutate(caseItem.id)}
+                                disabled={toggleHotCaseMutation.isPending}
+                                variant={caseItem.isHot ? "destructive" : "outline"}
+                                className={caseItem.isHot ? "bg-red-600 hover:bg-red-700" : "border-red-200 text-red-600 hover:bg-red-50"}
+                              >
+                                🔥 {caseItem.isHot ? "Cool" : "Hot"}
                               </Button>
                               <Button
                                 size="sm"
@@ -933,6 +978,27 @@ export default function AdminPanel() {
                     </div>
                   </div>
                 )}
+
+                {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Case Images ({selectedCase.imageUrls.length})</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {selectedCase.imageUrls.map((imageUrl, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={imageUrl}
+                            alt={`Case image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(imageUrl, '_blank')}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -948,6 +1014,16 @@ export default function AdminPanel() {
               >
                 <Check className="w-4 h-4 mr-2" />
                 Approve Case
+              </Button>
+              <Button
+                onClick={() => {
+                  toggleHotCaseMutation.mutate(selectedCase.id);
+                }}
+                disabled={toggleHotCaseMutation.isPending}
+                variant={selectedCase.isHot ? "destructive" : "outline"}
+                className={selectedCase.isHot ? "bg-red-600 hover:bg-red-700" : "border-red-200 text-red-600 hover:bg-red-50"}
+              >
+                🔥 {selectedCase.isHot ? "Remove Hot" : "Make Hot"}
               </Button>
               <Button
                 variant="destructive"

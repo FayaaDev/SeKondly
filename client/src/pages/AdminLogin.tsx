@@ -58,6 +58,8 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
+      console.log("Starting login process...");
+      
       // Step 1: Perform login
       const loginResponse = await fetch('/api/auth/login', {
         method: 'POST',
@@ -68,7 +70,12 @@ export default function AdminLogin() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log("Login response status:", loginResponse.status);
+
       if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        console.log("Login successful, received data:", loginData);
+        
         // Step 2: Fetch user data to check admin status
         const userResponse = await fetch('/api/auth/user', {
           credentials: 'include',
@@ -78,8 +85,11 @@ export default function AdminLogin() {
           },
         });
 
+        console.log("User data response status:", userResponse.status);
+
         if (userResponse.ok) {
           const userData = await userResponse.json();
+          console.log("User data received:", userData);
           
           // Step 3: Check if user is admin and redirect accordingly
           if (userData.isAdmin) {
@@ -88,7 +98,7 @@ export default function AdminLogin() {
               description: "Signed in successfully as administrator.",
             });
             // Force a page reload to update auth state and redirect to admin panel
-            window.location.href = "/admin-panel";
+            window.location.href = "/admin";
           } else {
             toast({
               title: "Access Denied",
@@ -102,17 +112,26 @@ export default function AdminLogin() {
           throw new Error("Failed to fetch user data after login");
         }
       } else {
-        const error = await loginResponse.json();
+        let errorMessage = "Invalid email or password.";
+        try {
+          const error = await loginResponse.json();
+          errorMessage = error.message || errorMessage;
+        } catch (parseError) {
+          console.error("Failed to parse login error response:", parseError);
+          errorMessage = `Login failed with status ${loginResponse.status}`;
+        }
+        
         toast({
           title: "Sign in failed",
-          description: error.message || "Invalid email or password.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {

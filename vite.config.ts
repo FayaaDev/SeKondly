@@ -42,5 +42,12 @@ export default defineConfig({
       "sekondly.app",
       "www.sekondly.app"
     ],
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
