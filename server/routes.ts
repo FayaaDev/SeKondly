@@ -1329,6 +1329,77 @@ Please respond to: ${validatedData.email}
     });
   }
 
+  // === ADMIN PANEL ENDPOINTS ===
+  
+  // Admin endpoints for user approval
+  app.get("/api/admin/pending-users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      console.error("Error fetching pending users:", error);
+      res.status(500).json({ message: "Failed to fetch pending users" });
+    }
+  });
+
+  app.post("/api/admin/approve-user/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const adminId = req.user?.id || 'system';
+      const approvedUser = await storage.approveUser(userId, adminId);
+      res.json(approvedUser);
+    } catch (error) {
+      console.error("Error approving user:", error);
+      res.status(500).json({ message: "Failed to approve user" });
+    }
+  });
+
+  app.delete("/api/admin/reject-user/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      await storage.rejectUser(userId);
+      res.json({ message: 'User rejected successfully' });
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      res.status(500).json({ message: "Failed to reject user" });
+    }
+  });
+
+  // Admin endpoints for document approval
+  app.get("/api/admin/pending-documents", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pendingDocuments = await storage.getPendingDocuments();
+      res.json(pendingDocuments);
+    } catch (error) {
+      console.error("Error fetching pending documents:", error);
+      res.status(500).json({ message: "Failed to fetch pending documents" });
+    }
+  });
+
+  app.post("/api/admin/approve-document/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const adminId = req.user?.id || 'system';
+      await storage.approveDocument(documentId, adminId);
+      res.json({ message: 'Document approved successfully' });
+    } catch (error) {
+      console.error("Error approving document:", error);
+      res.status(500).json({ message: "Failed to approve document" });
+    }
+  });
+
+  app.delete("/api/admin/reject-document/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const adminId = req.user?.id || 'system';
+      await storage.rejectDocument(documentId, adminId, "Rejected by admin");
+      res.json({ message: 'Document rejected successfully' });
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+      res.status(500).json({ message: "Failed to reject document" });
+    }
+  });
+
   // Emergency admin creation endpoint (only in development or with special key)
   app.post("/api/admin/create-admin", async (req, res) => {
     try {
@@ -1390,7 +1461,7 @@ Please respond to: ${validatedData.email}
   });
 
   // Get pending cases
-  app.get("/api/admin/pending-cases", async (req, res) => {
+  app.get("/api/admin/pending-cases", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const pendingCases = await storage.getPendingCases();
       res.json(pendingCases);
@@ -1401,10 +1472,10 @@ Please respond to: ${validatedData.email}
   });
 
   // Approve case
-  app.post("/api/admin/approve-case/:id", async (req, res) => {
+  app.post("/api/admin/approve-case/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const caseId = parseInt(req.params.id);
-      const adminId = req.session?.user?.id || 'system';
+      const adminId = req.user?.id || 'system';
       const approvedCase = await storage.approveCase(caseId, adminId);
       res.json(approvedCase);
     } catch (error) {
@@ -1414,7 +1485,7 @@ Please respond to: ${validatedData.email}
   });
 
   // Reject case
-  app.delete("/api/admin/reject-case/:id", async (req, res) => {
+  app.delete("/api/admin/reject-case/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const caseId = parseInt(req.params.id);
       await storage.rejectCase(caseId);
@@ -1426,7 +1497,7 @@ Please respond to: ${validatedData.email}
   });
 
   // Toggle hot case status
-  app.post("/api/admin/toggle-hot-case/:id", async (req, res) => {
+  app.post("/api/admin/toggle-hot-case/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const caseId = parseInt(req.params.id);
       const { isHot } = req.body;
