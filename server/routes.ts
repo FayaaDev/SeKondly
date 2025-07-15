@@ -435,6 +435,108 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // User onboarding endpoint
+  app.post("/api/onboarding", upload.single('credentialsFile'), async (req, res) => {
+    try {
+      console.log('POST /api/onboarding - Request body:', req.body);
+      console.log('POST /api/onboarding - File:', req.file);
+      
+      const {
+        firstName,
+        lastName,
+        email,
+        password,
+        boardCertification,
+        level,
+        yearsOfExperience,
+        workplace
+      } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName || !email || !password || !boardCertification || !level) {
+        return res.status(400).json({
+          message: "Missing required fields: firstName, lastName, email, password, boardCertification, and level are required"
+        });
+      }
+      
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          message: "Invalid email address"
+        });
+      }
+      
+      // Create user data
+      const userData = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        email,
+        firstName,
+        lastName,
+        password,
+        specialty: boardCertification,
+        level,
+        experience: yearsOfExperience || '',
+        institution: workplace || '',
+        phone: '', // Not collected in mobile onboarding
+        isApproved: false,
+        isAdmin: false,
+      };
+      
+      // Create user in database
+      const newUser = await storage.upsertUser(userData);
+      console.log('POST /api/onboarding - User created:', newUser.id);
+      
+      // Handle credentials file upload if provided
+      if (req.file) {
+        try {
+          const documentData = {
+            userId: newUser.id,
+            fileName: req.file.originalname,
+            fileUrl: `/uploads/${req.file.filename}`,
+            fileType: req.file.mimetype,
+          };
+          
+          await storage.uploadDocument(documentData);
+          console.log('POST /api/onboarding - Document uploaded:', req.file.filename);
+        } catch (docError) {
+          console.error('Error saving document:', docError);
+          // Don't fail the entire registration if document upload fails
+        }
+      }
+      
+      // Send welcome email
+      try {
+        await sendWelcomeEmail(email, firstName, lastName);
+        console.log('POST /api/onboarding - Welcome email sent');
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+        // Don't fail registration if email fails
+      }
+      
+      // Return success response (excluding sensitive data)
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.status(201).json({
+        message: "Registration successful. Your account is pending approval.",
+        user: userWithoutPassword
+      });
+      
+    } catch (error) {
+      console.error("Error in onboarding:", error);
+      
+      // Handle duplicate email error
+      if (error instanceof Error && error.message.includes('duplicate') && error.message.includes('email')) {
+        return res.status(409).json({
+          message: "An account with this email already exists"
+        });
+      }
+      
+      res.status(500).json({
+        message: "Registration failed. Please try again."
+      });
+    }
+  });
+
   // Auth routes
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
