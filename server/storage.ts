@@ -60,6 +60,7 @@ export interface IStorage {
   addComment(commentData: InsertComment): Promise<CommentWithAuthor>;
   getCaseComments(caseId: number, userId?: string): Promise<CommentWithAuthor[]>;
   getCommentById(commentId: number): Promise<CommentWithAuthor | undefined>;
+  deleteComment(commentId: number): Promise<void>;
   
   // Comment agree operations
   agreeWithComment(commentId: number, userId: string): Promise<CommentAgree>;
@@ -547,6 +548,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(caseComments.id, commentId));
     
     return comment;
+  }
+
+  async deleteComment(commentId: number): Promise<void> {
+    // First delete all agreements associated with this comment
+    await db
+      .delete(commentAgrees)
+      .where(eq(commentAgrees.commentId, commentId));
+    
+    // Then delete the comment itself
+    await db
+      .delete(caseComments)
+      .where(eq(caseComments.id, commentId));
   }
 
   // Comment agree operations

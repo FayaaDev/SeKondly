@@ -1169,6 +1169,38 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Delete comment
+  app.delete("/api/comments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const userId = req.user?.id || "mock-user-1";
+      
+      // Get comment to check if user is the author
+      const comment = await storage.getCommentById(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Check if user is the author of the comment
+      if (comment.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this comment" });
+      }
+      
+      // Delete the comment
+      await storage.deleteComment(commentId);
+      
+      console.log(`🗑️ Comment deleted successfully:`);
+      console.log(`  - Comment ID: ${commentId}`);
+      console.log(`  - Deleted by: ${userId}`);
+      console.log(`  - Original content: "${comment.content}"`);
+      
+      res.json({ success: true, message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   // Favorite/unfavorite case
   app.post("/api/cases/:id/favorite", isAuthenticated, async (req, res) => {
     try {

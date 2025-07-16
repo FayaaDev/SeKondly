@@ -77,10 +77,6 @@ export default function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetai
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseData?.id, "comments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       setNewComment("");
-      toast({
-        title: "Comment added",
-        description: "Your comment has been posted successfully.",
-      });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {

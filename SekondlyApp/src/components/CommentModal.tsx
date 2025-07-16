@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image as ExpoImage } from "expo-image";
 import { apiRequest } from "../lib/queryClient";
 import { handleAuthError } from "../lib/authUtils";
+import { useAuth } from "../hooks/useAuth";
 import type { CommentWithAuthor } from "../types/schema";
 
 interface CommentModalProps {
@@ -38,6 +39,7 @@ export default function CommentModal({
 }: CommentModalProps) {
   const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   // Fetch comments
   const { data: comments = [], isLoading } = useQuery({
@@ -68,6 +70,35 @@ export default function CommentModal({
     },
   });
 
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      console.log('CommentModal - Attempting to delete comment with ID:', commentId);
+      try {
+        const response = await apiRequest("DELETE", `/api/comments/${commentId}`);
+        console.log('CommentModal - Delete comment response:', response);
+        return response;
+      } catch (error) {
+        console.error('CommentModal - Delete comment error details:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/cases", caseId, "comments"] 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      Alert.alert("Success", "Comment deleted successfully.");
+    },
+    onError: (error) => {
+      console.error('CommentModal - Delete comment mutation error:', error);
+      if (!handleAuthError(error)) {
+        Alert.alert("Error", `Failed to delete comment: ${error.message || 'Unknown error'}`);
+      }
+    },
+  });
+
   // Helper functions
   const formatTimeAgo = (date: string | Date) => {
     const now = new Date();
@@ -89,6 +120,21 @@ export default function CommentModal({
     if (comment.trim()) {
       addCommentMutation.mutate(comment.trim());
     }
+  };
+
+  const confirmDeleteComment = (commentId: string) => {
+    Alert.alert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: () => deleteCommentMutation.mutate(commentId)
+        }
+      ]
+    );
   };
 
   // Render loading skeleton
@@ -135,10 +181,22 @@ export default function CommentModal({
       </View>
       <View style={styles.commentContent}>
         <View style={styles.commentHeader}>
-          <Text style={styles.commentAuthor}>
-            Dr. {item.author.firstName} {item.author.lastName}
-          </Text>
-          <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt!)}</Text>
+          <View style={styles.commentAuthorSection}>
+            <Text style={styles.commentAuthor}>
+              Dr. {item.author.firstName} {item.author.lastName}
+            </Text>
+            <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt!)}</Text>
+          </View>
+          {/* Delete button - only show for comment author */}
+          {(currentUser?.id === item.authorId || currentUser?.id === item.author?.id) && (
+            <TouchableOpacity 
+              style={styles.deleteButton}
+              onPress={() => confirmDeleteComment(item.id.toString())}
+              disabled={deleteCommentMutation.isPending}
+            >
+              <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
         </View>
         <Text style={styles.commentText}>{item.content}</Text>
       </View>
@@ -369,7 +427,13 @@ const styles = StyleSheet.create({
   commentHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 4,
+  },
+  commentAuthorSection: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   commentAuthor: {
     fontSize: 14,
@@ -380,6 +444,11 @@ const styles = StyleSheet.create({
   commentTime: {
     fontSize: 12,
     color: "#999",
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 16,
+    backgroundColor: "#FFF5F5",
   },
   commentText: {
     fontSize: 14,

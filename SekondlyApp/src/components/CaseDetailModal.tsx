@@ -298,6 +298,40 @@ export default function CaseDetailModal({
     },
   });
 
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      console.log('Attempting to delete comment with ID:', commentId);
+      try {
+        const response = await apiRequest("DELETE", `/api/comments/${commentId}`);
+        console.log('Delete comment response:', response);
+        return response;
+      } catch (error) {
+        console.error('Delete comment error details:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/cases", caseData?.id, "comments"] 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+    },
+    onError: (error) => {
+      console.error('Delete comment mutation error:', error);
+      if (!handleAuthError(error)) {
+        showAlert(
+          "Error", 
+          `Failed to delete comment: ${error.message || 'Unknown error'}`,
+          [{ text: 'OK', onPress: () => {} }],
+          'alert-circle',
+          '#FF3B30'
+        );
+      }
+    },
+  });
+
   // Helper functions
   const formatTimeAgo = (date: string | Date) => {
     const now = new Date();
@@ -375,6 +409,23 @@ export default function CaseDetailModal({
     onClose();
     // Navigate to profile
     onProfilePress?.(userId);
+  };
+
+  const confirmDeleteComment = (commentId: string) => {
+    showAlert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment? This action cannot be undone.",
+      [
+        { text: "Cancel", onPress: () => {}, style: "cancel" },
+        { 
+          text: "Delete", 
+          onPress: () => deleteCommentMutation.mutate(commentId),
+          style: "destructive"
+        }
+      ],
+      'trash',
+      '#FF3B30'
+    );
   };
 
   // Check if current user is the author
@@ -617,6 +668,20 @@ export default function CaseDetailModal({
                 })()}
               </Text>
             </TouchableOpacity>
+
+            {/* Delete button - only show for comment author */}
+            {(currentUser?.id === item.authorId || currentUser?.id === item.author?.id) && (
+              <TouchableOpacity 
+                style={styles.commentActionButton}
+                onPress={() => confirmDeleteComment(item.id.toString())}
+                disabled={deleteCommentMutation.isPending}
+              >
+                <View style={styles.medicalActionIcon}>
+                  <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                </View>
+                <Text style={[styles.commentActionLabel, styles.commentDeleteLabel]}>Delete</Text>
+              </TouchableOpacity>
+            )}
           </View>
           
           {/* Show Agreed List Button - positioned below action buttons */}
@@ -1625,6 +1690,9 @@ const styles = StyleSheet.create({
   },
   commentActionLabelActive: {
     color: "#22C55E",
+  },
+  commentDeleteLabel: {
+    color: "#FF3B30",
   },
   
   agreeCountButton: {

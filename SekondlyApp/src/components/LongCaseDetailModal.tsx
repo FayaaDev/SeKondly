@@ -24,6 +24,7 @@ import { handleAuthError } from '../lib/authUtils';
 import { useAuth } from '../hooks/useAuth';
 import ImageGalleryModal from './ImageGalleryModal';
 import CommentAgreersModal from './CommentAgreersModal';
+import { useCustomAlert } from './CustomAlert';
 import type { CaseWithAuthor, CommentWithAuthor } from '../types/schema';
 import { API_BASE_URL } from '../config/api';
 
@@ -76,6 +77,7 @@ const LongCaseDetailModal = ({
   const [showCommentAgreers, setShowCommentAgreers] = useState(false);
   const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
+  const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<TextInput>(null);
@@ -133,11 +135,38 @@ const LongCaseDetailModal = ({
       setNewComment("");
       setReplyingTo(null);
       Keyboard.dismiss();
-      Alert.alert("Success", "Comment added successfully");
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
         Alert.alert("Error", "Failed to add comment");
+      }
+    },
+  });
+
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      console.log('LongCaseDetailModal - Attempting to delete comment with ID:', commentId);
+      try {
+        const response = await apiRequest("DELETE", `/api/comments/${commentId}`);
+        console.log('LongCaseDetailModal - Delete comment response:', response);
+        return response;
+      } catch (error) {
+        console.error('LongCaseDetailModal - Delete comment error details:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/cases", caseData.id, "comments"] 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+    },
+    onError: (error) => {
+      console.error('LongCaseDetailModal - Delete comment mutation error:', error);
+      if (!handleAuthError(error)) {
+        Alert.alert("Error", `Failed to delete comment: ${error.message || 'Unknown error'}`);
       }
     },
   });
@@ -255,6 +284,23 @@ const LongCaseDetailModal = ({
     onClose();
     // Navigate to profile
     onProfilePress?.(userId);
+  };
+
+  const confirmDeleteComment = (commentId: string) => {
+    showAlert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment? This action cannot be undone.",
+      [
+        { text: "Cancel", onPress: () => {}, style: "cancel" },
+        { 
+          text: "Delete", 
+          onPress: () => deleteCommentMutation.mutate(commentId),
+          style: "destructive"
+        }
+      ],
+      'trash',
+      '#FF3B30'
+    );
   };
 
   const nextImage = () => {
@@ -540,6 +586,20 @@ const LongCaseDetailModal = ({
                                 })()}
                               </Text>
                             </TouchableOpacity>
+
+                            {/* Delete button - only show for comment author */}
+                            {(currentUser?.id === comment.authorId || currentUser?.id === comment.author?.id) && (
+                              <TouchableOpacity 
+                                style={styles.commentActionButton}
+                                onPress={() => confirmDeleteComment(comment.id.toString())}
+                                disabled={deleteCommentMutation.isPending}
+                              >
+                                <View style={styles.medicalActionIcon}>
+                                  <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                                </View>
+                                <Text style={[styles.commentActionLabel, styles.commentDeleteLabel]}>Delete</Text>
+                              </TouchableOpacity>
+                            )}
                           </View>
                           
                           {/* Show Agreed List Button - positioned below action buttons */}
@@ -649,6 +709,9 @@ const LongCaseDetailModal = ({
             onProfilePress={handleProfilePressFromAgreers}
             useOverlay={true}
           />
+          
+          {/* Custom Alert Component */}
+          <AlertComponent />
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
@@ -1030,6 +1093,9 @@ const styles = StyleSheet.create({
   commentActionLabelActive: {
     color: "#22C55E",
   },
+  commentDeleteLabel: {
+    color: "#FF3B30",
+  },
   
   agreeCountButton: {
     // Make the count clickable without affecting the icon
@@ -1114,11 +1180,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
+    gap: 16,
   },
   commentActionButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 60,
   },
   actionIconContainer: {
     width: 34,
