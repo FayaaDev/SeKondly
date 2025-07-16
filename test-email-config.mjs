@@ -13,12 +13,12 @@ console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'NOT_SET');
 
 // Create transporter with same config as server
 const emailTransporter = createTransport({
-  host: 'email-smtp.eu-north-1.amazonaws.com',
+  host: 'email-smtp.us-east-1.amazonaws.com',
   port: 587,
   secure: false,
   auth: {
-    user: process.env.SMTP_USER || 'AKIAVRCYZCTXCVKECGIR',
-    pass: process.env.SMTP_PASS || 'BMONkxzcbSEXcPc9gcf/p0PIUZzxW4iueTEeN4p0uElp'
+    user: process.env.SMTP_USER || 'AKIAVRCYZCTXP6X27O6Q',
+    pass: process.env.SMTP_PASS || 'BAoto0SPFrFVlZPumebfgXP2JUy/0720+bW1C8EM+Tr4'
   },
   requireTLS: true
 });
