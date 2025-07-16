@@ -36,8 +36,8 @@ const supportTicketSchema = z.object({
 async function sendWelcomeEmail(userEmail: string, firstName: string, lastName: string) {
   try {
     console.log(`Attempting to send welcome email to: ${userEmail}`);
-    console.log(`SMTP Config - User: ${process.env.EMAIL_USER ? 'SET' : 'NOT_SET'}`);
-    console.log(`SMTP Config - Pass: ${process.env.EMAIL_PASS ? 'SET' : 'NOT_SET'}`);
+    console.log(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
+    console.log(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
     
     const welcomeEmailContent = `
 Dear Dr. ${firstName} ${lastName},
@@ -74,7 +74,7 @@ Website: https://sekondly.app
     `.trim();
 
     const mailOptions = {
-      from: `"SeKondly Team" <${process.env.EMAIL_USER || 'admin@sekondly.app'}>`,
+      from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
       subject: 'Welcome to SeKondly - Your Account is Being Reviewed',
       text: welcomeEmailContent,
@@ -193,7 +193,7 @@ Website: https://sekondly.app
     `.trim();
 
     const mailOptions = {
-      from: `"SeKondly Team" <${process.env.EMAIL_USER || 'admin@sekondly.app'}>`,
+      from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
       subject: '🎉 Your SeKondly Account Has Been Approved!',
       text: approvalEmailContent,
@@ -1608,6 +1608,91 @@ Please respond to: ${validatedData.email}
     } catch (error) {
       console.error("Error toggling hot case:", error);
       res.status(500).json({ message: "Failed to toggle hot case status" });
+    }
+  });
+
+  // Test endpoints for email functionality
+  app.get("/api/test-smtp", async (req, res) => {
+    try {
+      console.log('Testing SMTP connection...');
+      console.log('SMTP Config:', {
+        host: 'email-smtp.eu-north-1.amazonaws.com',
+        port: 587,
+        user: process.env.SMTP_USER ? 'SET' : 'NOT_SET',
+        pass: process.env.SMTP_PASS ? 'SET' : 'NOT_SET'
+      });
+      
+      await emailTransporter.verify();
+      res.json({ 
+        success: true, 
+        message: "SMTP connection verified successfully" 
+      });
+    } catch (error) {
+      console.error('SMTP verification failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "SMTP connection failed",
+        details: error instanceof Error ? error.message : String(error),
+        code: error instanceof Error && 'code' in error ? error.code : undefined
+      });
+    }
+  });
+
+  app.post("/api/test-welcome-email", async (req, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
+      
+      if (!email || !firstName || !lastName) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields: email, firstName, lastName" 
+        });
+      }
+      
+      console.log(`Testing welcome email to: ${email}`);
+      const result = await sendWelcomeEmail(email, firstName, lastName);
+      
+      res.json({ 
+        success: true, 
+        message: "Welcome email test completed",
+        emailSent: result 
+      });
+    } catch (error) {
+      console.error('Welcome email test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Welcome email test failed",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/test-approval-email", async (req, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
+      
+      if (!email || !firstName || !lastName) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields: email, firstName, lastName" 
+        });
+      }
+      
+      console.log(`Testing approval email to: ${email}`);
+      const result = await sendApprovalEmail(email, firstName, lastName);
+      
+      res.json({ 
+        success: true, 
+        message: "Approval email test completed",
+        emailSent: result 
+      });
+    } catch (error) {
+      console.error('Approval email test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Approval email test failed",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
