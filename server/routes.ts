@@ -157,6 +157,10 @@ Website: https://sekondly.app
 
 async function sendApprovalEmail(userEmail: string, firstName: string, lastName: string) {
   try {
+    console.log(`Attempting to send approval email to: ${userEmail}`);
+    console.log(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
+    console.log(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
+    
     const approvalEmailContent = `
 Dear Dr. ${firstName} ${lastName},
 
@@ -274,11 +278,18 @@ Website: https://sekondly.app
     };
 
     await emailTransporter.verify();
+    console.log('SMTP connection verified for approval email');
+    
     await emailTransporter.sendMail(mailOptions);
     console.log(`Approval email sent successfully to ${userEmail}`);
     return true;
   } catch (error) {
     console.error('Failed to send approval email:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      code: error instanceof Error && 'code' in error ? error.code : undefined,
+      command: error instanceof Error && 'command' in error ? error.command : undefined
+    });
     return false;
   }
 }
@@ -1445,14 +1456,33 @@ Please respond to: ${validatedData.email}
   });
 
   app.post("/api/admin/approve-user/:id", isAuthenticated, isAdmin, async (req, res) => {
+    console.log('🔥 APPROVAL ENDPOINT HIT!!!');
     try {
+      console.log('=== APPROVAL ENDPOINT CALLED ===');
+      console.log('Request params:', req.params);
+      console.log('Request user:', req.user);
+      
       const userId = req.params.id;
       const adminId = req.user?.id || 'system';
+      
+      console.log('Calling storage.approveUser with:', { userId, adminId });
       const approvedUser = await storage.approveUser(userId, adminId);
+      console.log('storage.approveUser returned:', approvedUser);
+      
+      console.log('Approved user data:', {
+        id: approvedUser?.id,
+        email: approvedUser?.email,
+        firstName: approvedUser?.firstName,
+        lastName: approvedUser?.lastName,
+        hasEmail: !!approvedUser?.email,
+        hasFirstName: !!approvedUser?.firstName,
+        hasLastName: !!approvedUser?.lastName
+      });
       
       // Send approval email
       if (approvedUser && approvedUser.email && approvedUser.firstName && approvedUser.lastName) {
         try {
+          console.log(`Attempting to send approval email to: ${approvedUser.email}`);
           const emailSent = await sendApprovalEmail(
             approvedUser.email, 
             approvedUser.firstName, 
@@ -1463,6 +1493,13 @@ Please respond to: ${validatedData.email}
           console.error('Error sending approval email:', emailError);
           // Don't fail the approval if email fails
         }
+      } else {
+        console.log('Approval email not sent - missing required fields:', {
+          hasUser: !!approvedUser,
+          hasEmail: !!approvedUser?.email,
+          hasFirstName: !!approvedUser?.firstName,
+          hasLastName: !!approvedUser?.lastName
+        });
       }
       
       res.json(approvedUser);

@@ -3,9 +3,75 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
 import path from "path";
+import nodemailer from 'nodemailer';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+
+// Email configuration for AWS SES  
+const emailTransporter = nodemailer.createTransport({
+  host: 'email-smtp.us-east-1.amazonaws.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER || 'AKIAVRCYZCTXP6X27O6Q',
+    pass: process.env.SMTP_PASS || 'BAoto0SPFrFVlZPumebfgXP2JUy/0720+bW1C8EM+Tr4'
+  },
+  requireTLS: true
+});
+
+// Approval email function
+async function sendApprovalEmail(userEmail: string, firstName: string, lastName: string) {
+  try {
+    console.log(`Attempting to send approval email to: ${userEmail}`);
+    console.log('SMTP Config - User:', process.env.SMTP_USER ? 'SET' : 'NOT_SET');
+    console.log('SMTP Config - Pass:', process.env.SMTP_PASS ? 'SET' : 'NOT_SET');
+    
+    await emailTransporter.verify();
+    console.log('SMTP connection verified for approval email');
+    
+    const mailOptions = {
+      from: '"SeKondly Team" <admin@sekondly.app>',
+      to: userEmail,
+      subject: '🎉 Your SeKondly Account Has Been Approved!',
+      text: `Dear Dr. ${firstName} ${lastName},
+
+Great news! Your SeKondly account has been approved! 🎉
+
+We're excited to see you contribute to our growing community of medical professionals!
+
+Here's how to get started:
+• Visit https://sekondly.app and sign in with your registered email and password
+• Complete your profile to help colleagues find and connect with you
+• Start exploring cases or share your first case with the community  
+• Connect with other professionals in your field
+
+If you need any help getting started or have questions, please visit our support page at https://sekondly.app/static-landing.html
+
+Welcome to SeKondly!
+
+Best regards,
+The SeKondly Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app`
+    };
+    
+    await emailTransporter.sendMail(mailOptions);
+    console.log(`Approval email sent successfully to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send approval email:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      code: error instanceof Error && 'code' in error ? error.code : undefined,
+      command: error instanceof Error && 'command' in error ? error.command : undefined
+    });
+    return false;
+  }
+}
 
 const app = express();
 
@@ -140,9 +206,44 @@ app.get('/api/admin/pending-users', async (req, res) => {
 
 app.post('/api/admin/approve-user/:id', async (req, res) => {
   try {
+    console.log('🔥 APPROVAL ENDPOINT HIT (in index.ts)!!!');
     const userId = req.params.id;
     const adminId = req.session?.user?.id || 'system';
     const approvedUser = await storage.approveUser(userId, adminId);
+    
+    console.log('Approved user data:', {
+      id: approvedUser?.id,
+      email: approvedUser?.email,
+      firstName: approvedUser?.firstName,
+      lastName: approvedUser?.lastName,
+      hasEmail: !!approvedUser?.email,
+      hasFirstName: !!approvedUser?.firstName,
+      hasLastName: !!approvedUser?.lastName
+    });
+    
+    // Send approval email
+    if (approvedUser && approvedUser.email && approvedUser.firstName && approvedUser.lastName) {
+      try {
+        console.log(`Attempting to send approval email to: ${approvedUser.email}`);
+        const emailSent = await sendApprovalEmail(
+          approvedUser.email, 
+          approvedUser.firstName, 
+          approvedUser.lastName
+        );
+        console.log(`Approval email ${emailSent ? 'sent' : 'failed'} for user: ${approvedUser.email}`);
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    } else {
+      console.log('Approval email not sent - missing required fields:', {
+        hasUser: !!approvedUser,
+        hasEmail: !!approvedUser?.email,
+        hasFirstName: !!approvedUser?.firstName,
+        hasLastName: !!approvedUser?.lastName
+      });
+    }
+    
     res.json(approvedUser);
   } catch (error) {
     console.error("Error approving user:", error);
