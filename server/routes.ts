@@ -1449,6 +1449,22 @@ Please respond to: ${validatedData.email}
       const userId = req.params.id;
       const adminId = req.user?.id || 'system';
       const approvedUser = await storage.approveUser(userId, adminId);
+      
+      // Send approval email
+      if (approvedUser && approvedUser.email && approvedUser.firstName && approvedUser.lastName) {
+        try {
+          const emailSent = await sendApprovalEmail(
+            approvedUser.email, 
+            approvedUser.firstName, 
+            approvedUser.lastName
+          );
+          console.log(`Approval email ${emailSent ? 'sent' : 'failed'} for user: ${approvedUser.email}`);
+        } catch (emailError) {
+          console.error('Error sending approval email:', emailError);
+          // Don't fail the approval if email fails
+        }
+      }
+      
       res.json(approvedUser);
     } catch (error) {
       console.error("Error approving user:", error);

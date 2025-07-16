@@ -107,6 +107,15 @@ export function serveStatic(app: Express) {
     }
   });
 
+  // Also serve favicon at /assets/favicon.png for the landing page
+  app.get('/assets/favicon.png', (_req, res) => {
+    if (fs.existsSync(faviconPath)) {
+      res.sendFile(faviconPath);
+    } else {
+      res.status(404).send('Favicon not found');
+    }
+  });
+
   // Define web app routes that should serve the React app
   const webAppRoutes = [
     '/admin',
