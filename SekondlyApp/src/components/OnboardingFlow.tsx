@@ -15,10 +15,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Clipboard from 'expo-clipboard';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config/api';
 import StorageService from '../lib/storage';
 import { MEDICAL_SPECIALTIES, MEDICAL_LEVELS } from '../types/shared';
+import { useCustomAlert } from './CustomAlert';
 
 interface OnboardingData {
   firstName: string;
@@ -80,6 +82,7 @@ const checkPasswordStrength = (password: string) => {
  */
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn }) => {
   const queryClient = useQueryClient();
+  const { showAlert, AlertComponent } = useCustomAlert();
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>('welcome');
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
@@ -418,7 +421,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.passwordLabelContainer}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TouchableOpacity 
+                  style={styles.forgotPasswordButton}
+                  onPress={() => {
+                    showAlert(
+                      'Forgot Password',
+                      'Please contact support to reset your password.\n\nEmail: admin@sekondly.app',
+                      [
+                        { 
+                          text: 'Copy Email', 
+                          onPress: async () => {
+                            await Clipboard.setStringAsync('admin@sekondly.app');
+                          } 
+                        },
+                        { text: 'OK', onPress: () => {} }
+                      ],
+                      'mail'
+                    );
+                  }}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={styles.input}
                 value={signInData.password}
@@ -849,6 +875,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
 
   return (
     <>
+      <AlertComponent />
       {(() => {
         switch (currentScreen) {
           case 'welcome':
@@ -1079,6 +1106,21 @@ const styles = {
     fontWeight: '600',
     color: '#000',
     marginBottom: 8,
+  },
+  passwordLabelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  forgotPasswordButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
