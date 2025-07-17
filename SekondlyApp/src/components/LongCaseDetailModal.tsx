@@ -175,53 +175,28 @@ const LongCaseDetailModal = ({
   const agreeCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       console.log('Attempting to agree with comment ID:', commentId);
-      return await apiRequest("POST", `/api/comments/${commentId}/agree`);
-    },
-    onMutate: async (commentId: string) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ 
-        queryKey: ["/api/cases", caseData.id, "comments"] 
-      });
-
-      // Snapshot the previous value
-      const previousComments = queryClient.getQueryData(["/api/cases", caseData.id, "comments"]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(["/api/cases", caseData.id, "comments"], (old: any) => {
-        if (!old) return old;
-        return old.map((comment: any) => {
-          if (comment.id.toString() === commentId) {
-            const currentCount = comment.agreesCount || 0;
-            const isCurrentlyAgreed = comment.isAgreedByUser || false;
-            return {
-              ...comment,
-              isAgreedByUser: !isCurrentlyAgreed,
-              agreesCount: isCurrentlyAgreed ? Math.max(0, currentCount - 1) : currentCount + 1
-            };
-          }
-          return comment;
-        });
-      });
-
-      // Return a context object with the snapshot
-      return { previousComments };
+      const result = await apiRequest("POST", `/api/comments/${commentId}/agree`);
+      // Include the comment ID in the result for onSuccess callback
+      return { ...result, commentId };
     },
     onSuccess: (data) => {
       console.log('Agree comment success:', data);
-      // Refetch to ensure we have the latest data
+      // Refetch to get the latest data from server
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
+      // Also invalidate the agreers list for this comment
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/comments", data.commentId, "agrees"] 
+      });
+      // Invalidate all comment agrees queries to be safe
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/comments"], 
+        predicate: (query) => query.queryKey[2] === "agrees"
+      });
     },
-    onError: (error, commentId, context) => {
+    onError: (error) => {
       console.error('Agree comment error:', error);
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousComments) {
-        queryClient.setQueryData(
-          ["/api/cases", caseData.id, "comments"], 
-          context.previousComments
-        );
-      }
       if (!handleAuthError(error)) {
         Alert.alert("Error", "Failed to agree with comment");
       }
@@ -562,6 +537,7 @@ const LongCaseDetailModal = ({
                                 console.log('Agree button pressed for comment:', comment.id);
                                 agreeCommentMutation.mutate(comment.id.toString());
                               }}
+                              disabled={agreeCommentMutation.isPending}
                             >
                               <View style={[
                                 styles.medicalActionIcon,

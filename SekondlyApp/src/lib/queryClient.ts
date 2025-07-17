@@ -36,35 +36,73 @@ export async function apiRequest(
   try {
     const isFormData = data instanceof FormData;
     
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000); // 15 second timeout
+    
     const config: RequestInit = {
       method,
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
       },
       credentials: "include", // Use session-based authentication
+      signal: controller.signal, // Add abort signal
     };
 
-    if (data && method !== "GET") {
-      config.body = isFormData ? data : JSON.stringify(data);
+    if (method !== "GET") {
+      if (data) {
+        config.body = isFormData ? data : JSON.stringify(data);
+      } else {
+        // For POST/PUT/DELETE requests without data, send empty JSON object
+        config.body = JSON.stringify({});
+      }
     }
 
+    console.log('Request config:', {
+      method,
+      url: `${API_BASE_URL}${url}`,
+      headers: config.headers,
+      hasBody: !!config.body
+    });
+
     const response = await fetch(`${API_BASE_URL}${url}`, config);
+    
+    // Clear timeout on successful response
+    clearTimeout(timeoutId);
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.log('Error response text:', errorText);
+      
       // Handle auth errors
       if (response.status === 401 || response.status === 403) {
         throw new Error("Authentication failed");
       }
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      return await response.json();
+      const result = await response.json();
+      console.log('Response data:', result);
+      return result;
     }
-    return await response.text();
+    const textResult = await response.text();
+    console.log('Response text:', textResult);
+    return textResult;
   } catch (error) {
     console.error("API request error:", error);
+    
+    // Handle abort error (timeout)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout: ${method} ${url} took longer than 15 seconds`);
+    }
+    
     throw error;
   }
 }

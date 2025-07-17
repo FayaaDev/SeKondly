@@ -176,53 +176,44 @@ export default function CaseDetailModal({
   const agreeCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       console.log('Attempting to agree with comment ID:', commentId);
-      return await apiRequest("POST", `/api/comments/${commentId}/agree`);
-    },
-    onMutate: async (commentId: string) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ 
-        queryKey: ["/api/cases", caseData?.id, "comments"] 
-      });
-
-      // Snapshot the previous value
-      const previousComments = queryClient.getQueryData(["/api/cases", caseData?.id, "comments"]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(["/api/cases", caseData?.id, "comments"], (old: any) => {
-        if (!old) return old;
-        return old.map((comment: any) => {
-          if (comment.id.toString() === commentId) {
-            const currentCount = comment.agreesCount || 0;
-            const isCurrentlyAgreed = comment.isAgreedByUser || false;
-            return {
-              ...comment,
-              isAgreedByUser: !isCurrentlyAgreed,
-              agreesCount: isCurrentlyAgreed ? Math.max(0, currentCount - 1) : currentCount + 1
-            };
-          }
-          return comment;
-        });
-      });
-
-      // Return a context object with the snapshot
-      return { previousComments };
+      const result = await apiRequest("POST", `/api/comments/${commentId}/agree`);
+      // Include the comment ID in the result for onSuccess callback
+      return { ...result, commentId };
     },
     onSuccess: (data) => {
-      console.log('Agree comment success:', data);
-      // Refetch to ensure we have the latest data
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/cases", caseData?.id, "comments"] 
-      });
-    },
-    onError: (error, commentId, context) => {
-      console.error('Agree comment error:', error);
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousComments) {
-        queryClient.setQueryData(
-          ["/api/cases", caseData?.id, "comments"], 
-          context.previousComments
-        );
+      console.log('SHORT CASE: Agree comment success:', data);
+      console.log('SHORT CASE: Server response isAgreedByUser:', data.isAgreedByUser);
+      console.log('SHORT CASE: Invalidating queries...');
+      
+      // Force refetch of comments to get updated state
+      if (caseData?.id) {
+        console.log('SHORT CASE: Invalidating comments query for case:', caseData.id);
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/cases", caseData.id, "comments"] 
+        });
+        // Force immediate refetch
+        queryClient.refetchQueries({ 
+          queryKey: ["/api/cases", caseData.id, "comments"] 
+        });
       }
+      
+      // Also invalidate the agreers list for this comment
+      const commentId = data.commentId || selectedCommentId;
+      console.log('SHORT CASE: Invalidating agreers for comment:', commentId);
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/comments", commentId, "agrees"] 
+      });
+      
+      // Invalidate all comment agrees queries to be safe
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/comments"], 
+        predicate: (query) => query.queryKey[2] === "agrees"
+      });
+      
+      console.log('SHORT CASE: Query invalidation complete');
+    },
+    onError: (error) => {
+      console.error('Agree comment error:', error);
       if (!handleAuthError(error)) {
         showAlert(
           "Error", 
@@ -233,6 +224,15 @@ export default function CaseDetailModal({
         );
       }
     },
+    onSettled: () => {
+      console.log('SHORT CASE: Agree mutation settled (completed)');
+    },
+    // Add retry configuration to prevent getting stuck
+    retry: 1,
+    // Add meta to track mutation timing
+    meta: {
+      startTime: Date.now()
+    }
   });
 
   // Delete case mutation
@@ -641,9 +641,24 @@ export default function CaseDetailModal({
             <TouchableOpacity 
               style={styles.commentActionButton}
               onPress={() => {
-                console.log('Agree button pressed for comment:', item.id);
+                console.log('=== SHORT CASE AGREE BUTTON PRESSED ===');
+                console.log('SHORT CASE: Agree button pressed for comment:', item.id);
+                console.log('SHORT CASE: Current isAgreedByUser state:', (item as any).isAgreedByUser);
+                console.log('SHORT CASE: Current agreesCount:', (item as any).agreesCount);
+                console.log('SHORT CASE: agreeCommentMutation.isPending:', agreeCommentMutation.isPending);
+                console.log('SHORT CASE: agreeCommentMutation.isIdle:', agreeCommentMutation.isIdle);
+                console.log('SHORT CASE: agreeCommentMutation.isError:', agreeCommentMutation.isError);
+                console.log('SHORT CASE: agreeCommentMutation.isSuccess:', agreeCommentMutation.isSuccess);
+                console.log('SHORT CASE: Full comment object:', JSON.stringify(item, null, 2));
+                
+                if (agreeCommentMutation.isPending) {
+                  console.log('SHORT CASE: Button disabled due to pending mutation, ignoring press');
+                  return;
+                }
+                
                 agreeCommentMutation.mutate(item.id.toString());
               }}
+              disabled={agreeCommentMutation.isPending}
             >
               <View style={[
                 styles.medicalActionIcon,
