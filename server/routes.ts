@@ -884,6 +884,61 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Delete account endpoint
+  app.delete("/api/delete-account", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      console.log(`DELETE /api/delete-account - Deleting account for user: ${userId}`);
+      
+      // Delete all user data using the comprehensive deleteUser function
+      await storage.deleteUser(userId);
+      
+      // Destroy the session after successful deletion
+      if (req.session) {
+        req.session.destroy((err: any) => {
+          if (err) {
+            console.error("Error destroying session after account deletion:", err);
+            // Continue anyway since account was deleted
+          }
+        });
+      }
+      
+      // Clear session cookies
+      res.clearCookie('sekondly.sid', {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax'
+      });
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax'
+      });
+      res.clearCookie('session', {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax'
+      });
+      
+      console.log(`DELETE /api/delete-account - Account deleted successfully for user: ${userId}`);
+      res.json({ 
+        message: "Account deleted successfully",
+        success: true 
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ 
+        message: "Failed to delete account",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Add auth check endpoint for compatibility
   app.get("/api/auth/check", isAuthenticated, async (req: any, res) => {
     try {
