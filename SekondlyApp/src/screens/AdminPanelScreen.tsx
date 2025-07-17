@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Modal, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Modal, Linking, TextInput } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -54,6 +54,9 @@ export default function AdminPanelScreen() {
   const [selectedCase, setSelectedCase] = useState<CaseForReview | null>(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showCaseDetailModal, setShowCaseDetailModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [userToReject, setUserToReject] = useState<User | null>(null);
   const { user, isLoading } = useAuth();
   const navigation = useNavigation();
   const queryClient = useQueryClient();
@@ -103,12 +106,15 @@ export default function AdminPanelScreen() {
   });
 
   const rejectUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiRequest('DELETE', `/api/admin/reject-user/${userId}`);
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      await apiRequest('DELETE', `/api/admin/reject-user/${userId}`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-users'] });
-      Alert.alert('🗑️ User Rejected', 'The user has been rejected.');
+      Alert.alert('🗑️ User Rejected', 'The user has been rejected and notified via email.');
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setUserToReject(null);
     },
     onError: (error: any) => {
       Alert.alert('❌ Error', error.message || 'Failed to reject user');
@@ -342,7 +348,10 @@ export default function AdminPanelScreen() {
                     </TouchableOpacity>
                     
                     <TouchableOpacity
-                      onPress={() => rejectUserMutation.mutate(user.id)}
+                      onPress={() => {
+                        setUserToReject(user);
+                        setShowRejectModal(true);
+                      }}
                       style={[styles.actionButton, styles.rejectButton]}
                       disabled={rejectUserMutation.isPending}
                     >
@@ -651,6 +660,94 @@ export default function AdminPanelScreen() {
                 ))}
               </View>
             )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* User Rejection Modal */}
+      <Modal
+        visible={showRejectModal && !!userToReject}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowRejectModal(false);
+          setRejectionReason('');
+          setUserToReject(null);
+        }}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderContent}>
+              <Text style={styles.modalTitle}>Reject User Application</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setShowRejectModal(false);
+                setRejectionReason('');
+                setUserToReject(null);
+              }}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#8E8E93" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalScrollContent}>
+            {userToReject && (
+              <View style={styles.card}>
+                <Text style={styles.userName}>
+                  Dr. {userToReject.firstName} {userToReject.lastName}
+                </Text>
+                <Text style={styles.userDetail}>{userToReject.email}</Text>
+                <Text style={styles.userDetail}>{userToReject.specialty}</Text>
+              </View>
+            )}
+            
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Reason for Rejection</Text>
+              <TextInput
+                style={styles.textInput}
+                multiline
+                numberOfLines={6}
+                placeholder="Please provide a detailed reason for rejecting this application. This message will be sent to the user via email."
+                value={rejectionReason}
+                onChangeText={setRejectionReason}
+                textAlignVertical="top"
+              />
+              <Text style={styles.helperText}>
+                The user will be notified via email with the reason you provide above.
+              </Text>
+            </View>
+            
+            <View style={styles.modalActionButtons}>
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.viewButton]}
+                onPress={() => {
+                  setShowRejectModal(false);
+                  setRejectionReason('');
+                  setUserToReject(null);
+                }}
+              >
+                <Text style={styles.viewButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalRejectButton]}
+                onPress={() => {
+                  if (userToReject && rejectionReason.trim()) {
+                    rejectUserMutation.mutate({
+                      userId: userToReject.id,
+                      reason: rejectionReason.trim()
+                    });
+                  }
+                }}
+                disabled={rejectUserMutation.isPending || !rejectionReason.trim()}
+              >
+                <Text style={styles.modalRejectButtonText}>
+                  {rejectUserMutation.isPending ? 'Rejecting...' : 'Reject User'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1344,5 +1441,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
     borderWidth: 1,
     borderColor: '#FF3B30',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+    minHeight: 120,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 8,
+    lineHeight: 20,
   },
 });

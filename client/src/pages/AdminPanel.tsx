@@ -5,6 +5,8 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ChevronLeft, Users, FileText, Check, X, Eye, Settings, LogOut, Shield, TrendingUp, Clock, Download, Stethoscope, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -38,6 +40,9 @@ export default function AdminPanel() {
   const [selectedCase, setSelectedCase] = useState<CaseForReview | null>(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showCaseModal, setShowCaseModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [userToReject, setUserToReject] = useState<User | null>(null);
   const { user, isLoading, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,15 +105,18 @@ export default function AdminPanel() {
   });
 
   const rejectUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiRequest("DELETE", `/api/admin/reject-user/${userId}`);
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      await apiRequest("DELETE", `/api/admin/reject-user/${userId}`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
       toast({
         title: "User rejected",
-        description: "The user has been rejected.",
+        description: "The user has been rejected and notified via email.",
       });
+      setShowRejectModal(false);
+      setRejectionReason("");
+      setUserToReject(null);
     },
     onError: (error) => {
       toast({
@@ -508,7 +516,10 @@ export default function AdminPanel() {
                               size="sm"
                               variant="destructive"
                               className="flex-1"
-                              onClick={() => rejectUserMutation.mutate(user.id)}
+                              onClick={() => {
+                                setUserToReject(user);
+                                setShowRejectModal(true);
+                              }}
                               disabled={rejectUserMutation.isPending}
                             >
                               <X className="w-4 h-4 mr-2" />
@@ -1054,6 +1065,67 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
+
+      {/* User Rejection Modal */}
+      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reject User Application</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {userToReject && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium text-gray-900">
+                  Dr. {userToReject.firstName} {userToReject.lastName}
+                </p>
+                <p className="text-sm text-gray-600">{userToReject.email}</p>
+                <p className="text-sm text-gray-600">{userToReject.specialty}</p>
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for rejection <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Please provide a detailed reason for rejecting this application. This message will be sent to the user via email."
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <p className="text-sm text-gray-600">
+              The user will be notified via email with the reason you provide above.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectModal(false);
+                setRejectionReason("");
+                setUserToReject(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (userToReject && rejectionReason.trim()) {
+                  rejectUserMutation.mutate({
+                    userId: userToReject.id,
+                    reason: rejectionReason.trim()
+                  });
+                }
+              }}
+              disabled={rejectUserMutation.isPending || !rejectionReason.trim()}
+            >
+              {rejectUserMutation.isPending ? "Rejecting..." : "Reject User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

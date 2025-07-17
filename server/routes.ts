@@ -294,6 +294,104 @@ Website: https://sekondly.app
   }
 }
 
+async function sendRejectionEmail(userEmail: string, firstName: string, lastName: string, reason: string) {
+  try {
+    console.log(`Attempting to send rejection email to: ${userEmail}`);
+    
+    const rejectionEmailContent = `
+Dear Dr. ${firstName} ${lastName},
+
+Thank you for your interest in joining SeKondly. After careful review of your application, we regret to inform you that we cannot approve your account at this time.
+
+Reason for rejection:
+${reason}
+
+We appreciate the time you took to apply and wish you the best in your medical career. If you believe this decision was made in error or if you have additional credentials to share, please contact our support team at https://sekondly.app/static-landing.html
+
+Thank you for your understanding.
+
+Best regards,
+The SeKondly Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
+
+    const mailOptions = {
+      from: `"SeKondly Team" <admin@sekondly.app>`,
+      to: userEmail,
+      subject: 'SeKondly Account Application Status',
+      text: rejectionEmailContent,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #dc3545; margin: 0; font-size: 24px;">Application Update</h1>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">Dear Dr. ${firstName} ${lastName},</p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for your interest in joining SeKondly. After careful review of your application, we regret to inform you that we cannot approve your account at this time.
+            </p>
+            
+            <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 4px;">
+              <h3 style="color: #721c24; margin-top: 0; font-size: 16px;">Reason for rejection:</h3>
+              <p style="font-size: 16px; line-height: 1.6; color: #721c24; margin: 0; font-weight: 500;">
+                ${reason}
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              We appreciate the time you took to apply and wish you the best in your medical career. If you believe this decision was made in error or if you have additional credentials to share, please contact our support team.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sekondly.app/static-landing.html" style="background-color: #4ECDC4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                Contact Support
+              </a>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for your understanding.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+              Best regards,<br>
+              <strong>The SeKondly Team</strong>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <div style="text-align: center; color: #888; font-size: 14px;">
+              <p>This email was sent to ${userEmail}</p>
+              <p><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p>Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await emailTransporter.verify();
+    console.log('SMTP connection verified for rejection email');
+    
+    await emailTransporter.sendMail(mailOptions);
+    console.log(`Rejection email sent successfully to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send rejection email:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      code: error instanceof Error && 'code' in error ? error.code : undefined,
+      command: error instanceof Error && 'command' in error ? error.command : undefined
+    });
+    return false;
+  }
+}
+
 // File upload configuration
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -1544,8 +1642,50 @@ Please respond to: ${validatedData.email}
   app.delete("/api/admin/reject-user/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.params.id;
+      const { reason } = req.body;
+      
+      if (!reason || reason.trim() === "") {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+      
+      // Get user details before deletion for email
+      const userToReject = await storage.getUser(userId);
+      
+      if (!userToReject) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Send rejection email
+      let rejectionEmailSent = false;
+      if (userToReject.email && userToReject.firstName && userToReject.lastName) {
+        try {
+          console.log(`Attempting to send rejection email to: ${userToReject.email}`);
+          rejectionEmailSent = await sendRejectionEmail(
+            userToReject.email,
+            userToReject.firstName,
+            userToReject.lastName,
+            reason.trim()
+          );
+          console.log(`Rejection email ${rejectionEmailSent ? 'sent' : 'failed'} for user: ${userToReject.email}`);
+        } catch (emailError) {
+          console.error('Error sending rejection email:', emailError);
+          // Continue with rejection even if email fails
+        }
+      }
+      
+      // Delete/reject the user
       await storage.rejectUser(userId);
-      res.json({ message: 'User rejected successfully' });
+      
+      res.json({ 
+        message: 'User rejected successfully',
+        rejectionEmailSent,
+        user: {
+          id: userToReject.id,
+          email: userToReject.email,
+          firstName: userToReject.firstName,
+          lastName: userToReject.lastName
+        }
+      });
     } catch (error) {
       console.error("Error rejecting user:", error);
       res.status(500).json({ message: "Failed to reject user" });
