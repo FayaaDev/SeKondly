@@ -380,6 +380,14 @@ export default function CaseCard({
           isHot && { transform: [{ scale: pulseAnim }] }
         ]}
       >
+      {/* Hot Case Indicator */}
+      {isHot && (
+        <View style={styles.hotIndicator}>
+          <Ionicons name="flame" size={16} color="#FF3B30" />
+          <Text style={styles.hotIndicatorText}>HOT</Text>
+        </View>
+      )}
+      
       {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.authorInfo} onPress={handleProfilePress}>
@@ -425,9 +433,6 @@ export default function CaseCard({
               <Text style={styles.viewCount}>{caseData.viewsCount} views</Text>
             </View>
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.moreButton} onPress={handleMoreOptions}>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
         </TouchableOpacity>
       </View>
 
@@ -813,5 +818,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  hotIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  hotIndicatorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
   },
 });

@@ -1891,6 +1891,24 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Alternative endpoint for hot case toggle (for web and mobile compatibility)
+  app.post("/api/cases/:id/hot", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      // Toggle the hot status by checking current status
+      const currentCase = await storage.getCase(caseId);
+      if (!currentCase) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      const newHotStatus = !currentCase.isHot;
+      const updatedCase = await storage.updateCaseHotStatus(caseId, newHotStatus);
+      res.json(updatedCase);
+    } catch (error) {
+      console.error("Error toggling hot case:", error);
+      res.status(500).json({ message: "Failed to toggle hot case status" });
+    }
+  });
+
   // Test endpoints for email functionality
   app.get("/api/test-smtp", async (req, res) => {
     try {
