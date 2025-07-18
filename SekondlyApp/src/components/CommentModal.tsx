@@ -55,11 +55,22 @@ export default function CommentModal({
       return await apiRequest("POST", `/api/cases/${caseId}/comments`, { content });
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseId, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseId, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
+      
       setComment("");
       Alert.alert("Success", "Your comment has been posted successfully.");
     },
@@ -84,11 +95,22 @@ export default function CommentModal({
       }
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseId, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseId, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
+      
       Alert.alert("Success", "Comment deleted successfully.");
     },
     onError: (error) => {

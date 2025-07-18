@@ -128,10 +128,22 @@ const LongCaseDetailModal = ({
       return await apiRequest("POST", `/api/cases/${caseData.id}/comments`, { content });
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseData.id, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
+      
       setNewComment("");
       setReplyingTo(null);
       Keyboard.dismiss();
@@ -157,11 +169,21 @@ const LongCaseDetailModal = ({
       }
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseData.id, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
     },
     onError: (error) => {
       console.error('LongCaseDetailModal - Delete comment mutation error:', error);
@@ -185,6 +207,18 @@ const LongCaseDetailModal = ({
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData.id, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseData.id, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
+      
       // Also invalidate the agreers list for this comment
       queryClient.invalidateQueries({ 
         queryKey: ["/api/comments", data.commentId, "agrees"] 

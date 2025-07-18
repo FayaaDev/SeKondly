@@ -150,10 +150,22 @@ export default function CaseDetailModal({
       return await apiRequest("POST", `/api/cases/${caseData?.id}/comments`, { content });
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData?.id, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseData?.id, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
+      
       setNewComment("");
       setReplyingTo(null);
       Keyboard.dismiss();
@@ -196,6 +208,14 @@ export default function CaseDetailModal({
           queryKey: ["/api/cases", caseData.id, "comments"] 
         });
       }
+      
+      // Invalidate and refetch the main cases feed
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
+      queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
       
       // Also invalidate the agreers list for this comment
       const commentId = data.commentId || selectedCommentId;
@@ -312,11 +332,21 @@ export default function CaseDetailModal({
       }
     },
     onSuccess: () => {
+      // Invalidate and refetch the comments for this case
       queryClient.invalidateQueries({ 
         queryKey: ["/api/cases", caseData?.id, "comments"] 
       });
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/cases", caseData?.id, "comments"] 
+      });
+      
+      // Invalidate and refetch the main cases feed
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/cases"] });
+      
+      // Invalidate and refetch my cases
       queryClient.invalidateQueries({ queryKey: ["/api/my-cases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/my-cases"] });
     },
     onError: (error) => {
       console.error('Delete comment mutation error:', error);
