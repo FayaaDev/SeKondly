@@ -1936,6 +1936,56 @@ Please respond to: ${validatedData.email}
     }
   });
 
+  // Specialty Preferences Endpoints
+  
+  // Save specialty preferences
+  app.post("/api/specialty-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { specialties } = req.body;
+
+      if (!specialties || !Array.isArray(specialties)) {
+        return res.status(400).json({ message: "Invalid specialties provided" });
+      }
+
+      // For now, we'll store this in the user's profile or a simple storage
+      // You might want to create a separate table for user preferences
+      await storage.setUserSpecialtyPreferences(userId, specialties);
+      
+      res.json({ message: "Specialty preferences saved successfully" });
+    } catch (error) {
+      console.error("Error saving specialty preferences:", error);
+      res.status(500).json({ message: "Failed to save specialty preferences" });
+    }
+  });
+
+  // Get specialty preferences status
+  app.get("/api/specialty-preferences/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const hasSetPreferences = await storage.hasUserSetSpecialtyPreferences(userId);
+      
+      res.json({ hasSetPreferences });
+    } catch (error) {
+      console.error("Error checking specialty preferences status:", error);
+      res.status(500).json({ message: "Failed to check specialty preferences status" });
+    }
+  });
+
+  // Get user's specialty preferences
+  app.get("/api/specialty-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const preferences = await storage.getUserSpecialtyPreferences(userId);
+      
+      res.json(preferences || []);
+    } catch (error) {
+      console.error("Error fetching specialty preferences:", error);
+      res.status(500).json({ message: "Failed to fetch specialty preferences" });
+    }
+  });
+
+  // Test email endpoints
   app.post("/api/test-welcome-email", async (req, res) => {
     try {
       const { email, firstName, lastName } = req.body;

@@ -253,7 +253,7 @@ const SpecialtyPreferencesFlow: React.FC<SpecialtyPreferencesFlowProps> = ({
         <View style={styles.popularContainer}>
           <Text style={styles.popularTitle}>Popular Specialties</Text>
           <View style={styles.popularTagsContainer}>
-            {['Cardiology', 'Emergency Medicine', 'Internal Medicine', 'Surgery', 'Pediatrics', 'Psychiatry'].map((specialty) => (
+            {['General Surgey', 'Internal Medicine', 'Emergency Medicine', 'Urology', 'Colon and Rectal Surgery', 'Pediatrics', 'Obstetrics & Gynecology'].map((specialty) => (
               <TouchableOpacity
                 key={specialty}
                 style={[

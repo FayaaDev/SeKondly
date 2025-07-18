@@ -7,6 +7,7 @@
 
 export type RootStackParamList = {
   Auth: undefined;
+  SpecialtyPreferences: undefined;
   Main: undefined;
   AdminPanel: undefined;
   NotificationSettings: undefined;

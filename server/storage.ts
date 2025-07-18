@@ -120,6 +120,11 @@ export interface IStorage {
   updateNotificationPreferences(userId: string, preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | null>;
   getUserHiddenSpecialties(userId: string): Promise<string[]>;
+
+  // Specialty preference operations
+  setUserSpecialtyPreferences(userId: string, specialties: string[]): Promise<void>;
+  getUserSpecialtyPreferences(userId: string): Promise<string[]>;
+  hasUserSetSpecialtyPreferences(userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -235,33 +240,37 @@ export class DatabaseStorage implements IStorage {
 
     const allCases = await query;
 
-    // If user is specified, prioritize cases from users they follow
+    // If user is specified, prioritize cases by specialty preferences and followed users
     if (userId) {
+      // Get user's specialty preferences
+      const userSpecialtyPreferences = await this.getUserSpecialtyPreferences(userId);
       const followingUsers = await this.getUserFollowing(userId);
       const followingUserIds = new Set(followingUsers.map(user => user.id));
+      const preferredSpecialties = new Set(userSpecialtyPreferences);
 
-      // If user is following less than 10 users, return all cases by recency (no prioritization)
-      if (followingUserIds.size < 10) {
-        return allCases; // Already sorted by creation date
-      }
+      // Separate cases into priority groups
+      const preferredSpecialtyCases: CaseWithAuthor[] = [];
+      const followedUserCases: CaseWithAuthor[] = [];
+      const otherCases: CaseWithAuthor[] = [];
 
-      // For users following 10+ people, prioritize followed users' cases
-      if (followingUserIds.size >= 10) {
-        // Separate cases into two groups: from followed users and others
-        const casesFromFollowed: CaseWithAuthor[] = [];
-        const casesFromOthers: CaseWithAuthor[] = [];
+      allCases.forEach(caseItem => {
+        // First priority: Cases from preferred specialties
+        if (preferredSpecialties.has(caseItem.specialty)) {
+          preferredSpecialtyCases.push(caseItem);
+        }
+        // Second priority: Cases from followed users (if following 10+ people)
+        else if (followingUserIds.size >= 10 && followingUserIds.has(caseItem.authorId)) {
+          followedUserCases.push(caseItem);
+        }
+        // Third priority: All other cases
+        else {
+          otherCases.push(caseItem);
+        }
+      });
 
-        allCases.forEach(caseItem => {
-          if (followingUserIds.has(caseItem.authorId)) {
-            casesFromFollowed.push(caseItem);
-          } else {
-            casesFromOthers.push(caseItem);
-          }
-        });
-
-        // Return followed users' cases first, then others (both already sorted by creation date)
-        return [...casesFromFollowed, ...casesFromOthers];
-      }
+      // Return cases in priority order: preferred specialties first, then followed users, then others
+      // (all already sorted by creation date within each group)
+      return [...preferredSpecialtyCases, ...followedUserCases, ...otherCases];
     }
 
     return allCases;
@@ -606,6 +615,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: users.updatedAt,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
+        userSpecialtyPreferences: users.userSpecialtyPreferences,
       })
       .from(commentAgrees)
       .innerJoin(users, eq(commentAgrees.userId, users.id))
@@ -747,6 +757,7 @@ export class DatabaseStorage implements IStorage {
         level: users.level,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
+        userSpecialtyPreferences: users.userSpecialtyPreferences,
       })
       .from(users)
       .orderBy(desc(users.createdAt));
@@ -977,6 +988,7 @@ export class DatabaseStorage implements IStorage {
         level: users.level,
         approvedAt: users.approvedAt,
         approvedBy: users.approvedBy,
+        userSpecialtyPreferences: users.userSpecialtyPreferences,
       })
       .from(userFollows)
       .innerJoin(users, eq(userFollows.followerId, users.id))
@@ -1107,6 +1119,32 @@ export class DatabaseStorage implements IStorage {
       totalDocuments: totalDocumentsResult.count,
       pendingDocuments: pendingDocumentsResult.count,
     };
+  }
+
+  // Specialty preferences operations
+  async setUserSpecialtyPreferences(userId: string, specialties: string[]): Promise<void> {
+    await db
+      .update(users)
+      .set({ userSpecialtyPreferences: specialties })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserSpecialtyPreferences(userId: string): Promise<string[]> {
+    const [user] = await db
+      .select({ userSpecialtyPreferences: users.userSpecialtyPreferences })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return user?.userSpecialtyPreferences || [];
+  }
+
+  async hasUserSetSpecialtyPreferences(userId: string): Promise<boolean> {
+    const [user] = await db
+      .select({ userSpecialtyPreferences: users.userSpecialtyPreferences })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return !!(user?.userSpecialtyPreferences && user.userSpecialtyPreferences.length > 0);
   }
 }
 

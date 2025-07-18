@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   approvedAt: timestamp("approved_at"),
   approvedBy: varchar("approved_by"),
+  userSpecialtyPreferences: text("user_specialty_preferences").array().default([]),
 });
 
 // Medical cases table

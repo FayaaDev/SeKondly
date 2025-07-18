@@ -4,13 +4,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList, HomeStackParamList } from '../types/navigation';
 import { API_BASE_URL } from '../config/api';
+import { apiRequest } from '../lib/queryClient';
 import StorageService from '../lib/storage';
 
 // Import components directly
 import OnboardingFlow from '../components/OnboardingFlow';
+import SpecialtyPreferencesFlow from '../components/SpecialtyPreferencesFlow';
 import FeedScreen from '../screens/FeedScreen';
 import MyCasesScreen from '../screens/MyCasesScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
@@ -54,6 +56,20 @@ const AuthScreen: React.FC = () => {
       }}
       onSignIn={() => {
         // Navigation will be handled automatically by auth state change
+      }}
+    />
+  );
+};
+
+// Simple specialty preferences wrapper component
+const SpecialtyPreferencesScreen: React.FC = () => {
+  return (
+    <SpecialtyPreferencesFlow
+      onComplete={() => {
+        // Navigation will be handled automatically by preference status change
+      }}
+      onSkip={() => {
+        // Navigation will be handled automatically by preference status change
       }}
     />
   );
@@ -140,6 +156,7 @@ const MainScreen: React.FC = () => {
  * 
  * Handles the top-level navigation flow based on authentication state:
  * - Shows OnboardingFlow for unauthenticated users
+ * - Shows SpecialtyPreferencesFlow for first-time users who haven't set preferences
  * - Shows MainScreen with tabs for authenticated users
  * - Shows PendingVerificationScreen for users awaiting approval
  * 
@@ -152,9 +169,19 @@ const MainScreen: React.FC = () => {
 const RootNavigator: React.FC = () => {
   const { user, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  console.log('user:', user);
 
-  if (isLoading) {
+  // Check if user has set specialty preferences
+  const { data: specialtyStatus, isLoading: isLoadingSpecialtyStatus } = useQuery({
+    queryKey: ['/api/specialty-preferences/status'],
+    queryFn: () => apiRequest('GET', '/api/specialty-preferences/status'),
+    enabled: !!user,
+    retry: false,
+  });
+
+  console.log('user:', user);
+  console.log('specialtyStatus:', specialtyStatus);
+
+  if (isLoading || (user && isLoadingSpecialtyStatus)) {
     // You could show a loading screen here
     return null;
   }
@@ -168,12 +195,23 @@ const RootNavigator: React.FC = () => {
         }}
       >
         {user ? (
-          <>
-            <RootStack.Screen name="Main" component={MainScreen} />
-            <RootStack.Screen name="AdminPanel" component={AdminPanelScreen} />
-            <RootStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
-            <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
-          </>
+          // Check if user needs to set specialty preferences
+          !specialtyStatus?.hasSetPreferences ? (
+            <RootStack.Screen 
+              name="SpecialtyPreferences" 
+              component={SpecialtyPreferencesScreen}
+              options={{
+                gestureEnabled: false,
+              }}
+            />
+          ) : (
+            <>
+              <RootStack.Screen name="Main" component={MainScreen} />
+              <RootStack.Screen name="AdminPanel" component={AdminPanelScreen} />
+              <RootStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+              <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
+            </>
+          )
         ) : (
           <RootStack.Screen
             name="Auth"
