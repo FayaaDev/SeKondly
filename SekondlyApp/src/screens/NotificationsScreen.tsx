@@ -171,24 +171,6 @@ export default function NotificationsScreen() {
             </Text>
           </View>
         )}
-        
-        {/* Show notification registration status for debugging */}
-        {__DEV__ && (
-          <View style={styles.debugInfo}>
-            <Text style={styles.debugText}>
-              {isRegistered ? '✅ Push registered' : '⚠️ Push not registered'}
-            </Text>
-            <Text style={styles.debugText}>
-              📱 API: {notifications.length} notifications loaded
-            </Text>
-            <Text style={styles.debugText}>
-              👤 User: {user?.isApproved ? 'Approved' : 'Not approved'}
-            </Text>
-            {notificationError && (
-              <Text style={styles.debugErrorText}>Error: {notificationError}</Text>
-            )}
-          </View>
-        )}
       </View>
 
       {/* Notifications List */}
@@ -369,24 +351,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     marginBottom: 32,
-  },
-  debugInfo: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    padding: 8,
-    borderRadius: 4,
-  },
-  debugText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontFamily: 'monospace',
-  },
-  debugErrorText: {
-    color: '#FF6B6B',
-    fontSize: 10,
-    fontFamily: 'monospace',
-    marginTop: 2,
   },
 });

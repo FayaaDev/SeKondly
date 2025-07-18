@@ -23,10 +23,10 @@ const getApiBaseUrl = (): string => {
   // For iOS/Android - use local development server for testing notifications
   // Replace with your machine's IP address
   // To find your IP: ifconfig | grep "inet " | grep -v 127.0.0.1
-  return 'http://192.168.0.205:5001'; // Updated to match your current network
+  //return 'http://192.168.0.205:5001'; // Updated to match your current network
   
   // For production testing, uncomment this line:
-  // return 'https://sekondly.app';
+  return 'https://sekondly.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

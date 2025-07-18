@@ -40,28 +40,8 @@ export function NotificationSetup() {
     }
   }, [user?.isApproved, isRegistered, error]);
 
-  // This component doesn't render anything visible in production
-  if (!__DEV__) {
-    return null;
-  }
-
-  // Show setup status in development builds
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🔔 Push Notifications</Text>
-      <Text style={styles.status}>
-        User Approved: {user?.isApproved ? '✅' : '❌'}
-      </Text>
-      <Text style={styles.status}>
-        Notifications Registered: {isRegistered ? '✅' : '❌'}
-      </Text>
-      {error && (
-        <Text style={styles.error}>
-          Error: {error}
-        </Text>
-      )}
-    </View>
-  );
+  // This component doesn't render anything visible
+  return null;
 }
 
 const styles = StyleSheet.create({
