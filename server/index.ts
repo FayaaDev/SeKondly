@@ -470,6 +470,68 @@ app.get('/api/admin/user-documents/:userId', async (req, res) => {
 });
 
 // User profile and social endpoints
+// Get user profile by ID
+app.get('/api/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Get follow counts and status
+    const currentUserId = req.session?.user?.id;
+    const [followers, following] = await Promise.all([
+      storage.getUserFollowers(userId),
+      storage.getUserFollowing(userId)
+    ]);
+    
+    let isFollowedByUser = false;
+    if (currentUserId) {
+      const currentUserFollowing = await storage.getUserFollowing(currentUserId);
+      isFollowedByUser = currentUserFollowing.some((u: any) => u.id === userId);
+    }
+    
+    // Return public profile information with follow stats
+    const publicProfile = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      specialty: user.specialty,
+      institution: user.institution,
+      experience: user.experience,
+      profileImageUrl: user.profileImageUrl,
+      createdAt: user.createdAt,
+      isApproved: user.isApproved,
+      followersCount: followers.length,
+      followingCount: following.length,
+      isFollowedByUser
+    };
+    
+    res.json(publicProfile);
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Failed to fetch user profile" });
+  }
+});
+
+// Get user's cases
+app.get('/api/users/:userId/cases', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Get user's approved cases only
+    const cases = await storage.getUserCases(userId);
+    const approvedCases = cases.filter((case_data: any) => case_data.isApproved);
+    
+    res.json(approvedCases);
+  } catch (error) {
+    console.error("Error fetching user cases:", error);
+    res.status(500).json({ message: "Failed to fetch user cases" });
+  }
+});
+
 app.get('/api/users/:userId/following', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -515,6 +577,46 @@ app.get('/api/users/:userId/follow-status', async (req, res) => {
   } catch (error) {
     console.error("Error fetching follow status:", error);
     res.status(500).json({ message: "Failed to fetch follow status" });
+  }
+});
+
+// Follow a user
+app.post('/api/users/:userId/follow', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const currentUserId = req.session?.user?.id;
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    if (currentUserId === userId) {
+      return res.status(400).json({ message: "Cannot follow yourself" });
+    }
+    
+    await storage.followUser(currentUserId, userId);
+    res.json({ message: "User followed successfully" });
+  } catch (error) {
+    console.error("Error following user:", error);
+    res.status(500).json({ message: "Failed to follow user" });
+  }
+});
+
+// Unfollow a user
+app.delete('/api/users/:userId/follow', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const currentUserId = req.session?.user?.id;
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    await storage.unfollowUser(currentUserId, userId);
+    res.json({ message: "User unfollowed successfully" });
+  } catch (error) {
+    console.error("Error unfollowing user:", error);
+    res.status(500).json({ message: "Failed to unfollow user" });
   }
 });
 

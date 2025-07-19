@@ -104,7 +104,29 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
     },
     onError: (error) => {
       if (!handleAuthError(error)) {
-        Alert.alert("Error", error.message || "Failed to update follow status");
+        Alert.alert("Error", error.message || "Failed to follow user");
+      }
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/users/${userId}/follow`);
+    },
+    onSuccess: (data) => {
+      // Invalidate target user's data
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/followers`] });
+      
+      // Invalidate current user's following data
+      if (currentUser) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser.id}/following`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser.id}/follow-status`] });
+      }
+    },
+    onError: (error) => {
+      if (!handleAuthError(error)) {
+        Alert.alert("Error", error.message || "Failed to unfollow user");
       }
     },
   });
@@ -126,7 +148,12 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
       Alert.alert("Error", "You must be logged in to follow users");
       return;
     }
-    followMutation.mutate();
+    
+    if (profileUser?.isFollowedByUser) {
+      unfollowMutation.mutate();
+    } else {
+      followMutation.mutate();
+    }
   };
 
   if (profileLoading) {
@@ -253,13 +280,13 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
                 profileUser.isFollowedByUser && styles.followingButton
               ]}
               onPress={handleFollowPress}
-              disabled={followMutation.isPending}
+              disabled={followMutation.isPending || unfollowMutation.isPending}
             >
               <Text style={[
                 styles.followButtonText,
                 profileUser.isFollowedByUser && styles.followingButtonText
               ]}>
-                {followMutation.isPending 
+                {(followMutation.isPending || unfollowMutation.isPending)
                   ? "Loading..." 
                   : profileUser.isFollowedByUser 
                     ? "Following" 
@@ -362,8 +389,8 @@ export default function PublicProfileScreen({ route, navigation }: PublicProfile
             ) : (followModalType === 'followers' ? followers : following).length === 0 ? (
               <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>No users found.</Text>
             ) : (
-              (followModalType === 'followers' ? followers : following).map((u: User) => (
-                <TouchableOpacity key={u.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }} onPress={() => { setShowFollowModal(false); navigation.push('PublicProfile', { userId: u.id }); }}>
+              (followModalType === 'followers' ? followers : following).map((u: User, index: number) => (
+                <TouchableOpacity key={`${followModalType}-${u.id}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }} onPress={() => { setShowFollowModal(false); navigation.push('PublicProfile', { userId: u.id }); }}>
                   <ProfilePicture 
                     imageUrl={u.profileImageUrl} 
                     userName={`${u.firstName || ''} ${u.lastName || ''}`.trim()} 
