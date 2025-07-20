@@ -396,9 +396,12 @@ Website: https://sekondly.app
 
 async function sendCaseRejectionEmail(userEmail: string, firstName: string, lastName: string, caseTitle: string, caseId: number, rejectionReason: string) {
   try {
-    console.log(`Attempting to send case rejection email to: ${userEmail}`);
-    console.log(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
-    console.log(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
+    console.error(`=== CASE REJECTION EMAIL START ===`);
+    console.error(`Attempting to send case rejection email to: ${userEmail}`);
+    console.error(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
+    console.error(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
+    console.error(`Case: ${caseTitle}, ID: ${caseId}`);
+    console.error(`Rejection reason: ${rejectionReason}`);
     
     // Generate professional email using template
     const emailContent = generateCaseRejectionEmail({
@@ -410,6 +413,9 @@ async function sendCaseRejectionEmail(userEmail: string, firstName: string, last
       rejectionDate: new Date().toLocaleDateString()
     });
 
+    console.error(`Email content generated - Subject: ${emailContent.subject}`);
+    console.error(`Text length: ${emailContent.text.length}, HTML length: ${emailContent.html.length}`);
+
     const mailOptions = {
       from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
@@ -418,14 +424,16 @@ async function sendCaseRejectionEmail(userEmail: string, firstName: string, last
       html: emailContent.html
     };
 
+    console.error('=== VERIFYING SMTP CONNECTION ===');
     await emailTransporter.verify();
-    console.log('SMTP connection verified for case rejection email');
+    console.error('✅ SMTP connection verified for case rejection email');
     
+    console.error('=== SENDING EMAIL ===');
     await emailTransporter.sendMail(mailOptions);
-    console.log(`Case rejection email sent successfully to ${userEmail} for case: ${caseTitle}`);
+    console.error(`✅ Case rejection email sent successfully to ${userEmail} for case: ${caseTitle}`);
     return true;
   } catch (error) {
-    console.error('Failed to send case rejection email:', error);
+    console.error('❌ Failed to send case rejection email:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : String(error),
       code: error instanceof Error && 'code' in error ? error.code : undefined,
@@ -437,9 +445,10 @@ async function sendCaseRejectionEmail(userEmail: string, firstName: string, last
 
 async function sendCaseApprovalEmail(userEmail: string, firstName: string, lastName: string, caseTitle: string, caseId: number) {
   try {
-    console.log(`Attempting to send case approval email to: ${userEmail} for case: ${caseTitle}`);
-    console.log(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
-    console.log(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
+    console.error(`=== CASE APPROVAL EMAIL START ===`);
+    console.error(`Attempting to send case approval email to: ${userEmail} for case: ${caseTitle}`);
+    console.error(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
+    console.error(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
     
     // Generate professional email using template
     const emailContent = generateCaseApprovalEmail({
@@ -450,6 +459,9 @@ async function sendCaseApprovalEmail(userEmail: string, firstName: string, lastN
       approvalDate: new Date().toLocaleDateString()
     });
 
+    console.error(`Email content generated - Subject: ${emailContent.subject}`);
+    console.error(`Text length: ${emailContent.text.length}, HTML length: ${emailContent.html.length}`);
+
     const mailOptions = {
       from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
@@ -458,14 +470,16 @@ async function sendCaseApprovalEmail(userEmail: string, firstName: string, lastN
       html: emailContent.html
     };
 
+    console.error('=== VERIFYING SMTP CONNECTION ===');
     await emailTransporter.verify();
-    console.log('SMTP connection verified for case approval email');
+    console.error('✅ SMTP connection verified for case approval email');
     
+    console.error('=== SENDING EMAIL ===');
     await emailTransporter.sendMail(mailOptions);
-    console.log(`Case approval email sent successfully to ${userEmail} for case: ${caseTitle}`);
+    console.error(`✅ Case approval email sent successfully to ${userEmail} for case: ${caseTitle}`);
     return true;
   } catch (error) {
-    console.error('Failed to send case approval email:', error);
+    console.error('❌ Failed to send case approval email:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : String(error),
       code: error instanceof Error && 'code' in error ? error.code : undefined,
@@ -1938,24 +1952,48 @@ Please respond to: ${validatedData.email}
 
   // Approve case
   app.post("/api/admin/approve-case/:id", isAuthenticated, isAdmin, async (req, res) => {
+    console.error("=== CASE APPROVAL DEBUG START ===");
+    console.error("Request ID:", req.params.id);
+    
     try {
       const caseId = parseInt(req.params.id);
       const adminId = req.user?.id || 'system';
       
+      console.error(`Case approval request - ID: ${caseId}, Admin: ${adminId}`);
+      
       // Get case details before approval to get author info
+      console.error(`Fetching case details for ID: ${caseId}`);
       const caseBeforeApproval = await storage.getCase(caseId);
       if (!caseBeforeApproval) {
+        console.error(`Case approval failed: Case ${caseId} not found`);
         return res.status(404).json({ message: "Case not found" });
       }
       
+      console.error(`Case found: "${caseBeforeApproval.title}" by author ${caseBeforeApproval.authorId}`);
+      
       // Approve the case
+      console.error(`Approving case ID: ${caseId}`);
       const approvedCase = await storage.approveCase(caseId, adminId);
+      console.error(`Case ${caseId} approved successfully`);
       
       // Send approval email to case author
       try {
+        console.error(`Fetching author details for ID: ${caseBeforeApproval.authorId}`);
         const caseAuthor = await storage.getUser(caseBeforeApproval.authorId);
+        
+        console.error('Author details:', {
+          found: !!caseAuthor,
+          hasEmail: !!caseAuthor?.email,
+          hasFirstName: !!caseAuthor?.firstName,
+          hasLastName: !!caseAuthor?.lastName,
+          email: caseAuthor?.email
+        });
+        
         if (caseAuthor && caseAuthor.email && caseAuthor.firstName && caseAuthor.lastName) {
-          console.log(`Attempting to send case approval email to: ${caseAuthor.email} for case: ${caseBeforeApproval.title}`);
+          console.error(`=== ABOUT TO SEND APPROVAL EMAIL ===`);
+          console.error(`Email to: ${caseAuthor.email}`);
+          console.error(`Case: ${caseBeforeApproval.title}`);
+          
           const emailSent = await sendCaseApprovalEmail(
             caseAuthor.email,
             caseAuthor.firstName,
@@ -1963,9 +2001,9 @@ Please respond to: ${validatedData.email}
             caseBeforeApproval.title,
             caseId
           );
-          console.log(`Case approval email ${emailSent ? 'sent' : 'failed'} for case: ${caseBeforeApproval.title}`);
+          console.error(`=== APPROVAL EMAIL RESULT: ${emailSent ? 'SUCCESS' : 'FAILED'} ===`);
         } else {
-          console.log('Case approval email not sent - missing author information:', {
+          console.error('=== APPROVAL EMAIL SKIPPED - MISSING FIELDS ===', {
             hasAuthor: !!caseAuthor,
             hasEmail: !!caseAuthor?.email,
             hasFirstName: !!caseAuthor?.firstName,
@@ -1973,46 +2011,51 @@ Please respond to: ${validatedData.email}
           });
         }
       } catch (emailError) {
-        console.error('Error sending case approval email:', emailError);
+        console.error('=== APPROVAL EMAIL ERROR ===', emailError);
         // Don't fail the approval if email fails
       }
       
       res.json(approvedCase);
     } catch (error) {
-      console.error("Error approving case:", error);
+      console.error("=== CASE APPROVAL ERROR ===", error);
       res.status(500).json({ message: "Failed to approve case" });
     }
   });
 
   // Reject case
   app.delete("/api/admin/reject-case/:id", isAuthenticated, isAdmin, async (req, res) => {
+    console.error("=== CASE REJECTION DEBUG START ===");
+    console.error("Request ID:", req.params.id);
+    console.error("Request body:", JSON.stringify(req.body));
+    
     try {
       const caseId = parseInt(req.params.id);
       const { reason } = req.body;
       
-      console.log(`Case rejection request - ID: ${caseId}, Reason provided: ${!!reason}`);
+      console.error(`Case rejection request - ID: ${caseId}, Reason provided: ${!!reason}`);
+      console.error(`Reason content: "${reason}"`);
       
       if (!reason || reason.trim() === "") {
-        console.log('Case rejection failed: No reason provided');
+        console.error('Case rejection failed: No reason provided');
         return res.status(400).json({ message: "Rejection reason is required" });
       }
       
       // Get case details before deletion for email
-      console.log(`Fetching case details for ID: ${caseId}`);
+      console.error(`Fetching case details for ID: ${caseId}`);
       const caseToReject = await storage.getCase(caseId);
       
       if (!caseToReject) {
-        console.log(`Case rejection failed: Case ${caseId} not found`);
+        console.error(`Case rejection failed: Case ${caseId} not found`);
         return res.status(404).json({ message: "Case not found" });
       }
       
-      console.log(`Case found: "${caseToReject.title}" by author ${caseToReject.authorId}`);
+      console.error(`Case found: "${caseToReject.title}" by author ${caseToReject.authorId}`);
       
       // Get case author details for email
-      console.log(`Fetching author details for ID: ${caseToReject.authorId}`);
+      console.error(`Fetching author details for ID: ${caseToReject.authorId}`);
       const caseAuthor = await storage.getUser(caseToReject.authorId);
       
-      console.log('Author details:', {
+      console.error('Author details:', {
         found: !!caseAuthor,
         hasEmail: !!caseAuthor?.email,
         hasFirstName: !!caseAuthor?.firstName,
@@ -2024,7 +2067,11 @@ Please respond to: ${validatedData.email}
       let rejectionEmailSent = false;
       if (caseAuthor?.email && caseAuthor?.firstName && caseAuthor?.lastName) {
         try {
-          console.log(`Attempting to send case rejection email to: ${caseAuthor.email}`);
+          console.error(`=== ABOUT TO SEND EMAIL ===`);
+          console.error(`Email to: ${caseAuthor.email}`);
+          console.error(`Case: ${caseToReject.title}`);
+          console.error(`Reason: ${reason.trim()}`);
+          
           rejectionEmailSent = await sendCaseRejectionEmail(
             caseAuthor.email,
             caseAuthor.firstName,
@@ -2033,13 +2080,13 @@ Please respond to: ${validatedData.email}
             caseId,
             reason.trim()
           );
-          console.log(`Case rejection email ${rejectionEmailSent ? 'sent successfully' : 'failed'} for case: ${caseToReject.title}`);
+          console.error(`=== EMAIL RESULT: ${rejectionEmailSent ? 'SUCCESS' : 'FAILED'} ===`);
         } catch (emailError) {
-          console.error('Error sending case rejection email:', emailError);
+          console.error('=== EMAIL ERROR ===', emailError);
           // Continue with rejection even if email fails
         }
       } else {
-        console.log('Case rejection email not sent - missing required fields:', {
+        console.error('=== EMAIL SKIPPED - MISSING FIELDS ===', {
           hasAuthor: !!caseAuthor,
           hasEmail: !!caseAuthor?.email,
           hasFirstName: !!caseAuthor?.firstName,
@@ -2048,9 +2095,9 @@ Please respond to: ${validatedData.email}
       }
       
       // Delete/reject the case
-      console.log(`Deleting case ID: ${caseId}`);
+      console.error(`=== DELETING CASE ID: ${caseId} ===`);
       await storage.rejectCase(caseId);
-      console.log(`Case ${caseId} deleted successfully`);
+      console.error(`=== CASE ${caseId} DELETED SUCCESSFULLY ===`);
       
       res.json({ 
         message: rejectionEmailSent 
@@ -2064,7 +2111,7 @@ Please respond to: ${validatedData.email}
         }
       });
     } catch (error) {
-      console.error("Error rejecting case:", error);
+      console.error("=== CASE REJECTION ERROR ===", error);
       res.status(500).json({ message: "Failed to reject case" });
     }
   });
