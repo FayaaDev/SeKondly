@@ -605,8 +605,11 @@ app.delete('/api/users/:userId/follow', async (req, res) => {
     // Try to register complex routes, but fallback to basic server if it fails
     let server;
     try {
+      console.error("=== ATTEMPTING TO REGISTER ROUTES FROM routes.ts ===");
       server = await registerRoutes(app);
+      console.error("=== ROUTES FROM routes.ts REGISTERED SUCCESSFULLY ===");
     } catch (error: any) {
+      console.error("=== COMPLEX ROUTES FAILED ===");
       console.log("Complex routes failed, using basic server:", error.message);
       console.error("Full error:", error);
       server = require("http").createServer(app);

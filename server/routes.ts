@@ -10,8 +10,6 @@ import path from "path";
 import fs from "fs";
 import { isAuthenticated, isAdmin } from "./middleware/auth";
 import nodemailer from "nodemailer";
-import { generateCaseRejectionEmail } from "./templates/caseRejectionTemplate";
-import { generateCaseApprovalEmail } from "./templates/caseApprovalTemplate";
 
 // Email configuration for AWS SES
 const emailTransporter = nodemailer.createTransport({
@@ -403,25 +401,115 @@ async function sendCaseRejectionEmail(userEmail: string, firstName: string, last
     console.error(`Case: ${caseTitle}, ID: ${caseId}`);
     console.error(`Rejection reason: ${rejectionReason}`);
     
-    // Generate professional email using template
-    const emailContent = generateCaseRejectionEmail({
-      firstName,
-      lastName,
-      caseTitle,
-      caseId,
-      rejectionReason,
-      rejectionDate: new Date().toLocaleDateString()
-    });
+    const caseRejectionEmailContent = `
+Dear Dr. ${firstName} ${lastName},
 
-    console.error(`Email content generated - Subject: ${emailContent.subject}`);
-    console.error(`Text length: ${emailContent.text.length}, HTML length: ${emailContent.html.length}`);
+Thank you for submitting your case "${caseTitle}" to SeKondly. After careful review by our moderation team, we regret to inform you that we cannot approve your case for publication at this time.
+
+Case Details:
+- Case Title: ${caseTitle}
+- Case ID: ${caseId}
+- Submission Date: ${new Date().toLocaleDateString()}
+
+Reason for rejection:
+${rejectionReason}
+
+We appreciate the time and effort you put into creating this case. Our moderation process ensures that all published content meets our quality and educational standards for the medical community.
+
+What you can do next:
+• Review our case submission guidelines at https://sekondly.app/static-landing.html
+• Address the feedback provided and resubmit your case
+• Contact our support team if you have questions about the rejection
+
+If you believe this decision was made in error or if you have additional information to provide, please don't hesitate to contact our support team.
+
+Thank you for your understanding and for being part of the SeKondly community.
+
+Best regards,
+The SeKondly Moderation Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
 
     const mailOptions = {
       from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
-      subject: emailContent.subject,
-      text: emailContent.text,
-      html: emailContent.html
+      subject: `Case Submission Update - ${caseTitle}`,
+      text: caseRejectionEmailContent,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #dc3545; margin: 0; font-size: 24px;">Case Submission Update</h1>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">Dear Dr. ${firstName} ${lastName},</p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for submitting your case "${caseTitle}" to SeKondly. After careful review by our moderation team, we regret to inform you that we cannot approve your case for publication at this time.
+            </p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #4ECDC4;">
+              <h3 style="color: #333; margin-top: 0; font-size: 16px;">Case Details:</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: #333; margin: 8px 0;">
+                <strong>Case Title:</strong> ${caseTitle}<br>
+                <strong>Case ID:</strong> ${caseId}<br>
+                <strong>Submission Date:</strong> ${new Date().toLocaleDateString()}
+              </p>
+            </div>
+            
+            <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 4px;">
+              <h3 style="color: #721c24; margin-top: 0; font-size: 16px;">Reason for rejection:</h3>
+              <p style="font-size: 16px; line-height: 1.6; color: #721c24; margin: 0; font-weight: 500;">
+                ${rejectionReason}
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              We appreciate the time and effort you put into creating this case. Our moderation process ensures that all published content meets our quality and educational standards for the medical community.
+            </p>
+            
+            <div style="background-color: #e8f5f4; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">What you can do next:</h3>
+              <ul style="line-height: 1.8; color: #333;">
+                <li>Review our case submission guidelines</li>
+                <li>Address the feedback provided and resubmit your case</li>
+                <li>Contact our support team if you have questions about the rejection</li>
+              </ul>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              If you believe this decision was made in error or if you have additional information to provide, please don't hesitate to contact our support team.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sekondly.app/static-landing.html" style="background-color: #4ECDC4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                Contact Support
+              </a>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for your understanding and for being part of the SeKondly community.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+              Best regards,<br>
+              <strong>The SeKondly Moderation Team</strong>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <div style="text-align: center; color: #888; font-size: 14px;">
+              <p>This email was sent to ${userEmail}</p>
+              <p><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p>Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </div>
+      `
     };
 
     console.error('=== VERIFYING SMTP CONNECTION ===');
@@ -446,28 +534,114 @@ async function sendCaseRejectionEmail(userEmail: string, firstName: string, last
 async function sendCaseApprovalEmail(userEmail: string, firstName: string, lastName: string, caseTitle: string, caseId: number) {
   try {
     console.error(`=== CASE APPROVAL EMAIL START ===`);
-    console.error(`Attempting to send case approval email to: ${userEmail} for case: ${caseTitle}`);
+    console.error(`Attempting to send case approval email to: ${userEmail}`);
     console.error(`SMTP Config - User: ${process.env.SMTP_USER ? 'SET' : 'NOT_SET'}`);
     console.error(`SMTP Config - Pass: ${process.env.SMTP_PASS ? 'SET' : 'NOT_SET'}`);
+    console.error(`Case: ${caseTitle}, ID: ${caseId}`);
     
-    // Generate professional email using template
-    const emailContent = generateCaseApprovalEmail({
-      firstName,
-      lastName,
-      caseTitle,
-      caseId,
-      approvalDate: new Date().toLocaleDateString()
-    });
+    const caseApprovalEmailContent = `
+Dear Dr. ${firstName} ${lastName},
 
-    console.error(`Email content generated - Subject: ${emailContent.subject}`);
-    console.error(`Text length: ${emailContent.text.length}, HTML length: ${emailContent.html.length}`);
+Congratulations! We are pleased to inform you that your case "${caseTitle}" has been approved and is now live on SeKondly.
+
+Case Details:
+- Case Title: ${caseTitle}
+- Case ID: ${caseId}
+- Approval Date: ${new Date().toLocaleDateString()}
+- Status: Published and Available to Medical Community
+
+Your case has been reviewed by our moderation team and meets our high standards for educational content. It is now accessible to healthcare professionals worldwide and will contribute to advancing medical knowledge and collaboration.
+
+What happens next:
+• Your case is now visible to all verified medical professionals on SeKondly
+• Healthcare providers can interact with your case, provide insights, and learn from your experience
+• You will receive notifications when colleagues engage with your case
+• Your contribution helps build our global medical knowledge database
+
+You can view your published case and track engagement by logging into your SeKondly account at https://sekondly.app
+
+Thank you for sharing your valuable medical expertise with the SeKondly community. Your contribution makes a real difference in advancing healthcare education and collaboration.
+
+Best regards,
+The SeKondly Moderation Team
+
+---
+This email was sent to ${userEmail}
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
 
     const mailOptions = {
       from: `"SeKondly Team" <admin@sekondly.app>`,
       to: userEmail,
-      subject: emailContent.subject,
-      text: emailContent.text,
-      html: emailContent.html
+      subject: `Case Approved - ${caseTitle} is Now Live!`,
+      text: caseApprovalEmailContent,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #28a745; margin: 0; font-size: 24px;">🎉 Case Approved!</h1>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">Dear Dr. ${firstName} ${lastName},</p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Congratulations! We are pleased to inform you that your case "${caseTitle}" has been approved and is now live on SeKondly.
+            </p>
+            
+            <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #28a745;">
+              <h3 style="color: #155724; margin-top: 0; font-size: 16px;">Case Details:</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: #155724; margin: 8px 0;">
+                <strong>Case Title:</strong> ${caseTitle}<br>
+                <strong>Case ID:</strong> ${caseId}<br>
+                <strong>Approval Date:</strong> ${new Date().toLocaleDateString()}<br>
+                <strong>Status:</strong> Published and Available to Medical Community
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Your case has been reviewed by our moderation team and meets our high standards for educational content. It is now accessible to healthcare professionals worldwide and will contribute to advancing medical knowledge and collaboration.
+            </p>
+            
+            <div style="background-color: #e8f5f4; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #4ECDC4; margin-top: 0;">What happens next:</h3>
+              <ul style="line-height: 1.8; color: #333;">
+                <li>Your case is now visible to all verified medical professionals on SeKondly</li>
+                <li>Healthcare providers can interact with your case, provide insights, and learn from your experience</li>
+                <li>You will receive notifications when colleagues engage with your case</li>
+                <li>Your contribution helps build our global medical knowledge database</li>
+              </ul>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              You can view your published case and track engagement by logging into your SeKondly account.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sekondly.app" style="background-color: #4ECDC4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                View Your Published Case
+              </a>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333;">
+              Thank you for sharing your valuable medical expertise with the SeKondly community. Your contribution makes a real difference in advancing healthcare education and collaboration.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+              Best regards,<br>
+              <strong>The SeKondly Moderation Team</strong>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <div style="text-align: center; color: #888; font-size: 14px;">
+              <p>This email was sent to ${userEmail}</p>
+              <p><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p>Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </div>
+      `
     };
 
     console.error('=== VERIFYING SMTP CONNECTION ===');
@@ -522,6 +696,16 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Debug route to confirm routes.ts is loaded
+  app.get("/api/debug-routes", (req, res) => {
+    console.error("=== DEBUG ROUTE HIT - routes.ts is working! ===");
+    res.status(200).json({ 
+      message: "routes.ts is loaded and working",
+      timestamp: new Date().toISOString(),
+      routesRegistered: true
+    });
+  });
+
   // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.status(200).json({ 
@@ -2020,6 +2204,13 @@ Please respond to: ${validatedData.email}
       console.error("=== CASE APPROVAL ERROR ===", error);
       res.status(500).json({ message: "Failed to approve case" });
     }
+  });
+
+  // TEMPORARY: Test route without authentication to see if it's an auth issue
+  app.post("/api/admin/test-approve-case/:id", async (req, res) => {
+    console.error("=== TEST CASE APPROVAL ROUTE HIT (NO AUTH) ===");
+    console.error("Request ID:", req.params.id);
+    res.json({ message: "Test route working - no auth required", id: req.params.id });
   });
 
   // Reject case
