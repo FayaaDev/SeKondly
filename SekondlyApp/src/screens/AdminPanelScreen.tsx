@@ -57,6 +57,11 @@ export default function AdminPanelScreen() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [userToReject, setUserToReject] = useState<User | null>(null);
+  
+  // Case rejection modal state
+  const [showCaseRejectModal, setShowCaseRejectModal] = useState(false);
+  const [caseRejectionReason, setCaseRejectionReason] = useState('');
+  const [caseToReject, setCaseToReject] = useState<CaseForReview | null>(null);
   const { user, isLoading } = useAuth();
   const navigation = useNavigation();
   const queryClient = useQueryClient();
@@ -161,12 +166,15 @@ export default function AdminPanelScreen() {
   });
 
   const rejectCaseMutation = useMutation({
-    mutationFn: async (caseId: number) => {
-      await apiRequest('DELETE', `/api/admin/reject-case/${caseId}`);
+    mutationFn: async ({ caseId, reason }: { caseId: number; reason: string }) => {
+      await apiRequest('DELETE', `/api/admin/reject-case/${caseId}`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-cases'] });
-      Alert.alert('🗑️ Case Rejected', 'The case has been rejected and removed.');
+      Alert.alert('🗑️ Case Rejected', 'The case has been rejected and the author notified via email.');
+      setShowCaseRejectModal(false);
+      setCaseRejectionReason('');
+      setCaseToReject(null);
     },
     onError: (error: any) => {
       Alert.alert('❌ Error', error.message || 'Failed to reject case');
@@ -551,14 +559,8 @@ export default function AdminPanelScreen() {
                     
                     <TouchableOpacity
                       onPress={() => {
-                        Alert.alert(
-                          'Reject Case',
-                          'Are you sure you want to reject this case? This action cannot be undone.',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Reject', style: 'destructive', onPress: () => rejectCaseMutation.mutate(caseItem.id) }
-                          ]
-                        );
+                        setCaseToReject(caseItem);
+                        setShowCaseRejectModal(true);
                       }}
                       style={[styles.actionButton, styles.rejectButton]}
                       disabled={rejectCaseMutation.isPending}
@@ -752,6 +754,97 @@ export default function AdminPanelScreen() {
         </SafeAreaView>
       </Modal>
 
+      {/* Case Rejection Modal */}
+      <Modal
+        visible={showCaseRejectModal && !!caseToReject}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowCaseRejectModal(false);
+          setCaseRejectionReason('');
+          setCaseToReject(null);
+        }}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderContent}>
+              <Text style={styles.modalTitle}>Reject Case Submission</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCaseRejectModal(false);
+                setCaseRejectionReason('');
+                setCaseToReject(null);
+              }}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#8E8E93" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalScrollContent}>
+            {caseToReject && (
+              <View style={styles.card}>
+                <Text style={styles.caseTitle}>
+                  {caseToReject.title}
+                </Text>
+                <Text style={styles.caseAuthor}>
+                  By Dr. {caseToReject.author.firstName} {caseToReject.author.lastName}
+                </Text>
+                <Text style={styles.caseSpecialty}>{caseToReject.specialty}</Text>
+                <Text style={styles.caseFormat}>Format: {caseToReject.format}</Text>
+              </View>
+            )}
+            
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Reason for Rejection</Text>
+              <TextInput
+                style={styles.textInput}
+                multiline
+                numberOfLines={6}
+                placeholder="Please provide detailed feedback about why this case requires revision. This message will be sent to the author via email to help them improve their submission."
+                value={caseRejectionReason}
+                onChangeText={setCaseRejectionReason}
+                textAlignVertical="top"
+              />
+              <Text style={styles.helperText}>
+                The case author will be notified via email with the feedback you provide above. Be specific about what needs to be improved.
+              </Text>
+            </View>
+            
+            <View style={styles.modalActionButtons}>
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.viewButton]}
+                onPress={() => {
+                  setShowCaseRejectModal(false);
+                  setCaseRejectionReason('');
+                  setCaseToReject(null);
+                }}
+              >
+                <Text style={styles.viewButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalRejectButton]}
+                onPress={() => {
+                  if (caseToReject && caseRejectionReason.trim()) {
+                    rejectCaseMutation.mutate({
+                      caseId: caseToReject.id,
+                      reason: caseRejectionReason.trim()
+                    });
+                  }
+                }}
+                disabled={rejectCaseMutation.isPending || !caseRejectionReason.trim()}
+              >
+                <Text style={styles.modalRejectButtonText}>
+                  {rejectCaseMutation.isPending ? 'Rejecting...' : 'Reject Case'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
       {/* Case Detail Modal */}
       <Modal
         visible={showCaseDetailModal && !!selectedCase}
@@ -844,22 +937,9 @@ export default function AdminPanelScreen() {
 
                   <TouchableOpacity
                     onPress={() => {
-                      Alert.alert(
-                        'Reject Case',
-                        'Are you sure you want to reject this case? This action cannot be undone.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Reject', 
-                            style: 'destructive', 
-                            onPress: () => {
-                              rejectCaseMutation.mutate(selectedCase.id);
-                              setShowCaseDetailModal(false);
-                              setSelectedCase(null);
-                            }
-                          }
-                        ]
-                      );
+                      setCaseToReject(selectedCase);
+                      setShowCaseDetailModal(false);
+                      setShowCaseRejectModal(true);
                     }}
                     style={[styles.modalActionButton, styles.modalRejectButton]}
                     disabled={rejectCaseMutation.isPending}

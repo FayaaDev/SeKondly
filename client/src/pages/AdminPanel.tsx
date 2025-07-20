@@ -43,6 +43,11 @@ export default function AdminPanel() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [userToReject, setUserToReject] = useState<User | null>(null);
+  
+  // Case rejection modal state
+  const [showCaseRejectModal, setShowCaseRejectModal] = useState(false);
+  const [caseRejectionReason, setCaseRejectionReason] = useState("");
+  const [caseToReject, setCaseToReject] = useState<CaseForReview | null>(null);
   const { user, isLoading, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -188,15 +193,18 @@ export default function AdminPanel() {
   });
 
   const rejectCaseMutation = useMutation({
-    mutationFn: async (caseId: number) => {
-      await apiRequest("DELETE", `/api/admin/reject-case/${caseId}`);
+    mutationFn: async ({ caseId, reason }: { caseId: number; reason: string }) => {
+      await apiRequest("DELETE", `/api/admin/reject-case/${caseId}`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-cases"] });
       toast({
         title: "Case rejected",
-        description: "The case has been rejected and removed.",
+        description: "The case has been rejected and the author notified via email.",
       });
+      setShowCaseRejectModal(false);
+      setCaseRejectionReason("");
+      setCaseToReject(null);
     },
     onError: (error) => {
       toast({
@@ -766,9 +774,8 @@ export default function AdminPanel() {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => {
-                                  if (confirm('Are you sure you want to reject this case? This action cannot be undone.')) {
-                                    rejectCaseMutation.mutate(caseItem.id);
-                                  }
+                                  setCaseToReject(caseItem);
+                                  setShowCaseRejectModal(true);
                                 }}
                                 disabled={rejectCaseMutation.isPending}
                               >
@@ -1049,11 +1056,9 @@ export default function AdminPanel() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (confirm('Are you sure you want to reject this case? This action cannot be undone.')) {
-                    rejectCaseMutation.mutate(selectedCase.id);
-                    setShowCaseModal(false);
-                    setSelectedCase(null);
-                  }
+                  setCaseToReject(selectedCase);
+                  setShowCaseModal(false);
+                  setShowCaseRejectModal(true);
                 }}
                 disabled={rejectCaseMutation.isPending}
                 className="flex-1"
@@ -1122,6 +1127,70 @@ export default function AdminPanel() {
               disabled={rejectUserMutation.isPending || !rejectionReason.trim()}
             >
               {rejectUserMutation.isPending ? "Rejecting..." : "Reject User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Case Rejection Modal */}
+      <Dialog open={showCaseRejectModal} onOpenChange={setShowCaseRejectModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Reject Case Submission</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {caseToReject && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium text-gray-900">
+                  {caseToReject.title}
+                </p>
+                <p className="text-sm text-gray-600">
+                  By Dr. {caseToReject.author.firstName} {caseToReject.author.lastName}
+                </p>
+                <p className="text-sm text-gray-600">{caseToReject.specialty}</p>
+                <p className="text-sm text-gray-600">Format: {caseToReject.format}</p>
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for rejection <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={caseRejectionReason}
+                onChange={(e) => setCaseRejectionReason(e.target.value)}
+                placeholder="Please provide detailed feedback about why this case requires revision. This message will be sent to the author via email to help them improve their submission."
+                rows={6}
+                className="resize-none"
+              />
+            </div>
+            <p className="text-sm text-gray-600">
+              The case author will be notified via email with the feedback you provide above. Be specific about what needs to be improved.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCaseRejectModal(false);
+                setCaseRejectionReason("");
+                setCaseToReject(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (caseToReject && caseRejectionReason.trim()) {
+                  rejectCaseMutation.mutate({
+                    caseId: caseToReject.id,
+                    reason: caseRejectionReason.trim()
+                  });
+                }
+              }}
+              disabled={rejectCaseMutation.isPending || !caseRejectionReason.trim()}
+            >
+              {rejectCaseMutation.isPending ? "Rejecting..." : "Reject Case"}
             </Button>
           </DialogFooter>
         </DialogContent>
