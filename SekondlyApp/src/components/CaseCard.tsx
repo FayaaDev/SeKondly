@@ -383,7 +383,7 @@ export default function CaseCard({
       {/* Hot Case Indicator */}
       {isHot && (
         <View style={styles.hotIndicator}>
-          <Ionicons name="flame" size={16} color="#FF3B30" />
+          <Ionicons name="flame" size={16} color="#4ECDC4" />
           <Text style={styles.hotIndicatorText}>HOT</Text>
         </View>
       )}
@@ -474,7 +474,7 @@ export default function CaseCard({
             <Ionicons
               name={isHot ? "flame" : "flame-outline"}
               size={20}
-              color={isHot ? "#FF3B30" : "#666"}
+              color={isHot ? "#4ECDC4" : "#666"}
             />
             <Text style={[styles.actionText, isHot && styles.hotActionText]}>
               {isHot ? "Hot" : "Hot"}
@@ -518,8 +518,8 @@ const styles = StyleSheet.create({
   hotContainer: {
     backgroundColor: "#fff",
     borderWidth: 2,
-    borderColor: "#FF3B30",
-    shadowColor: "#FF3B30",
+    borderColor: "#4ECDC4",
+    shadowColor: "#4ECDC4",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -758,10 +758,10 @@ const styles = StyleSheet.create({
   hotActionButton: {
     backgroundColor: "rgba(255, 59, 48, 0.1)",
     borderWidth: 1,
-    borderColor: "#FF3B30",
+    borderColor: "#4ECDC4",
   },
   hotActionText: {
-    color: "#FF3B30",
+    color: "#4ECDC4",
     fontWeight: "600",
   },
   imageContainer: {
@@ -827,14 +827,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 59, 48, 0.1)',
     borderWidth: 1,
-    borderColor: '#FF3B30',
+    borderColor: '#4ECDC4',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     zIndex: 10,
   },
   hotIndicatorText: {
-    color: '#FF3B30',
+    color: '#4ECDC4',
     fontSize: 12,
     fontWeight: '700',
     marginLeft: 4,
