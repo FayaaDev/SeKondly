@@ -423,28 +423,8 @@ app.get('/api/admin/pending-cases', async (req, res) => {
   }
 });
 
-app.post('/api/admin/approve-case/:id', async (req, res) => {
-  try {
-    const caseId = parseInt(req.params.id);
-    const adminId = req.session?.user?.id || 'system';
-    const approvedCase = await storage.approveCase(caseId, adminId);
-    res.json(approvedCase);
-  } catch (error) {
-    console.error("Error approving case:", error);
-    res.status(500).json({ message: "Failed to approve case" });
-  }
-});
-
-app.delete('/api/admin/reject-case/:id', async (req, res) => {
-  try {
-    const caseId = parseInt(req.params.id);
-    await storage.rejectCase(caseId);
-    res.json({ message: 'Case rejected successfully' });
-  } catch (error) {
-    console.error("Error rejecting case:", error);
-    res.status(500).json({ message: "Failed to reject case" });
-  }
-});
+// Case approval and rejection routes are now handled in routes.ts
+// with proper email functionality and detailed logging
 
 app.post('/api/admin/toggle-hot-case/:id', async (req, res) => {
   try {
