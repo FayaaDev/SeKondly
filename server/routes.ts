@@ -669,7 +669,20 @@ const upload = multer({
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + "_" + Math.round(Math.random() * 1e9);
-      cb(null, uniqueSuffix + path.extname(file.originalname));
+      
+      // Handle Arabic filenames properly
+      let originalName = file.originalname;
+      try {
+        // Try to decode if it's encoded
+        originalName = decodeURIComponent(originalName);
+      } catch (decodeError) {
+        // If decoding fails, use the original name
+        console.log('Filename decoding failed, using original:', originalName);
+      }
+      
+      // Extract file extension safely
+      const ext = path.extname(originalName) || '';
+      cb(null, uniqueSuffix + ext);
     }
   }),
   limits: {
@@ -677,7 +690,16 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    
+    // Handle Arabic filenames properly
+    let originalName = file.originalname;
+    try {
+      originalName = decodeURIComponent(originalName);
+    } catch (decodeError) {
+      // Use original if decoding fails
+    }
+    
+    const extname = allowedTypes.test(path.extname(originalName).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
@@ -873,9 +895,17 @@ Please respond to: ${validatedData.email}
       // Handle credentials file upload if provided
       if (req.file) {
         try {
+          // Handle Arabic filenames properly
+          let originalFileName = req.file.originalname;
+          try {
+            originalFileName = decodeURIComponent(originalFileName);
+          } catch (decodeError) {
+            console.log('File name decoding failed, using original name:', originalFileName);
+          }
+          
           const documentData = {
             userId: newUser.id,
-            fileName: req.file.originalname,
+            fileName: originalFileName,
             fileUrl: `/uploads/${req.file.filename}`,
             fileType: req.file.mimetype,
           };
@@ -916,6 +946,54 @@ Please respond to: ${validatedData.email}
       
       res.status(500).json({
         message: "Registration failed. Please try again."
+      });
+    }
+  });
+
+  // Standalone document upload endpoint
+  app.post("/api/documents", isAuthenticated, upload.single('document'), async (req: any, res) => {
+    try {
+      console.log('POST /api/documents - Request body:', req.body);
+      console.log('POST /api/documents - File:', req.file);
+      
+      if (!req.file) {
+        return res.status(400).json({
+          message: "No document provided"
+        });
+      }
+      
+      const userId = req.user.id;
+      
+      // Handle Arabic filenames properly
+      let originalFileName = req.file.originalname;
+      try {
+        // Try to decode if it's already encoded
+        originalFileName = decodeURIComponent(originalFileName);
+      } catch (decodeError) {
+        // If decoding fails, use the original name as is
+        console.log('File name decoding failed, using original name:', originalFileName);
+      }
+      
+      const documentData = {
+        userId: userId,
+        fileName: originalFileName,
+        fileUrl: `/uploads/${req.file.filename}`,
+        fileType: req.file.mimetype,
+      };
+      
+      const uploadedDocument = await storage.uploadDocument(documentData);
+      console.log('POST /api/documents - Document uploaded:', req.file.filename);
+      
+      res.status(201).json({
+        message: "Document uploaded successfully",
+        document: uploadedDocument
+      });
+      
+    } catch (error) {
+      console.error("Error in document upload:", error);
+      
+      res.status(500).json({
+        message: "Document upload failed. Please try again."
       });
     }
   });

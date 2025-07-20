@@ -370,7 +370,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.contactButton]}
+            style={[styles.button, styles.secondaryButton]}
             onPress={() => {
               Linking.openURL('https://sekondly.app').catch((err) => {
                 console.error('Failed to open URL:', err);
@@ -378,7 +378,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
               });
             }}
           >
-            <Text style={styles.contactButtonText}>Contact us</Text>
+            <Text style={styles.secondaryButtonText}>Contact us</Text>
           </TouchableOpacity>
         </View>
       </View>

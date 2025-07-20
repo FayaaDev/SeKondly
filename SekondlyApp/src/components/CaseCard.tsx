@@ -212,8 +212,10 @@ export default function CaseCard({
 
   const handleShare = async () => {
     try {
+      const shareMessage = `Check out this medical case: ${caseData.title}\n\nDownload SeKondly app to explore more medical cases and join the healthcare community:\nhttps://apps.apple.com/sa/app/sekondly/id6747885635`;
+      
       await Share.share({
-        message: `Check out this medical case: ${caseData.title}`,
+        message: shareMessage,
         title: caseData.title,
       });
     } catch (error) {

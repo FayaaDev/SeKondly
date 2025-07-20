@@ -28,30 +28,61 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
 
+  // Utility function to safely handle file names with Arabic characters
+  const sanitizeFileName = (fileName: string): string => {
+    if (!fileName) return 'document';
+    // Ensure the file name is a valid string and handle any encoding issues
+    try {
+      return fileName.trim() || 'document';
+    } catch (error) {
+      return 'document';
+    }
+  };
+
   const uploadMutation = useMutation({
     mutationFn: async (file: SelectedFile) => {
       const formData = new FormData();
+      
+      // Ensure Arabic file names are properly encoded
+      const encodedFileName = encodeURIComponent(file.name);
+      
       formData.append('document', {
         uri: file.uri,
         type: file.mimeType,
-        name: file.name,
+        name: encodedFileName,
       } as any);
 
       const response = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Remove Content-Type header to let the browser set it with proper boundary
+          'Accept': 'application/json',
         },
         credentials: 'include',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If response is not valid JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      return response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        // If the response is not valid JSON, return a success indicator
+        responseData = { success: true, message: 'Document uploaded successfully' };
+      }
+
+      return responseData;
     },
     onSuccess: () => {
       Alert.alert('Success', 'Your document has been submitted for review.');
@@ -97,7 +128,8 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
         const newFiles: SelectedFile[] = validFiles.map((file: any) => ({
           uri: file.uri,
-          name: file.name,
+          // Ensure the file name is properly handled for Arabic characters
+          name: sanitizeFileName(file.name),
           size: file.size || 0,
           mimeType: file.mimeType || 'application/octet-stream',
         }));
@@ -116,6 +148,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   const uploadFile = async (file: SelectedFile, index: number) => {
     try {
       await uploadMutation.mutateAsync(file);
+      // Store the original (non-encoded) file name for display
       setUploadedFiles(prev => [...prev, file.name]);
       setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     } catch (error) {

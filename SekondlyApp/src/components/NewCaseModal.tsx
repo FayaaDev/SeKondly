@@ -441,6 +441,30 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   };
 
   const openCamera = async () => {
+    if (selectedImages.length >= 3) {
+      showAlert(
+        'Maximum Images Reached',
+        'You can upload up to 3 images per case.',
+        [{ text: 'OK', onPress: () => {} }],
+        'image',
+        '#FF9500'
+      );
+      return;
+    }
+
+    // Request camera permissions
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      showAlert(
+        'Camera Permission Required',
+        'Camera access is needed to take photos. Please enable it in your device settings.',
+        [{ text: 'OK', onPress: () => {} }],
+        'camera',
+        '#FF9500'
+      );
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
       allowsEditing: true,
@@ -460,7 +484,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
       const imageAsset: ImageAsset = {
         uri: asset.uri,
         type: 'image/jpeg',
-        name: `image_${Date.now()}.jpg`,
+        name: `camera_image_${Date.now()}.jpg`,
       };
       setSelectedImages(prev => [...prev, imageAsset]);
     }
@@ -1046,38 +1070,77 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                 Medical Images
               </Text>
               
-              {/* Image Upload Button */}
-              <TouchableOpacity
-                onPress={handleImagePicker}
-                style={{
-                  borderWidth: 2,
-                  borderColor: '#E5E5E7',
-                  borderStyle: 'dashed',
-                  borderRadius: 12,
-                  padding: 32,
-                  alignItems: 'center',
-                  backgroundColor: '#F9F9F9',
-                  marginBottom: 16,
-                }}
-              >
-                <Camera size={32} color="#8E8E93" />
-                <Text style={{
-                  fontSize: 16,
-                  color: '#8E8E93',
-                  textAlign: 'center',
-                  marginTop: 8,
-                }}>
-                  Add medical images, scans, or charts
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: '#8E8E93',
-                  textAlign: 'center',
-                  marginTop: 4,
-                }}>
-                  Up to 3 images (max 4MB each)
-                </Text>
-              </TouchableOpacity>
+              {/* Image Upload Options */}
+              <View style={{
+                flexDirection: 'row',
+                gap: 12,
+                marginBottom: 16,
+              }}>
+                {/* Camera Button */}
+                <TouchableOpacity
+                  onPress={openCamera}
+                  disabled={selectedImages.length >= 3}
+                  style={{
+                    flex: 1,
+                    borderWidth: 2,
+                    borderColor: selectedImages.length >= 3 ? '#C7C7CC' : '#E5E5E7',
+                    borderStyle: 'dashed',
+                    borderRadius: 12,
+                    padding: 20,
+                    alignItems: 'center',
+                    backgroundColor: selectedImages.length >= 3 ? '#F2F2F7' : '#F9F9F9',
+                    opacity: selectedImages.length >= 3 ? 0.5 : 1,
+                  }}
+                >
+                  <Camera size={28} color={selectedImages.length >= 3 ? '#8E8E93' : '#4ECDC4'} />
+                  <Text style={{
+                    fontSize: 14,
+                    color: selectedImages.length >= 3 ? '#8E8E93' : '#4ECDC4',
+                    textAlign: 'center',
+                    marginTop: 6,
+                    fontWeight: '500',
+                  }}>
+                    Take Photo
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Gallery Button */}
+                <TouchableOpacity
+                  onPress={handleImagePicker}
+                  disabled={selectedImages.length >= 3}
+                  style={{
+                    flex: 1,
+                    borderWidth: 2,
+                    borderColor: selectedImages.length >= 3 ? '#C7C7CC' : '#E5E5E7',
+                    borderStyle: 'dashed',
+                    borderRadius: 12,
+                    padding: 20,
+                    alignItems: 'center',
+                    backgroundColor: selectedImages.length >= 3 ? '#F2F2F7' : '#F9F9F9',
+                    opacity: selectedImages.length >= 3 ? 0.5 : 1,
+                  }}
+                >
+                  <ImageIcon size={28} color={selectedImages.length >= 3 ? '#8E8E93' : '#4ECDC4'} />
+                  <Text style={{
+                    fontSize: 14,
+                    color: selectedImages.length >= 3 ? '#8E8E93' : '#4ECDC4',
+                    textAlign: 'center',
+                    marginTop: 6,
+                    fontWeight: '500',
+                  }}>
+                    From Gallery
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{
+                fontSize: 12,
+                color: '#8E8E93',
+                textAlign: 'center',
+                marginBottom: 16,
+              }}>
+                Add medical images, scans, or charts • Up to 3 images (max 4MB each)
+              </Text>
 
               {/* Selected Images Preview */}
               {selectedImages.length > 0 && (
