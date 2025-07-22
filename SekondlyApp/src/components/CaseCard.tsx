@@ -414,7 +414,7 @@ export default function CaseCard({
                 </Text>
                 {caseData.isAuthorFollowedByUser && (
                   <View style={styles.followingIndicator}>
-                    <Ionicons name="star" size={12} color="#FFD700" />
+                    <Text style={styles.followingIndicatorText}>Followed</Text>
                   </View>
                 )}
               </View>
@@ -579,9 +579,14 @@ const styles = StyleSheet.create({
   },
   followingIndicator: {
     marginLeft: 4,
-    backgroundColor: "rgba(255, 215, 0, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     padding: 2,
+  },
+  followingIndicatorText: {
+    fontSize: 10,
+    color: "#8E8E93",
+    fontWeight: "500",
   },
   specialtyBadge: {
     backgroundColor: "#EBF4FF",

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest, CacheManager } from "../lib/queryClient";
 import CaseCard from "../components/CaseCard";
@@ -37,6 +38,7 @@ export default function FavoritesScreen() {
   const [cachedFavorites, setCachedFavorites] = useState<CaseWithAuthor[]>([]);
   
   const { user } = useAuth();
+  const navigation = useNavigation();
 
   // Load cached favorites on mount
   useEffect(() => {
@@ -76,6 +78,18 @@ export default function FavoritesScreen() {
       setRefreshing(false);
     }
   }, [refetchFavorites]);
+
+  const handleProfilePress = (userId: string) => {
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'Home',
+        params: {
+          screen: 'PublicProfile',
+          params: { userId }
+        }
+      })
+    );
+  };
 
   const renderLoadingSkeleton = () => (
     <View style={styles.container}>
@@ -152,6 +166,7 @@ export default function FavoritesScreen() {
                   setSelectedCase(caseData);
                   setShowCaseDetail(true);
                 }}
+                onProfilePress={handleProfilePress}
               />
             ))}
           </View>
