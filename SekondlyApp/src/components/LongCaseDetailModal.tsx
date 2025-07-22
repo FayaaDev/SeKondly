@@ -246,8 +246,8 @@ const LongCaseDetailModal = ({
     return (
       <View key={comment.id} style={[
         styles.commentCard,
-        depth > 0 && styles.replyComment,
-        { marginLeft: Math.min(depth * 20, maxDepth * 20) }
+        depth > 0 && styles.replyComment
+        // Removed marginLeft - using repliesContainer padding instead
       ]}>
         {/* Reply indicator for nested comments */}
         {depth > 0 && (
@@ -275,11 +275,6 @@ const LongCaseDetailModal = ({
                 <Text style={styles.commentAuthorName}>
                   Dr. {comment.author.firstName} {comment.author.lastName}
                 </Text>
-                {comment.replyToUsername && (
-                  <Text style={styles.replyingToText}>
-                    replying to @{comment.replyToUsername}
-                  </Text>
-                )}
                 <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt!)}</Text>
               </View>
               <View style={styles.commentCredentialsBadges}>
@@ -1602,14 +1597,14 @@ const styles = StyleSheet.create({
   },
   repliesContainer: {
     marginTop: 12,
-    paddingLeft: 16,
+    paddingLeft: 8, // Reduced from 16 to 8 for more conservative indentation
   },
   maxDepthContainer: {
     backgroundColor: '#F1F5F9',
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
-    marginLeft: 16,
+    marginLeft: 8, // Reduced from 16 to 8 to match repliesContainer
   },
   maxDepthText: {
     fontSize: 12,
