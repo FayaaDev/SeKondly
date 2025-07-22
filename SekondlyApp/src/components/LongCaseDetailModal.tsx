@@ -30,6 +30,13 @@ import { API_BASE_URL } from '../config/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Enhanced comment interface for hierarchical structure
+interface HierarchicalComment extends CommentWithAuthor {
+  replies?: HierarchicalComment[];
+  parentId?: string | null;
+  replyToUsername?: string;
+}
+
 interface LongCaseDetailModalProps {
   visible: boolean;
   onClose: () => void;
@@ -54,6 +61,106 @@ const getInitials = (firstName?: string | null, lastName?: string | null) => {
   return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
 };
 
+// Helper function to parse reply information from comment content
+const parseCommentForReply = (content: string): { replyToUsername?: string; cleanContent: string } => {
+  const replyMatch = content.match(/^@([^\s]+)\s+(.*)$/);
+  if (replyMatch) {
+    return {
+      replyToUsername: replyMatch[1],
+      cleanContent: replyMatch[2]
+    };
+  }
+  return { cleanContent: content };
+};
+
+// Helper function to organize comments into hierarchical structure
+const organizeCommentsHierarchically = (comments: CommentWithAuthor[]): HierarchicalComment[] => {
+  const commentMap = new Map<string, HierarchicalComment>();
+  const rootComments: HierarchicalComment[] = [];
+  const replyQueue: HierarchicalComment[] = [];
+  
+  // First pass: create all comments with parsed reply info
+  comments.forEach(comment => {
+    const { replyToUsername, cleanContent } = parseCommentForReply(comment.content);
+    const hierarchicalComment: HierarchicalComment = {
+      ...comment,
+      content: cleanContent,
+      replyToUsername,
+      replies: []
+    };
+    commentMap.set(comment.id.toString(), hierarchicalComment);
+    
+    if (replyToUsername) {
+      replyQueue.push(hierarchicalComment);
+    } else {
+      rootComments.push(hierarchicalComment);
+    }
+  });
+  
+  // Second pass: organize replies into hierarchy
+  // Sort comments by creation date to maintain chronological order
+  const sortedComments = Array.from(commentMap.values()).sort((a, b) => 
+    new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+  );
+  
+  replyQueue.forEach(replyComment => {
+    if (replyComment.replyToUsername) {
+      // Find the most recent parent comment by author name (in case of multiple comments from same author)
+      let parentComment: HierarchicalComment | undefined;
+      
+      // Search through all comments (including replies) to find the parent
+      const findParentInComments = (commentsToSearch: HierarchicalComment[]): HierarchicalComment | undefined => {
+        for (const comment of commentsToSearch) {
+          const commentAuthorName = `${comment.author.firstName || ''}${comment.author.lastName || ''}`;
+          if (commentAuthorName === replyComment.replyToUsername && 
+              comment.id !== replyComment.id &&
+              new Date(comment.createdAt!).getTime() < new Date(replyComment.createdAt!).getTime()) {
+            if (!parentComment || new Date(comment.createdAt!).getTime() > new Date(parentComment.createdAt!).getTime()) {
+              parentComment = comment;
+            }
+          }
+          
+          // Also search in replies recursively
+          if (comment.replies && comment.replies.length > 0) {
+            const foundInReplies = findParentInComments(comment.replies);
+            if (foundInReplies) {
+              const foundAuthorName = `${foundInReplies.author.firstName || ''}${foundInReplies.author.lastName || ''}`;
+              if (foundAuthorName === replyComment.replyToUsername &&
+                  new Date(foundInReplies.createdAt!).getTime() < new Date(replyComment.createdAt!).getTime()) {
+                if (!parentComment || new Date(foundInReplies.createdAt!).getTime() > new Date(parentComment.createdAt!).getTime()) {
+                  parentComment = foundInReplies;
+                }
+              }
+            }
+          }
+        }
+        return parentComment;
+      };
+      
+      parentComment = findParentInComments(rootComments);
+      
+      if (parentComment) {
+        replyComment.parentId = parentComment.id.toString();
+        parentComment.replies!.push(replyComment);
+        // Sort replies by creation time
+        parentComment.replies!.sort((a, b) => 
+          new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+        );
+      } else {
+        // If parent not found, treat as root comment
+        rootComments.push(replyComment);
+      }
+    }
+  });
+  
+  // Sort root comments by creation time
+  rootComments.sort((a, b) => 
+    new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+  );
+  
+  return rootComments;
+};
+
 // Helper function to get full image URL
 const getFullImageUrl = (imageUrl: string): string => {
   if (imageUrl.startsWith('http')) {
@@ -72,10 +179,15 @@ const LongCaseDetailModal = ({
 
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{
+    username: string;
+    commentId: string;
+    authorName: string;
+  } | null>(null);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [showCommentAgreers, setShowCommentAgreers] = useState(false);
   const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const { user: currentUser } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
@@ -121,6 +233,196 @@ const LongCaseDetailModal = ({
     enabled: !!caseData.id && visible,
     retry: false,
   });
+
+  // Organize comments hierarchically
+  const hierarchicalComments = organizeCommentsHierarchically(comments || []);
+
+  // Render hierarchical comment function
+  const renderHierarchicalComment = (comment: HierarchicalComment, depth: number = 0): React.ReactElement => {
+    const maxDepth = 3; // Limit nesting depth
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const isExpanded = expandedReplies.has(comment.id.toString());
+    
+    return (
+      <View key={comment.id} style={[
+        styles.commentCard,
+        depth > 0 && styles.replyComment,
+        { marginLeft: Math.min(depth * 20, maxDepth * 20) }
+      ]}>
+        {/* Reply indicator for nested comments */}
+        {depth > 0 && (
+          <View style={styles.replyIndicatorLine} />
+        )}
+        
+        <View style={styles.commentHeader}>
+          <TouchableOpacity style={styles.commentAvatar}>
+            {comment.author.profileImageUrl ? (
+              <ExpoImage
+                source={{ uri: getFullImageUrl(comment.author.profileImageUrl) }}
+                style={styles.commentAvatarImage}
+                contentFit="cover"
+              />
+            ) : (
+              <Text style={styles.commentAvatarText}>
+                {getInitials(comment.author.firstName, comment.author.lastName)}
+              </Text>
+            )}
+          </TouchableOpacity>
+          
+          <View style={styles.commentMainContent}>
+            <View style={styles.commentAuthorInfo}>
+              <View style={styles.commentNameRow}>
+                <Text style={styles.commentAuthorName}>
+                  Dr. {comment.author.firstName} {comment.author.lastName}
+                </Text>
+                {comment.replyToUsername && (
+                  <Text style={styles.replyingToText}>
+                    replying to @{comment.replyToUsername}
+                  </Text>
+                )}
+                <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt!)}</Text>
+              </View>
+              <View style={styles.commentCredentialsBadges}>
+                <View style={styles.commentSpecialtyBadge}>
+                  <Ionicons name="medical" size={10} color="#4ECDC4" />
+                  <Text style={styles.commentSpecialtyText}>{comment.author.specialty}</Text>
+                </View>
+                {(comment.author as any)?.level && (
+                  <View style={styles.commentLevelBadge}>
+                    <Ionicons name="ribbon" size={10} color="#059669" />
+                    <Text style={styles.commentLevelText}>{(comment.author as any)?.level}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            
+            <View style={styles.commentContentContainer}>
+              <Text style={styles.commentContent}>{comment.content}</Text>
+            </View>
+            
+            {/* Medical-focused Comment Actions */}
+            <View style={styles.commentActions}>
+              <TouchableOpacity 
+                style={styles.commentActionButton}
+                onPress={() => handleReply(
+                  comment.id.toString(),
+                  comment.author.firstName || '',
+                  comment.author.lastName || ''
+                )}
+              >
+                <View style={styles.medicalActionIcon}>
+                  <Ionicons name="chatbubble-outline" size={16} color="#4ECDC4" />
+                </View>
+                <Text style={styles.commentActionLabel}>Reply</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.commentActionButton}
+                onPress={() => {
+                  console.log('=== LONG CASE AGREE BUTTON PRESSED ===');
+                  console.log('LONG CASE: Agree button pressed for comment:', comment.id);
+                  console.log('LONG CASE: Current isAgreedByUser state:', (comment as any).isAgreedByUser);
+                  console.log('LONG CASE: Current agreesCount:', (comment as any).agreesCount);
+                  console.log('LONG CASE: agreeCommentMutation.isPending:', agreeCommentMutation.isPending);
+                  
+                  if (agreeCommentMutation.isPending) {
+                    console.log('LONG CASE: Button disabled due to pending mutation, ignoring press');
+                    return;
+                  }
+                  
+                  agreeCommentMutation.mutate(comment.id.toString());
+                }}
+                disabled={agreeCommentMutation.isPending}
+              >
+                <View style={[
+                  styles.medicalActionIcon,
+                  (comment as any).isAgreedByUser && styles.medicalActionIconActive
+                ]}>
+                  <Ionicons 
+                    name={(comment as any).isAgreedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
+                    size={16} 
+                    color={(comment as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
+                  />
+                </View>
+                <Text style={[
+                  styles.commentActionLabel,
+                  (comment as any).isAgreedByUser && styles.commentActionLabelActive
+                ]}>
+                  {(() => {
+                    const count = (comment as any).agreesCount || 0;
+                    if (count > 0) {
+                      return `Agree (${count})`;
+                    }
+                    return 'Agree';
+                  })()}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Delete button - only show for comment author */}
+              {(currentUser?.id === comment.authorId || currentUser?.id === comment.author?.id) && (
+                <TouchableOpacity 
+                  style={styles.commentActionButton}
+                  onPress={() => confirmDeleteComment(comment.id.toString())}
+                  disabled={deleteCommentMutation.isPending}
+                >
+                  <View style={styles.medicalActionIcon}>
+                    <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                  </View>
+                  <Text style={[styles.commentActionLabel, styles.commentDeleteLabel]}>Delete</Text>
+                </TouchableOpacity>
+              )}
+              
+              {/* Show/Hide Replies Button */}
+              {hasReplies && (
+                <TouchableOpacity 
+                  style={styles.commentActionButton}
+                  onPress={() => toggleReplies(comment.id.toString())}
+                >
+                  <View style={styles.medicalActionIcon}>
+                    <Ionicons 
+                      name={isExpanded ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#4ECDC4" 
+                    />
+                  </View>
+                  <Text style={styles.commentActionLabel}>
+                    {isExpanded ? 'Hide' : 'Show'} {comment.replies!.length} {comment.replies!.length === 1 ? 'reply' : 'replies'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* Show Agreed List Button - positioned below action buttons */}
+            {(comment as any).agreesCount > 0 && (
+              <TouchableOpacity 
+                style={styles.showAgreersButton}
+                onPress={() => handleShowCommentAgreers(comment.id.toString())}
+              >
+                <Ionicons name="people-outline" size={12} color="#4ECDC4" />
+                <Text style={styles.showAgreersText}>See who agreed with this</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        
+        {/* Render replies */}
+        {hasReplies && isExpanded && depth < maxDepth && (
+          <View style={styles.repliesContainer}>
+            {comment.replies!.map(reply => renderHierarchicalComment(reply, depth + 1))}
+          </View>
+        )}
+        
+        {/* Show message if max depth reached */}
+        {hasReplies && isExpanded && depth >= maxDepth && (
+          <View style={styles.maxDepthContainer}>
+            <Text style={styles.maxDepthText}>
+              View more replies by tapping the original comment
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   // Comments mutation
   const addCommentMutation = useMutation({
@@ -241,19 +543,31 @@ const LongCaseDetailModal = ({
   const handleAddComment = () => {
     if (!newComment.trim()) return;
     const finalComment = replyingTo 
-      ? `@${replyingTo} ${newComment}` 
+      ? `@${replyingTo.username} ${newComment}` 
       : newComment;
     addCommentMutation.mutate(finalComment);
   };
 
-  const handleReply = (username: string) => {
-    setReplyingTo(username);
+  const handleReply = (commentId: string, authorFirstName: string, authorLastName: string) => {
+    const username = `${authorFirstName || ''}${authorLastName || ''}`;
+    const authorName = `Dr. ${authorFirstName} ${authorLastName}`;
+    setReplyingTo({ username, commentId, authorName });
     setNewComment("");
   };
 
   const cancelReply = () => {
     setReplyingTo(null);
     setNewComment("");
+  };
+
+  const toggleReplies = (commentId: string) => {
+    const newExpanded = new Set(expandedReplies);
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+    }
+    setExpandedReplies(newExpanded);
   };
 
   const handleShare = async () => {
@@ -510,125 +824,7 @@ const LongCaseDetailModal = ({
                     )}
                   </View>
 
-                  {comments.map((comment: CommentWithAuthor) => (
-                    <View key={comment.id} style={styles.commentCard}>
-                      <View style={styles.commentHeader}>
-                        <TouchableOpacity style={styles.commentAvatar}>
-                          {comment.author.profileImageUrl ? (
-                            <ExpoImage
-                              source={{ uri: getFullImageUrl(comment.author.profileImageUrl) }}
-                              style={styles.commentAvatarImage}
-                              contentFit="cover"
-                            />
-                          ) : (
-                            <Text style={styles.commentAvatarText}>
-                              {getInitials(comment.author.firstName, comment.author.lastName)}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                        
-                        <View style={styles.commentMainContent}>
-                          <View style={styles.commentAuthorInfo}>
-                            <View style={styles.commentNameRow}>
-                              <Text style={styles.commentAuthorName}>
-                                Dr. {comment.author.firstName} {comment.author.lastName}
-                              </Text>
-                              <Text style={styles.commentTime}>{formatTimeAgo(comment.createdAt!)}</Text>
-                            </View>
-                            <View style={styles.commentCredentialsBadges}>
-                              <View style={styles.commentSpecialtyBadge}>
-                                <Ionicons name="medical" size={10} color="#4ECDC4" />
-                                <Text style={styles.commentSpecialtyText}>{comment.author.specialty}</Text>
-                              </View>
-                              {(comment.author as any)?.level && (
-                                <View style={styles.commentLevelBadge}>
-                                  <Ionicons name="ribbon" size={10} color="#059669" />
-                                  <Text style={styles.commentLevelText}>{(comment.author as any)?.level}</Text>
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                          
-                          <View style={styles.commentContentContainer}>
-                            <Text style={styles.commentContent}>{comment.content}</Text>
-                          </View>
-                          
-                          {/* Medical-focused Comment Actions */}
-                          <View style={styles.commentActions}>
-                            <TouchableOpacity 
-                              style={styles.commentActionButton}
-                              onPress={() => handleReply(comment.author.username!)}
-                            >
-                              <View style={styles.medicalActionIcon}>
-                                <Ionicons name="chatbubble-outline" size={16} color="#4ECDC4" />
-                              </View>
-                              <Text style={styles.commentActionLabel}>Reply</Text>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity 
-                              style={styles.commentActionButton}
-                              onPress={() => {
-                                console.log('Agree button pressed for comment:', comment.id);
-                                agreeCommentMutation.mutate(comment.id.toString());
-                              }}
-                              disabled={agreeCommentMutation.isPending}
-                            >
-                              <View style={[
-                                styles.medicalActionIcon,
-                                (comment as any).isAgreedByUser && styles.medicalActionIconActive
-                              ]}>
-                                <Ionicons 
-                                  name={(comment as any).isAgreedByUser ? "checkmark-circle" : "checkmark-circle-outline"} 
-                                  size={16} 
-                                  color={(comment as any).isAgreedByUser ? "#22C55E" : "#4ECDC4"} 
-                                />
-                              </View>
-                              <Text style={[
-                                styles.commentActionLabel,
-                                (comment as any).isAgreedByUser && styles.commentActionLabelActive
-                              ]}>
-                                {(() => {
-                                  const count = (comment as any).agreesCount || 0;
-                                  if (count > 0) {
-                                    return `Agree (${count})`;
-                                  }
-                                  return 'Agree';
-                                })()}
-                              </Text>
-                            </TouchableOpacity>
-
-                            {/* Delete button - only show for comment author */}
-                            {(currentUser?.id === comment.authorId || currentUser?.id === comment.author?.id) && (
-                              <TouchableOpacity 
-                                style={styles.commentActionButton}
-                                onPress={() => confirmDeleteComment(comment.id.toString())}
-                                disabled={deleteCommentMutation.isPending}
-                              >
-                                <View style={styles.medicalActionIcon}>
-                                  <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-                                </View>
-                                <Text style={[styles.commentActionLabel, styles.commentDeleteLabel]}>Delete</Text>
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                          
-                          {/* Show Agreed List Button - positioned below action buttons */}
-                          {(comment as any).agreesCount > 0 && (
-                            <TouchableOpacity 
-                              style={styles.showAgreersButton}
-                              onPress={() => {
-                                console.log('LongCaseDetailModal - List button pressed for comment:', comment.id);
-                                handleShowCommentAgreers(comment.id.toString());
-                              }}
-                            >
-                              <Ionicons name="people-outline" size={12} color="#4ECDC4" />
-                              <Text style={styles.showAgreersText}>See who agreed with this</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-                  ))}
+                  {hierarchicalComments.map(comment => renderHierarchicalComment(comment, 0))}
                 </View>
               )}
             </ScrollView>
@@ -640,7 +836,7 @@ const LongCaseDetailModal = ({
                   <View style={styles.replyIconContainer}>
                     <Ionicons name="return-down-forward" size={14} color="#4ECDC4" />
                   </View>
-                  <Text style={styles.replyText}>Replying to Dr. {replyingTo}</Text>
+                  <Text style={styles.replyText}>Replying to {replyingTo.authorName}</Text>
                   <TouchableOpacity onPress={cancelReply} style={styles.cancelReplyButton}>
                     <Ionicons name="close" size={16} color="#536471" />
                   </TouchableOpacity>
@@ -1380,6 +1576,46 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     marginLeft: 4,
     fontWeight: '600',
+  },
+
+  // Hierarchical Reply Styles
+  replyComment: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#E2E8F0',
+    backgroundColor: '#FAFBFC',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  replyIndicatorLine: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: '#4ECDC4',
+  },
+  replyingToText: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    fontStyle: 'italic',
+    marginLeft: 8,
+  },
+  repliesContainer: {
+    marginTop: 12,
+    paddingLeft: 16,
+  },
+  maxDepthContainer: {
+    backgroundColor: '#F1F5F9',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginLeft: 16,
+  },
+  maxDepthText: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 
