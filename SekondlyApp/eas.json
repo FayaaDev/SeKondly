@@ -12,12 +12,19 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
       "ios": {
         "resourceClass": "m-medium",
         "distribution": "store"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "autoIncrement": "versionCode"
       }
     }
   },
@@ -27,6 +34,10 @@
         "appleId": "drfayaa@gmail.com",
         "ascAppId": "6747885635",
         "appleTeamId": "4MMGRMAFPR"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
       }
     }
   }

@@ -538,7 +538,7 @@ export default function FeedScreen() {
     return (
       <View style={styles.pagerContainer}>
         <PanGestureHandler
-          activeOffsetY={[-10, 10]}
+          activeOffsetY={Platform.OS === 'android' ? [-15, 15] : [-10, 10]}
           failOffsetX={[-20, 20]}
           simultaneousHandlers={horizontalGestureRef}
         >
@@ -553,11 +553,11 @@ export default function FeedScreen() {
               onPageScrollStateChanged={(e) => {
                 console.log(`Vertical (${tabType}) page scroll state:`, e.nativeEvent.pageScrollState);
               }}
-              overdrag={false}
+              overdrag={Platform.OS === 'android' ? true : false}
               scrollEnabled={true}
               keyboardDismissMode="on-drag"
               pageMargin={0}
-              overScrollMode="never"
+              overScrollMode={Platform.OS === 'android' ? "auto" : "never"}
               layoutDirection="ltr"
             >
           {casesData.map((caseData: CaseWithAuthor, index: number) => (
@@ -760,6 +760,7 @@ export default function FeedScreen() {
                       onRefresh={onRefresh}
                       tintColor="#007AFF"
                       colors={["#007AFF"]}
+                      progressBackgroundColor="#FFFFFF"
                     />
                   }
                   showsVerticalScrollIndicator={false}
@@ -776,6 +777,7 @@ export default function FeedScreen() {
                       onRefresh={onRefresh}
                       tintColor="#007AFF"
                       colors={["#007AFF"]}
+                      progressBackgroundColor="#FFFFFF"
                     />
                   }
                   showsVerticalScrollIndicator={false}
@@ -797,6 +799,7 @@ export default function FeedScreen() {
                       onRefresh={onRefresh}
                       tintColor="#007AFF"
                       colors={["#007AFF"]}
+                      progressBackgroundColor="#FFFFFF"
                     />
                   }
                   showsVerticalScrollIndicator={false}
@@ -813,6 +816,7 @@ export default function FeedScreen() {
                       onRefresh={onRefresh}
                       tintColor="#007AFF"
                       colors={["#007AFF"]}
+                      progressBackgroundColor="#FFFFFF"
                     />
                   }
                   showsVerticalScrollIndicator={false}
