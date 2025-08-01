@@ -144,18 +144,22 @@ const SpecialtyPreferencesFlow: React.FC<SpecialtyPreferencesFlowProps> = ({
   };
 
   const handleSkip = () => {
-    console.log('Skip button pressed');
+    console.log('Choose random button pressed');
     console.log('onSkip callback:', onSkip);
     console.log('onComplete callback:', onComplete);
     
-    // Try onSkip first, then fallback to onComplete
-    if (onSkip) {
-      console.log('Calling onSkip callback');
-      onSkip();
-    } else {
-      console.log('No onSkip callback, using onComplete');
-      onComplete();
-    }
+    // Add General Surgery and Internal Medicine as random selections
+    const randomSpecialties = ['General Surgery', 'Internal Medicine'];
+    const newTags: SelectedTag[] = randomSpecialties.map(specialty => ({
+      specialty,
+      id: `${specialty}-${Date.now()}`,
+    }));
+    
+    // Update selected specialties
+    setSelectedSpecialties(newTags);
+    
+    // Save these random preferences
+    savePreferencesMutation.mutate(randomSpecialties);
   };
 
   return (
@@ -253,7 +257,7 @@ const SpecialtyPreferencesFlow: React.FC<SpecialtyPreferencesFlowProps> = ({
         <View style={styles.popularContainer}>
           <Text style={styles.popularTitle}>Popular Specialties</Text>
           <View style={styles.popularTagsContainer}>
-            {['General Surgey', 'Internal Medicine', 'Emergency Medicine', 'Urology', 'Colon and Rectal Surgery', 'Pediatrics', 'Obstetrics & Gynecology'].map((specialty) => (
+            {['General Surgery', 'Internal Medicine', 'Emergency Medicine', 'Urology', 'Colon and Rectal Surgery', 'Pediatrics', 'Obstetrics & Gynecology'].map((specialty) => (
               <TouchableOpacity
                 key={specialty}
                 style={[
@@ -289,7 +293,7 @@ const SpecialtyPreferencesFlow: React.FC<SpecialtyPreferencesFlowProps> = ({
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.skipButtonText}>Skip for Now</Text>
+          <Text style={styles.skipButtonText}>Choose Random</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 

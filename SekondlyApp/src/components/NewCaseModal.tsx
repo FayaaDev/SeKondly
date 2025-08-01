@@ -11,10 +11,10 @@ import {
   Dimensions,
   ActivityIndicator,
   Linking,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Camera, Image as ImageIcon, Save } from 'lucide-react-native';
@@ -95,7 +95,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
   const [showDraftSavedMessage, setShowDraftSavedMessage] = useState(false);
   const { showAlert, AlertComponent } = useCustomAlert();
   const queryClient = useQueryClient();
-  const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Load draft on modal open
   useEffect(() => {
@@ -278,6 +278,9 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
         credentials: 'include',
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Case submission failed:', response.status, errorText);
@@ -307,34 +310,61 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
         throw new Error(errorMessage);
       }
       
-      return response.json();
+      const responseData = await response.json();
+      console.log('Response data type:', typeof responseData);
+      console.log('Response data:', responseData);
+      
+      return responseData;
     },
     onSuccess: async (data) => {
       console.log('Case created successfully:', data);
+      console.log('Data is array:', Array.isArray(data));
+      
+      // Handle case where API returns array instead of single case
+      const caseData = Array.isArray(data) ? data[0] : data;
       
       // If the server response is missing the format field, add it manually
       // This is a temporary fix until server-side changes are deployed
-      if (data && !data.format) {
-        data.format = caseFormat;
+      if (caseData && !caseData.format) {
+        caseData.format = caseFormat;
         console.log('Added missing format field to case response:', caseFormat);
       }
       
+      console.log('About to invalidate queries...');
+      
+      // Simplified query invalidation - only invalidate, don't refetch immediately
       queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my-cases'] });
-      showAlert(
-        'Success', 
-        'Your case has been submitted successfully and will be published once approved by our medical team!',
-        [{ text: 'OK', onPress: () => {} }],
-        'checkmark-circle',
-        '#4ECDC4'
-      );
+      
+      console.log('Queries invalidated, clearing draft...');
       
       // Clear draft after successful submission
       await clearDraft();
       
+      console.log('Draft cleared, resetting form...');
+      
       // Reset form first, then close modal
       resetForm();
-      onClose();
+      
+      console.log('Form reset, showing success message...');
+      
+      // Show success message and close modal
+      setTimeout(() => {
+        console.log('Showing success alert...');
+        showAlert(
+          'Success', 
+          'Your case has been submitted successfully and will be published once approved by our medical team!',
+          [{ 
+            text: 'OK', 
+            onPress: () => {
+              console.log('Alert dismissed, closing modal...');
+              onClose();
+            }
+          }],
+          'checkmark-circle',
+          '#4ECDC4'
+        );
+      }, 100);
     },
     onError: (error: any) => {
       console.error('Case submission error:', error);
@@ -664,7 +694,7 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
     setShowSpecialtySuggestions(specialtyInput.length > 0);
     // Scroll to the specialty section with some extra space for the dropdown
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd(true);
+      scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
@@ -836,20 +866,21 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
             </View>
           </View>
 
-          <KeyboardAwareScrollView
-            ref={scrollViewRef}
+          <KeyboardAvoidingView 
             style={{ flex: 1 }}
-            contentContainerStyle={{ 
-              padding: 20,
-              paddingBottom: caseFormat === 'long' ? 100 : 60 
-            }}
-            keyboardShouldPersistTaps="handled"
-            enableOnAndroid={true}
-            extraScrollHeight={showSpecialtySuggestions && (filteredSpecialties.length > 0 || specialtyInput.trim().length > 0) ? 200 : 20}
-            scrollEnabled={true}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={false}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
           >
+            <ScrollView
+              ref={scrollViewRef}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ 
+                padding: 20,
+                paddingBottom: caseFormat === 'long' ? 100 : 60 
+              }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
             {/* Case Format Selection */}
             <View style={{ marginBottom: 24 }}>
               <Text style={{
@@ -1372,7 +1403,8 @@ export default function NewCaseModal({ isOpen, onClose }: NewCaseModalProps) {
                 </View>
               </TouchableOpacity>
             </View>
-          </KeyboardAwareScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
           
           {/* Custom Alert Component */}
           <AlertComponent />

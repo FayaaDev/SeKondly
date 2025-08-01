@@ -188,14 +188,23 @@ export default function ImageGalleryModal({
     }
   }, [visible, initialIndex]);
 
-  if (!visible) return null;
+  console.log('ImageGalleryModal render called with visible:', visible, 'images:', images.length);
+  
+  if (!visible) {
+    console.log('ImageGalleryModal returning null because visible is false');
+    return null;
+  }
 
+  console.log('ImageGalleryModal rendering Modal component');
   return (
     <Modal
       visible={visible}
-      transparent
+      transparent={false}
       animationType="fade"
       onRequestClose={handleClose}
+      presentationStyle="overFullScreen"
+      statusBarTranslucent={true}
+      hardwareAccelerated={true}
     >
       <GestureHandlerRootView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000" />

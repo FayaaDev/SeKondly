@@ -637,48 +637,168 @@ const LongCaseDetailModal = ({
   const renderImageGallery = () => {
     if (!caseData?.imageUrls || caseData.imageUrls.length === 0) return null;
 
+    // Limit to 3 images maximum for display, but allow access to all via gallery
+    const imagesToShow = caseData.imageUrls.slice(0, 3);
+    const fullImageUrls = imagesToShow.map(url => getFullImageUrl(url));
+
+    if (imagesToShow.length === 1) {
+      return (
+        <View style={styles.imageGalleryContainer}>
+          <View style={styles.imageSectionHeader}>
+            <Text style={styles.sectionTitle}>Images</Text>
+            <TouchableOpacity
+              style={styles.imageControlButton}
+              onPress={() => setShowImageGallery(true)}
+            >
+              <Ionicons name="expand-outline" size={20} color="#1D9BF0" />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => {
+              console.log('Single image clicked, index: 0');
+              console.log('Current showImageGallery state:', showImageGallery);
+              setCurrentImageIndex(0);
+              setShowImageGallery(true);
+              console.log('After setting showImageGallery to true');
+            }}
+            style={{ zIndex: 10 }}
+            delayPressIn={0}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <ExpoImage
+              source={{ uri: fullImageUrls[0] }}
+              style={styles.image}
+              contentFit="contain"
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (imagesToShow.length === 2) {
+      return (
+        <View style={styles.imageGalleryContainer}>
+          <View style={styles.imageSectionHeader}>
+            <Text style={styles.sectionTitle}>Images</Text>
+            <TouchableOpacity
+              style={styles.imageControlButton}
+              onPress={() => setShowImageGallery(true)}
+            >
+              <Ionicons name="expand-outline" size={20} color="#1D9BF0" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.imageGrid}>
+            {imagesToShow.map((url, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={[styles.twoImageContainer, { zIndex: 10 }]}
+                activeOpacity={0.8}
+                delayPressIn={0}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                onPress={() => {
+                  console.log('Image clicked, index:', index);
+                  console.log('Current showImageGallery state:', showImageGallery);
+                  setCurrentImageIndex(index);
+                  setShowImageGallery(true);
+                  console.log('After setting showImageGallery to true');
+                }}
+              >
+                <ExpoImage
+                  source={{ uri: getFullImageUrl(url) }}
+                  style={styles.gridImage}
+                  contentFit="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    // Three or more images - special layout
     return (
       <View style={styles.imageGalleryContainer}>
         <View style={styles.imageSectionHeader}>
           <Text style={styles.sectionTitle}>Images</Text>
-          <View style={styles.imageControls}>
-            <TouchableOpacity 
-              style={[styles.imageControlButton, { opacity: currentImageIndex === 0 ? 0.5 : 1 }]} 
-              onPress={prevImage}
-              disabled={currentImageIndex === 0}
-            >
-              <Ionicons name="chevron-back" size={24} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.imageCounter}>
-              {currentImageIndex + 1} / {caseData.imageUrls.length}
-            </Text>
-            <TouchableOpacity 
-              style={[styles.imageControlButton, { opacity: currentImageIndex === caseData.imageUrls.length - 1 ? 0.5 : 1 }]} 
-              onPress={nextImage}
-              disabled={currentImageIndex === caseData.imageUrls.length - 1}
-            >
-              <Ionicons name="chevron-forward" size={24} color="#333" />
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.imageControlButton}
+            onPress={() => setShowImageGallery(true)}
+          >
+            <Ionicons name="expand-outline" size={20} color="#1D9BF0" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.threeImageGrid}>
+          <TouchableOpacity 
+            style={[styles.largeImageContainer, { zIndex: 10 }]}
+            activeOpacity={0.8}
+            delayPressIn={0}
+            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+            onPress={() => {
+              console.log('Large image clicked, index: 0');
+              console.log('Current showImageGallery state:', showImageGallery);
+              setCurrentImageIndex(0);
+              setShowImageGallery(true);
+              console.log('After setting showImageGallery to true');
+            }}
+          >
+            <ExpoImage
+              source={{ uri: getFullImageUrl(imagesToShow[0]) }}
+              style={styles.gridImage}
+              contentFit="cover"
+            />
+          </TouchableOpacity>
+          <View style={styles.smallImagesColumn}>
+            {imagesToShow.slice(1).map((url, index) => (
+              <TouchableOpacity 
+                key={index + 1} 
+                style={[styles.smallImageContainer, { zIndex: 10 }]}
+                activeOpacity={0.8}
+                delayPressIn={0}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                onPress={() => {
+                  console.log('Small image clicked, index:', index + 1);
+                  setCurrentImageIndex(index + 1);
+                  setShowImageGallery(true);
+                }}
+              >
+                <ExpoImage
+                  source={{ uri: getFullImageUrl(url) }}
+                  style={styles.gridImage}
+                  contentFit="cover"
+                />
+                {index === 1 && caseData.imageUrls!.length > 3 && (
+                  <View style={styles.imageOverlay}>
+                    <Text style={styles.imageOverlayText}>
+                      +{caseData.imageUrls!.length - 3}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
-        <TouchableOpacity onPress={() => setShowImageGallery(true)}>
-          <ExpoImage
-            source={{ uri: getFullImageUrl(caseData.imageUrls[currentImageIndex]) }}
-            style={styles.image}
-            contentFit="cover"
-          />
-        </TouchableOpacity>
       </View>
     );
   };
 
   const renderImageGalleryModal = () => {
-    if (!caseData?.imageUrls || !showImageGallery) return null;
+    console.log('renderImageGalleryModal called - showImageGallery:', showImageGallery);
+    console.log('renderImageGalleryModal called - caseData?.imageUrls:', caseData?.imageUrls?.length);
+    
+    if (!caseData?.imageUrls || !showImageGallery) {
+      console.log('renderImageGalleryModal returning null - no images or showImageGallery is false');
+      return null;
+    }
 
+    console.log('renderImageGalleryModal rendering ImageGalleryModal');
     return (
       <ImageGalleryModal
         visible={showImageGallery}
-        onClose={() => setShowImageGallery(false)}
+        onClose={() => {
+          console.log('ImageGalleryModal onClose called');
+          setShowImageGallery(false);
+        }}
         images={caseData.imageUrls.map(getFullImageUrl)}
         initialIndex={currentImageIndex}
       />
@@ -688,7 +808,7 @@ const LongCaseDetailModal = ({
   return (
     <>
       <Modal
-        visible={visible}
+        visible={visible && !showImageGallery}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={onClose}
@@ -738,6 +858,8 @@ const LongCaseDetailModal = ({
               keyboardDismissMode="interactive"
               contentInsetAdjustmentBehavior="automatic"
               contentContainerStyle={styles.scrollViewContent}
+              scrollEventThrottle={16}
+              nestedScrollEnabled={false}
             >
               <Text style={styles.caseTitle}>{caseData.title}</Text>
 
@@ -916,7 +1038,19 @@ const LongCaseDetailModal = ({
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
-      {renderImageGalleryModal()}
+      
+      {/* Image Gallery Modal - conditionally render to ensure proper modal stacking */}
+      {showImageGallery && (
+        <ImageGalleryModal
+          visible={true}
+          onClose={() => {
+            console.log('ImageGalleryModal onClose called');
+            setShowImageGallery(false);
+          }}
+          images={caseData?.imageUrls?.map(getFullImageUrl) || []}
+          initialIndex={currentImageIndex}
+        />
+      )}
     </>
   );
 };
@@ -1057,14 +1191,16 @@ const styles = StyleSheet.create({
   // Image Gallery Styles
   imageGalleryContainer: {
     marginBottom: 16,
-    backgroundColor: "#F7F9FA",
+    paddingHorizontal: 16,
+    zIndex: 5,
   },
   imageSectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
     paddingVertical: 8,
+    marginBottom: 8,
+    zIndex: 6,
   },
   imageControls: {
     flexDirection: "row",
@@ -1088,6 +1224,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#536471",
     marginHorizontal: 8,
+  },
+
+  // Image grid styles from CaseCard
+  imageGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+    marginTop: 8,
+    gap: 4,
+  },
+  twoImageContainer: {
+    width: (screenWidth - 36) / 2, // Account for container padding (16*2) and gap (4)
+    height: 120,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  threeImageGrid: {
+    flexDirection: "row",
+    marginBottom: 12,
+    marginTop: 8,
+    gap: 4,
+    height: 120,
+  },
+  largeImageContainer: {
+    width: ((screenWidth - 36) * 2) / 3, // Account for container padding
+    height: 120,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  smallImagesColumn: {
+    flex: 1,
+    gap: 4,
+  },
+  smallImageContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  gridImage: {
+    width: "100%",
+    height: "100%",
+  },
+  imageOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageOverlayText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 
   // Long Case Field Styles
