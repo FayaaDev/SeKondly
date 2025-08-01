@@ -294,6 +294,124 @@ Website: https://sekondly.app
   }
 }
 
+async function sendForgotPasswordEmail(userEmail: string, firstName: string, lastName: string) {
+  try {
+    console.log(`Sending forgot password notification to admin for user: ${userEmail}`);
+    
+    const currentDate = new Date();
+    const requestDate = currentDate.toLocaleDateString();
+    const requestTime = currentDate.toLocaleTimeString();
+    
+    const forgotPasswordEmailContent = `
+Dear Support Team,
+
+A user has requested a password reset for their SeKondly account.
+
+User Details:
+- Email: ${userEmail}
+- Name: Dr. ${firstName} ${lastName}
+- Request Date: ${requestDate}
+- Request Time: ${requestTime}
+
+Next Steps:
+✉️ Contact the user directly at their registered email address
+🔐 Verify their identity before providing password reset assistance
+📋 Guide them through the password reset process
+✅ Confirm their new password meets security requirements
+
+The user has been notified that their password reset request has been received and that support will contact them directly.
+
+Please handle this request promptly.
+
+Best regards,
+SeKondly Automated System
+
+---
+This notification was sent to admin@sekondly.app
+SeKondly - Empowering healthcare through collaboration
+Website: https://sekondly.app
+    `.trim();
+
+    const mailOptions = {
+      from: `"SeKondly Team" <admin@sekondly.app>`,
+      to: 'admin@sekondly.app',
+      subject: `Password Reset Request - ${userEmail}`,
+      text: forgotPasswordEmailContent,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset Request - SeKondly</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8f9fa;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 12px;">
+            <div style="background: linear-gradient(45deg, #4ECDC4, #44A08D); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; margin: -20px -20px 0 -20px;">
+              <h1 style="margin: 0 0 10px 0; font-size: 28px; font-weight: bold;">🔐 Password Reset Request</h1>
+              <p style="margin: 0; font-size: 16px; opacity: 0.9;">Support Action Required</p>
+            </div>
+            
+            <div style="background: #ffffff; padding: 30px 20px; border: 1px solid #e9ecef; border-top: none;">
+              <h2 style="color: #333; margin-top: 0; font-size: 24px;">Dear Support Team,</h2>
+              
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                A user has requested a password reset for their SeKondly account.
+              </p>
+              
+              <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #ffeaa7;">
+                <h3 style="color: #856404; margin-top: 0; font-size: 18px;">👤 User Details:</h3>
+                <p style="margin: 8px 0; font-size: 14px; color: #856404;"><strong>Email:</strong> ${userEmail}</p>
+                <p style="margin: 8px 0; font-size: 14px; color: #856404;"><strong>Name:</strong> Dr. ${firstName} ${lastName}</p>
+                <p style="margin: 8px 0; font-size: 14px; color: #856404;"><strong>Request Date:</strong> ${requestDate}</p>
+                <p style="margin: 8px 0; font-size: 14px; color: #856404;"><strong>Request Time:</strong> ${requestTime}</p>
+              </div>
+              
+              <div style="background-color: #e8f5f4; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #4ECDC4;">
+                <h3 style="color: #155724; margin-top: 0;">📋 Next Steps:</h3>
+                <ul style="line-height: 1.8; color: #155724; margin: 10px 0; padding-left: 20px;">
+                  <li>✉️ Contact the user directly at their registered email address</li>
+                  <li>🔐 Verify their identity before providing password reset assistance</li>
+                  <li>📋 Guide them through the password reset process</li>
+                  <li>✅ Confirm their new password meets security requirements</li>
+                </ul>
+              </div>
+              
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                The user has been notified that their password reset request has been received and that support will contact them directly.
+              </p>
+              
+              <p style="font-size: 16px; line-height: 1.6; color: #333; margin-top: 30px;">
+                Please handle this request promptly.
+              </p>
+              
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                Best regards,<br>
+                <strong>SeKondly Automated System</strong>
+              </p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; margin: 0 -20px -20px -20px; border-top: 1px solid #e9ecef;">
+              <p style="margin: 5px 0; font-size: 14px; color: #666;">This notification was sent to admin@sekondly.app</p>
+              <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>SeKondly</strong> - Empowering healthcare through collaboration</p>
+              <p style="margin: 5px 0; font-size: 14px; color: #666;">Website: <a href="https://sekondly.app" style="color: #4ECDC4;">https://sekondly.app</a></p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    await emailTransporter.verify();
+    await emailTransporter.sendMail(mailOptions);
+    console.log(`Forgot password notification sent to admin for user: ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send forgot password email:', error);
+    return false;
+  }
+}
+
 async function sendRejectionEmail(userEmail: string, firstName: string, lastName: string, reason: string) {
   try {
     console.log(`Attempting to send rejection email to: ${userEmail}`);
@@ -1233,6 +1351,68 @@ Please respond to: ${validatedData.email}
     } catch (error) {
       console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  // Forgot password endpoint
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      // Validate email format
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email address is required"
+        });
+      }
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid email address"
+        });
+      }
+      
+      console.log(`Processing forgot password request for email: ${email}`);
+      
+      // Check if user exists
+      const user = await storage.getUserByEmailOrUsername(email);
+      
+      if (!user) {
+        // For security reasons, don't reveal if user exists or not
+        return res.json({
+          success: true,
+          message: "If an account with this email exists, a password reset request has been sent to our support team."
+        });
+      }
+      
+      // Send forgot password email to admin
+      try {
+        const emailSent = await sendForgotPasswordEmail(email, user.firstName || 'User', user.lastName || '');
+        
+        if (emailSent) {
+          console.log(`Forgot password notification sent to admin for user: ${email}`);
+        } else {
+          console.error(`Failed to send forgot password notification for user: ${email}`);
+        }
+      } catch (emailError) {
+        console.error('Error sending forgot password notification:', emailError);
+        // Don't fail the request if email fails
+      }
+      
+      res.json({
+        success: true,
+        message: "Your password reset request has been received. Our support team will contact you directly at your registered email address to assist with resetting your password."
+      });
+      
+    } catch (error) {
+      console.error("Error processing forgot password request:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to process password reset request. Please try again."
+      });
     }
   });
 
@@ -2568,6 +2748,35 @@ Please respond to: ${validatedData.email}
       res.status(500).json({ 
         success: false, 
         error: "Case approval email test failed",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/test-forgot-password-email", async (req, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
+      
+      if (!email || !firstName || !lastName) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields: email, firstName, lastName" 
+        });
+      }
+      
+      console.log(`Testing forgot password email for user: ${email}`);
+      const result = await sendForgotPasswordEmail(email, firstName, lastName);
+      
+      res.json({ 
+        success: true, 
+        message: "Forgot password email test completed",
+        emailSent: result 
+      });
+    } catch (error) {
+      console.error('Forgot password email test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Forgot password email test failed",
         details: error instanceof Error ? error.message : String(error)
       });
     }

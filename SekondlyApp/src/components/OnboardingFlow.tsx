@@ -88,6 +88,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
   const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [showAccountReview, setShowAccountReview] = useState(false);
   const [showSignInAccountReview, setShowSignInAccountReview] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [specialtySearch, setSpecialtySearch] = useState('');
   const [signInData, setSignInData] = useState({
     email: '',
@@ -192,6 +194,38 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to process password reset request');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+      showAlert(
+        'Password Reset Request Sent',
+        data.message,
+        [{ text: 'OK', onPress: () => {} }],
+        'checkmark-circle'
+      );
+    },
+    onError: (error: Error) => {
+      Alert.alert('Error', error.message);
+    },
+  });
+
   const validatePersonalInfo = (): boolean => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
       Alert.alert('Required Fields Missing', 'Please fill in all required fields.');
@@ -285,6 +319,22 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
       return;
     }
     signInMutation.mutate(signInData);
+  };
+
+  const handleForgotPassword = () => {
+    if (!forgotPasswordEmail) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotPasswordEmail)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      return;
+    }
+    
+    forgotPasswordMutation.mutate(forgotPasswordEmail);
   };
 
   const handleDocumentPick = async () => {
@@ -425,22 +475,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 <Text style={styles.inputLabel}>Password</Text>
                 <TouchableOpacity 
                   style={styles.forgotPasswordButton}
-                  onPress={() => {
-                    showAlert(
-                      'Forgot Password',
-                      'Please contact support to reset your password.\n\nEmail: admin@sekondly.app',
-                      [
-                        { 
-                          text: 'Copy Email', 
-                          onPress: async () => {
-                            await Clipboard.setStringAsync('admin@sekondly.app');
-                          } 
-                        },
-                        { text: 'OK', onPress: () => {} }
-                      ],
-                      'mail'
-                    );
-                  }}
+                  onPress={() => setShowForgotPassword(true)}
                 >
                   <Text style={styles.forgotPasswordText}>Forgot password?</Text>
                 </TouchableOpacity>
@@ -952,6 +987,66 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+      
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={showForgotPassword}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => {
+              setShowForgotPassword(false);
+              setForgotPasswordEmail('');
+            }}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Reset Password</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          
+          <View style={styles.formContainer}>
+            <View style={styles.formHeader}>
+              <Ionicons name="key-outline" size={48} color="#4ECDC4" />
+              <Text style={styles.formTitle}>Forgot Your Password?</Text>
+              <Text style={styles.formSubtitle}>
+                Enter your email address and we'll help you reset your password
+              </Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <TextInput
+                style={styles.input}
+                value={forgotPasswordEmail}
+                onChangeText={setForgotPasswordEmail}
+                placeholder="Enter your email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!forgotPasswordMutation.isPending}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+              onPress={handleForgotPassword}
+              disabled={forgotPasswordMutation.isPending}
+            >
+              {forgotPasswordMutation.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Send Reset Request</Text>
+              )}
+            </TouchableOpacity>
+            
+            <Text style={[styles.formSubtitle, { marginTop: 20, textAlign: 'center' }]}>
+              Our support team will contact you directly at your registered email address to help reset your password.
+            </Text>
+          </View>
+        </SafeAreaView>
       </Modal>
     </>
   );
