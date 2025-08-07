@@ -19,6 +19,7 @@ import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../lib/queryClient";
 import ProfilePicture from "../components/ProfilePicture";
 import ProfilePictureModal from "../components/ProfilePictureModal";
+import PrivacyPolicyButton from "../components/PrivacyPolicyButton";
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { User } from '../types/schema';
 
@@ -335,6 +336,11 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Privacy Policy Button */}
+        <View style={styles.privacyPolicyContainer}>
+          <PrivacyPolicyButton />
+        </View>
       </ScrollView>
 
       {/* Profile Picture Modal for editing */}
@@ -577,5 +583,10 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 16,
     fontWeight: "500",
+  },
+  privacyPolicyContainer: {
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 20,
   },
 });

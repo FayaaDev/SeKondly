@@ -21,6 +21,7 @@ import { API_BASE_URL } from '../config/api';
 import StorageService from '../lib/storage';
 import { MEDICAL_SPECIALTIES, MEDICAL_LEVELS } from '../types/shared';
 import { useCustomAlert } from './CustomAlert';
+import PrivacyPolicyButton from './PrivacyPolicyButton';
 
 interface OnboardingData {
   firstName: string;
@@ -430,6 +431,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
           >
             <Text style={styles.secondaryButtonText}>Contact us</Text>
           </TouchableOpacity>
+
+          <PrivacyPolicyButton style={styles.privacyPolicyButton} />
         </View>
       </View>
     </SafeAreaView>
@@ -503,6 +506,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSignIn })
                 <Text style={styles.primaryButtonText}>Sign In</Text>
               )}
             </TouchableOpacity>
+
+            <PrivacyPolicyButton style={styles.privacyPolicyButton} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -1136,6 +1141,10 @@ const styles = {
     color: '#007AFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  privacyPolicyButton: {
+    marginTop: 20,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 24,
