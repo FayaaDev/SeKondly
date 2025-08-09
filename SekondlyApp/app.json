@@ -2,7 +2,7 @@
   "expo": {
     "name": "SeKondly",
     "slug": "sekondly-app-v2",
-    "version": "1.0.9",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/sekondly-icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
       "supportsTablet": false,
       "icon": "./assets/sekondly-icon.png",
       "bundleIdentifier": "com.sekondly.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture medical images and documents for case discussions.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload medical images and documents.",
@@ -28,12 +28,16 @@
     },
     "android": {
       "package": "com.sekondly.app",
-      "versionCode": 3,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
+      "statusBar": {
+        "barStyle": "dark-content",
+        "backgroundColor": "#ffffff"
+      },
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
@@ -42,6 +46,9 @@
         "VIBRATE",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -52,8 +59,6 @@
         "projectId": "59188267-3b91-4fec-a72a-0b5f38f47cb7"
       }
     },
-    "plugins": [
-      "expo-notifications"
-    ]
+    "plugins": []
   }
 }
