@@ -1566,7 +1566,7 @@ Please respond to: ${validatedData.email}
       console.log('POST /api/cases - Files:', req.files);
       
       const files = req.files as Express.Multer.File[];
-      const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
+      let imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
       // Validate format - explicitly check for 'long' or default to 'short'
       const format = req.body.format === 'long' ? 'long' : 'short';
@@ -1707,6 +1707,91 @@ Please respond to: ${validatedData.email}
             verificationResult.violations.forEach((violation: any, index: number) => {
               console.log(`  ${index + 1}. ${violation.type} (${violation.severity}): ${violation.description}`);
             });
+            
+            // 🔒 AUTOMATIC DE-IDENTIFICATION 🔒
+            console.log('🛡️ Applying automatic de-identification...');
+            try {
+              const { FinalDeidentificationService } = await import('./final-deidentification-service.js');
+              const deidentificationService = new FinalDeidentificationService(projectId, keyFilename);
+              
+              // Apply smart redaction to protect privacy
+              const deidentificationResult = await deidentificationService.processCase(
+                textContent,
+                imagePaths,
+                { 
+                  detectOnly: false,
+                  redactText: true,
+                  blurImages: true,
+                  redactionStyle: 'smart'
+                }
+              );
+              
+              if ('deidentification' in deidentificationResult && deidentificationResult.deidentification) {
+                console.log('✅ Text de-identification successful');
+                console.log(`📊 Applied ${deidentificationResult.deidentification.redactionsSummary.totalRedactions} redactions`);
+                
+                // Update case data with redacted content
+                const redactedLines = deidentificationResult.deidentification.redactedText.split('\n\n');
+                let lineIndex = 0;
+                
+                if (caseData.title && lineIndex < redactedLines.length) {
+                  caseData.title = redactedLines[lineIndex++];
+                }
+                if (caseData.history && lineIndex < redactedLines.length) {
+                  caseData.history = redactedLines[lineIndex++];
+                }
+                if ((caseData as any).chiefComplaint && lineIndex < redactedLines.length) {
+                  (caseData as any).chiefComplaint = redactedLines[lineIndex++];
+                }
+                if ((caseData as any).examination && lineIndex < redactedLines.length) {
+                  (caseData as any).examination = redactedLines[lineIndex++];
+                }
+                if ((caseData as any).historyOfPresentIllness && lineIndex < redactedLines.length) {
+                  (caseData as any).historyOfPresentIllness = redactedLines[lineIndex++];
+                }
+                if ((caseData as any).pastMedicalHistory && lineIndex < redactedLines.length) {
+                  (caseData as any).pastMedicalHistory = redactedLines[lineIndex++];
+                }
+                if ((caseData as any).management && lineIndex < redactedLines.length) {
+                  (caseData as any).management = redactedLines[lineIndex++];
+                }
+                
+                // 🖼️ AUTOMATIC IMAGE BLURRING 🖼️
+                if (deidentificationResult.deidentification.redactedImages && 
+                    deidentificationResult.deidentification.redactedImages.length > 0) {
+                  
+                  console.log('🖼️ Processing blurred images...');
+                  const blurredImageUrls: string[] = [];
+                  
+                  for (const redactedImage of deidentificationResult.deidentification.redactedImages) {
+                    console.log(`🔄 Processed image: ${redactedImage.originalPath}`);
+                    console.log(`  - Faces blurred: ${redactedImage.facesBlurred}`);
+                    console.log(`  - Text regions blurred: ${redactedImage.textRegionsBlurred}`);
+                    
+                    // Convert file path to URL for the blurred image
+                    const filename = redactedImage.redactedPath.split('/').pop();
+                    const blurredUrl = `/uploads/${filename}`;
+                    blurredImageUrls.push(blurredUrl);
+                  }
+                  
+                  // Update imageUrls with blurred versions
+                  if (blurredImageUrls.length > 0) {
+                    imageUrls = blurredImageUrls;
+                    // ✅ CRITICAL FIX: Update caseData.imageUrls too!
+                    caseData.imageUrls = blurredImageUrls;
+                    console.log(`🔒 Replaced ${blurredImageUrls.length} images with blurred versions`);
+                    console.log(`📝 Updated case data with blurred URLs:`, blurredImageUrls);
+                  }
+                }
+                
+                console.log('🔒 Case content automatically de-identified');
+              } else {
+                console.log('ℹ️ No redaction needed - case passed verification');
+              }
+            } catch (deidentificationError) {
+              console.error('⚠️ De-identification failed:', deidentificationError);
+              console.log('📝 Case will be flagged for manual review');
+            }
           }
           
           // Add verification data to case
