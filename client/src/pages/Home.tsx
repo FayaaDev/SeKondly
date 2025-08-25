@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -272,11 +272,28 @@ export default function Home() {
   const displayCases = isSearchActive ? searchResults : cases;
   
   // Filter cases by selected specialty (only when not searching)
-  const filteredCases = isSearchActive 
-    ? searchResults
-    : selectedSpecialty === "All Cases" 
-      ? cases 
-      : cases.filter((case_data) => case_data.specialty === selectedSpecialty);
+  const filteredCases = React.useMemo(() => {
+    let filtered = isSearchActive 
+      ? searchResults
+      : selectedSpecialty === "All Cases" 
+        ? cases 
+        : cases.filter((case_data) => case_data.specialty === selectedSpecialty);
+
+    // Sort to ensure admin cases (from 'admin@sekondly.app') always appear last
+    filtered.sort((a, b) => {
+      const aIsAdmin = a.author?.email === 'admin@sekondly.app';
+      const bIsAdmin = b.author?.email === 'admin@sekondly.app';
+      
+      // If one is admin and other is not, put non-admin first
+      if (aIsAdmin && !bIsAdmin) return 1;
+      if (!aIsAdmin && bIsAdmin) return -1;
+      
+      // If both are admin or both are user, maintain original order (by creation date)
+      return 0;
+    });
+    
+    return filtered;
+  }, [isSearchActive, searchResults, selectedSpecialty, cases]);
 
   const specialties = ["All Cases", ...MEDICAL_SPECIALTIES];
 

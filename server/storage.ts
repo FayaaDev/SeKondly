@@ -260,7 +260,20 @@ export class DatabaseStorage implements IStorage {
 
     const allCases = await query;
 
-    // If user is specified, prioritize cases by specialty preferences and followed users
+    // Separate admin cases from user cases - admin cases should always appear last
+    const adminEmail = 'admin@sekondly.app';
+    const userCases: CaseWithAuthor[] = [];
+    const adminCases: CaseWithAuthor[] = [];
+
+    allCases.forEach(caseItem => {
+      if (caseItem.author.email === adminEmail) {
+        adminCases.push(caseItem);
+      } else {
+        userCases.push(caseItem);
+      }
+    });
+
+    // If user is specified, prioritize user cases by specialty preferences and followed users
     if (userId) {
       // Get user's specialty preferences
       const userSpecialtyPreferences = await this.getUserSpecialtyPreferences(userId);
@@ -268,12 +281,12 @@ export class DatabaseStorage implements IStorage {
       const followingUserIds = new Set(followingUsers.map(user => user.id));
       const preferredSpecialties = new Set(userSpecialtyPreferences);
 
-      // Separate cases into priority groups
+      // Separate user cases into priority groups (excluding admin cases)
       const preferredSpecialtyCases: CaseWithAuthor[] = [];
       const followedUserCases: CaseWithAuthor[] = [];
-      const otherCases: CaseWithAuthor[] = [];
+      const otherUserCases: CaseWithAuthor[] = [];
 
-      allCases.forEach(caseItem => {
+      userCases.forEach(caseItem => {
         // First priority: Cases from preferred specialties
         if (preferredSpecialties.has(caseItem.specialty)) {
           preferredSpecialtyCases.push(caseItem);
@@ -282,18 +295,19 @@ export class DatabaseStorage implements IStorage {
         else if (followingUserIds.size >= 10 && followingUserIds.has(caseItem.authorId)) {
           followedUserCases.push(caseItem);
         }
-        // Third priority: All other cases
+        // Third priority: All other user cases
         else {
-          otherCases.push(caseItem);
+          otherUserCases.push(caseItem);
         }
       });
 
-      // Return cases in priority order: preferred specialties first, then followed users, then others
+      // Return cases in priority order: preferred specialties first, then followed users, then other users, then admin cases last
       // (all already sorted by creation date within each group)
-      return [...preferredSpecialtyCases, ...followedUserCases, ...otherCases];
+      return [...preferredSpecialtyCases, ...followedUserCases, ...otherUserCases, ...adminCases];
     }
 
-    return allCases;
+    // If no user specified, just return user cases first, then admin cases
+    return [...userCases, ...adminCases];
   }
 
   async getCase(id: number): Promise<CaseWithAuthor | undefined> {

@@ -166,29 +166,16 @@ export default function FeedScreen() {
   const allTabCases = React.useMemo(() => {
     let filtered = cases;
     
-    // In All tab: show all cases EXCEPT those from user's specialty
-    if (user?.specialty) {
-      const userSpecialty = user.specialty.toLowerCase();
-      filtered = filtered.filter((case_data: any) => 
-        case_data.specialty.toLowerCase() !== userSpecialty
-      );
-    }
+    // In All tab: show all cases (including user's specialty cases)
+    // This ensures shared cases appear in both All feed and specialty feed
+    // No filtering by user's specialty here - we want to show everything in All tab
 
-    // Apply specialty filter if selected in All tab, but only if it's not the user's own specialty
+    // Apply specialty filter if selected in All tab
     if (selectedSpecialty !== "All Cases") {
       const selectedSpecialtyLower = selectedSpecialty.toLowerCase();
-      const userSpecialtyLower = user?.specialty?.toLowerCase();
-      
-      // Only apply the filter if the selected specialty is different from user's specialty
-      if (selectedSpecialtyLower !== userSpecialtyLower) {
-        filtered = filtered.filter((case_data: any) => 
-          case_data.specialty.toLowerCase() === selectedSpecialtyLower
-        );
-      } else {
-        // If user tries to filter by their own specialty in "All" tab, show empty result
-        // since their specialty cases should be in the specialty tab
-        filtered = [];
-      }
+      filtered = filtered.filter((case_data: any) => 
+        case_data.specialty.toLowerCase() === selectedSpecialtyLower
+      );
     }
 
     // Apply title keyword filter
@@ -212,6 +199,19 @@ export default function FeedScreen() {
                fullName.includes(searchName);
       });
     }
+    
+    // Sort to ensure admin cases (from 'admin@sekondly.app') always appear last
+    filtered.sort((a: any, b: any) => {
+      const aIsAdmin = a.author?.email === 'admin@sekondly.app';
+      const bIsAdmin = b.author?.email === 'admin@sekondly.app';
+      
+      // If one is admin and other is not, put non-admin first
+      if (aIsAdmin && !bIsAdmin) return 1;
+      if (!aIsAdmin && bIsAdmin) return -1;
+      
+      // If both are admin or both are user, maintain original order (by creation date)
+      return 0;
+    });
     
     return filtered;
   }, [cases, selectedSpecialty, user?.specialty, user?.id, titleSearchKeyword, doctorNameSearch]);
@@ -250,6 +250,19 @@ export default function FeedScreen() {
       });
     }
     
+    // Sort to ensure admin cases (from 'admin@sekondly.app') always appear last
+    filtered.sort((a: any, b: any) => {
+      const aIsAdmin = a.author?.email === 'admin@sekondly.app';
+      const bIsAdmin = b.author?.email === 'admin@sekondly.app';
+      
+      // If one is admin and other is not, put non-admin first
+      if (aIsAdmin && !bIsAdmin) return 1;
+      if (!aIsAdmin && bIsAdmin) return -1;
+      
+      // If both are admin or both are user, maintain original order (by creation date)
+      return 0;
+    });
+    
     return filtered;
   }, [cases, user?.specialty, user?.id, titleSearchKeyword, doctorNameSearch]);
 
@@ -264,13 +277,8 @@ export default function FeedScreen() {
   // Reset specialty filter if user's specialty changes and they have their old specialty selected
   useEffect(() => {
     if (user?.specialty && selectedSpecialty !== "All Cases") {
-      const userSpecialty = user.specialty.toLowerCase();
-      const currentFilter = selectedSpecialty.toLowerCase();
-      // If the current filter is the user's specialty, reset to "All Cases"
-      if (currentFilter === userSpecialty && activeTab === 'all') {
-        setSelectedSpecialty("All Cases");
-        setSpecialtySearch("");
-      }
+      // No longer need to auto-reset when user has their own specialty selected
+      // since we now allow viewing own specialty cases in All tab
     }
   }, [user?.specialty, selectedSpecialty, activeTab]);
 
@@ -294,17 +302,12 @@ export default function FeedScreen() {
   // Use MEDICAL_SPECIALTIES for the list
   const specialties = ["All Cases", ...MEDICAL_SPECIALTIES];
 
-  // Filter specialties based on search input and exclude user's own specialty in "All" tab
+  // Filter specialties based on search input
   const filteredSpecialties = React.useMemo(() => {
     let availableSpecialties = specialties;
     
-    // In "All" tab, exclude user's own specialty from filter options
-    if (activeTab === 'all' && user?.specialty) {
-      const userSpecialty = user.specialty.toLowerCase();
-      availableSpecialties = specialties.filter(specialty => 
-        specialty === "All Cases" || specialty.toLowerCase() !== userSpecialty
-      );
-    }
+    // No need to exclude user's specialty from All tab filter options anymore
+    // since All tab now shows all cases including user's specialty cases
     
     // Apply search filter
     return specialtySearch 
