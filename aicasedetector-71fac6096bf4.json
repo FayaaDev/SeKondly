@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "aicasedetector",
+  "private_key_id": "71fac6096bf4a3086944d343b432917bbcf8430d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCtnxISDVuZbcXF\nBqRDMen+uv9ZhEwrkzVJACtxtMGMmpqaTdWxN4v0wxtV7HolA1epHpTq7LYLiTdo\nhLFoAC1EpKkFh1+q8zZRuRu1kXVPgZK2yXEsONQaNewlATpZ3Uf044kLdUvA9fKi\nGXdNAYGuPjUqGdHGQqpwCMh0lVC1pR1x4/y4y7gWOUEj8BG15LLALiPSiIt//EqO\nm/yWSfKiVrbCP75Do4QOHJZLdRfDqjBcenPAGn1b6ltSOEA69hf20XbTU/bvCytT\nkKSE6N7zor5ODVbZpOPRtJKzXGo8MhMW5KLYhxC1UKuPMma61YdMaDmFRvKMNTF8\n0pQC6NYVAgMBAAECggEAL4xMypzV5SLm8pprCev1hUl4/O76XUSnZyKgwzcZeoQs\nqu1+BFaOAa4dIl7s5I4Rx8MUTXIeOPKPNhSA8VZ7Dz14/IaicJLC4YasTAFV+zwl\nDeIFGHNHwxXZYhj//fRX7H0T3wt0f5fbpwEKZxBuj2WB8dG4XW+MdboyC5uIyvXF\nS0SQNj3IrGvStbbPwuqNcjl56aqMP4o4Lx4JHhsLHrjrZ+eCwO00swGKD5q4E8Nv\nyQ4CkMA3iaTGAYJFVmVtLQ9lROjg+55fAVlDXjlXe7QpJLQ9QO2dtgwoQiKls+3O\nGoXC54nqTUIqgYxTd+mn2Zv5FSEFMI9pG7eocoTLUQKBgQDkrhmHrBwACi3JzjWc\nsCU2HYcoenx5mirmbi+ZDOOlfdDsf9kWIYdZ9/ITsyocAngznAE9StinBWUuf+IC\nTMI5/AW3yPUMjNYjhIJv1Dcss3xZ5ozFPQ6gG/hiMB66ywDR5Pi6G7UN6jATIKJw\nVfBOFpsqMwitaYVG8gbcbbdT5wKBgQDCXRFTSnJ1bxU8F1jRMlS79DKIgc3MCMG0\njaZLg9z0oI6Lxhiu+TP9WnwGUMshbogH3szqeuxAqNgi3JpEMmZAaz2XnK7SIPJp\nUU4nHmX2L8fXlVqLCKmuoiOYUVWmcq7NB2seWXpoPyr7icsrc176vzBaGluQBkQP\nlRyPVDEGowKBgQCzqXjTV8vT2CtrLoB+bwF9R6uliL38x7vGuHDa3P6JSZT4CeXj\ndkohzCQ7h/qgcOxBF+L9Za1bY2jAJKbLScUayz8uykqEJq4iz3uvIlqK2yTqeLDG\nUZcJAZCei9HIza8CONOVXCleGkzU6kHU4h/fKfGUMO4zWADm4UW0rtpmpwKBgEWR\nznvDsAh8xFsH+FCY9V95XwUhgSpBECSydw2cm2AsgBljxL4MkSFkW/Rewvaqe6Jl\ni296pEnYpdSEpes3JwZz3E4CVUj9ZgdwhMrXxKNEIwH1gb02UpYhjyAcLM4xSoQ0\n3ZC1cm0R/y6d+c0JtLuH56S4voFk3MO/GcPr3MiFAoGBAJLklsoRhOH/s4qIH60t\nCAF1mASKqof/CLqfxmwyM4f+QJyouhVfF33/RIBV94i4U8QW0kvf8oEVYogyxCmw\npk26g63s6pimu/ttbZuSzk0bfgZeC7CHPMH2uZifkuykQYNlB2r77wsZLvPCboiI\npu4dH3f6R3o0YYphu691/2g1\n-----END PRIVATE KEY-----\n",
+  "client_email": "aicasedetector@aicasedetector.iam.gserviceaccount.com",
+  "client_id": "108721284245632224367",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/aicasedetector%40aicasedetector.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

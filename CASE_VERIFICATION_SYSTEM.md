@@ -62,10 +62,10 @@ verification_notes          TEXT       -- Admin review notes
 
 ```bash
 # Required
-GOOGLE_CLOUD_PROJECT_ID=your-project-id
+GOOGLE_CLOUD_PROJECT_ID=aicasedetector
 
 # Optional (uses default credentials if not provided)
-GOOGLE_CLOUD_KEY_FILE=/path/to/service-account.json
+GOOGLE_CLOUD_KEY_FILE=/Users/fayaa/SeKondly/aicasedetector-71fac6096bf4.json
 ```
 
 ### Verification Modes

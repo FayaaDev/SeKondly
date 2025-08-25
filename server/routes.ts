@@ -776,18 +776,19 @@ Website: https://sekondly.app
 
 import { createVerificationMiddleware, developmentConfig, productionConfig, addVerificationFlags, type VerifiedRequest } from './verification-middleware.js';
 import { verifyCaseSimple } from './simple-verification.js';
+import { CaseVerificationService } from './verification-service.js';
 
 // Configuration
 const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 const verificationConfig = isDevelopment ? developmentConfig : productionConfig;
 
-// For now, use simple verification to avoid breaking existing functionality
-const useSimpleVerification = true;
+// Enable full AI verification now that Google Cloud is configured
+const useSimpleVerification = false;
 
-// Create verification middleware (disabled for now)
+// Create verification middleware (now enabled for full AI verification)
 const verifyCase = createVerificationMiddleware({
   ...verificationConfig,
-  enabled: false // Disabled until schema is fully updated
+  enabled: true // Enabled now that Google Cloud is configured
 });
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -1648,7 +1649,7 @@ Please respond to: ${validatedData.email}
       
       console.log('POST /api/cases - Parsed case data:', caseData);
       
-      // Run simple verification
+      // Run verification (simple or full AI)
       if (useSimpleVerification) {
         try {
           const imagePaths = files ? files.map(file => file.path) : [];
@@ -1658,16 +1659,75 @@ Please respond to: ${validatedData.email}
             { enabled: true, logOnly: true, notifyAdmins: true }
           );
           
-          console.log(`🔍 Verification result: ${verificationResult.summary}`);
-          
-          // For now, we just log the result. In the future, we could:
-          // - Block cases with critical violations
-          // - Add verification flags to the database
-          // - Send notifications to admins
+          console.log(`🔍 Simple Verification result: ${verificationResult.summary}`);
           
         } catch (verificationError) {
-          console.error('⚠️ Verification failed:', verificationError);
+          console.error('⚠️ Simple verification failed:', verificationError);
           // Continue with case creation even if verification fails
+        }
+      } else {
+        // Run full AI verification with Google Cloud
+        try {
+          console.log('🤖 Running full AI verification with Google Cloud...');
+          
+          // Initialize verification service with Google Cloud credentials
+          const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+          const keyFilename = process.env.GOOGLE_CLOUD_KEY_FILE;
+          
+          if (!projectId) {
+            throw new Error('GOOGLE_CLOUD_PROJECT_ID not configured');
+          }
+          
+          const verificationService = new CaseVerificationService(projectId, keyFilename);
+          const imagePaths = files ? files.map(file => file.path) : [];
+          
+          // Extract text content from case data (handle both short and long formats)
+          const textContent = [
+            caseData.title,
+            caseData.history,
+            (caseData as any).chiefComplaint,
+            (caseData as any).examination,
+            (caseData as any).historyOfPresentIllness,
+            (caseData as any).pastMedicalHistory,
+            (caseData as any).management
+          ].filter(Boolean).join('\n\n');
+          
+          const verificationResult = await verificationService.verifyCaseContent(
+            textContent,
+            imagePaths,
+            {} // Use default verification options
+          );
+          
+          console.log(`🔍 AI Verification result: Valid=${verificationResult.isValid}`);
+          console.log(`📊 Confidence: ${verificationResult.confidence}%`);
+          console.log(`⚠️ Violations: ${verificationResult.violations.length}`);
+          
+          if (verificationResult.violations.length > 0) {
+            console.log('🚨 Privacy violations detected:');
+            verificationResult.violations.forEach((violation: any, index: number) => {
+              console.log(`  ${index + 1}. ${violation.type} (${violation.severity}): ${violation.description}`);
+            });
+          }
+          
+          // Add verification data to case
+          caseData = addVerificationFlags(caseData, verificationResult);
+          
+        } catch (verificationError) {
+          console.error('⚠️ AI verification failed:', verificationError);
+          console.log('🔄 Falling back to simple verification...');
+          
+          // Fallback to simple verification if AI fails
+          try {
+            const imagePaths = files ? files.map(file => file.path) : [];
+            const verificationResult = await verifyCaseSimple(
+              caseData,
+              imagePaths,
+              { enabled: true, logOnly: true, notifyAdmins: true }
+            );
+            console.log(`🔍 Fallback verification result: ${verificationResult.summary}`);
+          } catch (fallbackError) {
+            console.error('⚠️ Fallback verification also failed:', fallbackError);
+          }
         }
       }
       
