@@ -75,6 +75,14 @@ export const cases = pgTable("cases", {
   examination: text("examination"),
   management: text("management"),
   isHot: boolean("is_hot").default(false).notNull(),
+  // AI Verification fields
+  verificationStatus: varchar("verification_status", { enum: ['pending', 'verified', 'flagged', 'failed'] }).default('pending'),
+  verificationConfidence: integer("verification_confidence").default(0),
+  requiresManualReview: boolean("requires_manual_review").default(false),
+  verificationViolations: integer("verification_violations").default(0),
+  verificationTimestamp: timestamp("verification_timestamp"),
+  verificationSummary: jsonb("verification_summary"), // Stores violation summary as JSON
+  verificationNotes: text("verification_notes"), // Admin notes after manual review
 });
 
 // Case likes table

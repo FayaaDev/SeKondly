@@ -627,6 +627,16 @@ app.delete('/api/users/:userId/follow', async (req, res) => {
     // setting up all the other routes so the catch-all route
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
+      // Add explicit route for static landing page BEFORE Vite setup
+      app.get('/landing', (req, res) => {
+        res.sendFile(path.resolve(process.cwd(), 'static-landing.html'));
+      });
+      
+      // Also serve landing page on root path
+      app.get('/', (req, res) => {
+        res.sendFile(path.resolve(process.cwd(), 'static-landing.html'));
+      });
+      
       // Set up Vite dev server for web app development
       await setupVite(app, server);
       
@@ -636,19 +646,6 @@ app.delete('/api/users/:userId/follow', async (req, res) => {
         next();
       });
       
-      // Serve static landing page for root and other routes
-      app.get('*', (req, res, next) => {
-        // Skip API routes
-        if (req.path.startsWith('/api/')) {
-          return next();
-        }
-        // Skip /app routes (handled by Vite)
-        if (req.path.startsWith('/app')) {
-          return next();
-        }
-        // Serve the static landing page
-        res.sendFile(path.resolve(process.cwd(), 'static-landing.html'));
-      });
     } else {
       serveStatic(app);
     }

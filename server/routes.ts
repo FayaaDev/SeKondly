@@ -774,7 +774,21 @@ Website: https://sekondly.app
   }
 }
 
-// File upload configuration
+import { createVerificationMiddleware, developmentConfig, productionConfig, addVerificationFlags, type VerifiedRequest } from './verification-middleware.js';
+import { verifyCaseSimple } from './simple-verification.js';
+
+// Configuration
+const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+const verificationConfig = isDevelopment ? developmentConfig : productionConfig;
+
+// For now, use simple verification to avoid breaking existing functionality
+const useSimpleVerification = true;
+
+// Create verification middleware (disabled for now)
+const verifyCase = createVerificationMiddleware({
+  ...verificationConfig,
+  enabled: false // Disabled until schema is fully updated
+});
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -1545,7 +1559,7 @@ Please respond to: ${validatedData.email}
   });
 
   // Create new case
-  app.post("/api/cases", isAuthenticated, upload.array("images", 5), async (req, res) => {
+  app.post("/api/cases", isAuthenticated, upload.array("images", 5), async (req: VerifiedRequest, res) => {
     try {
       console.log('POST /api/cases - Request body:', req.body);
       console.log('POST /api/cases - Files:', req.files);
@@ -1608,7 +1622,7 @@ Please respond to: ${validatedData.email}
       };
 
       // Create type-safe case data
-      const caseData = format === 'long' 
+      let caseData = format === 'long' 
         ? {
             ...baseCaseData,
             format: 'long' as const,
@@ -1625,8 +1639,37 @@ Please respond to: ${validatedData.email}
             ...baseCaseData,
             format: 'short' as const,
           };
+
+      // Add verification data if available
+      if (req.verificationResult) {
+        caseData = addVerificationFlags(caseData, req.verificationResult);
+        console.log(`🔍 Added verification data: status=${(caseData as any).verificationStatus}, confidence=${(caseData as any).verificationConfidence}%`);
+      }
       
       console.log('POST /api/cases - Parsed case data:', caseData);
+      
+      // Run simple verification
+      if (useSimpleVerification) {
+        try {
+          const imagePaths = files ? files.map(file => file.path) : [];
+          const verificationResult = await verifyCaseSimple(
+            caseData,
+            imagePaths,
+            { enabled: true, logOnly: true, notifyAdmins: true }
+          );
+          
+          console.log(`🔍 Verification result: ${verificationResult.summary}`);
+          
+          // For now, we just log the result. In the future, we could:
+          // - Block cases with critical violations
+          // - Add verification flags to the database
+          // - Send notifications to admins
+          
+        } catch (verificationError) {
+          console.error('⚠️ Verification failed:', verificationError);
+          // Continue with case creation even if verification fails
+        }
+      }
       
       const newCase = await storage.createCase(caseData);
       
@@ -2042,7 +2085,79 @@ Please respond to: ${validatedData.email}
     }
   });
 
-  // === NOTIFICATION ROUTES ===
+  // === ADMIN VERIFICATION ROUTES ===
+  // TODO: Implement these routes once storage methods are added
+
+  /*
+  // Get verification statistics
+  app.get('/api/admin/verification/stats', async (req, res) => {
+    try {
+      const stats = await storage.getVerificationStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching verification stats:", error);
+      res.status(500).json({ message: "Failed to fetch verification stats" });
+    }
+  });
+
+  // Get cases flagged for review
+  app.get('/api/admin/verification/flagged-cases', async (req, res) => {
+    try {
+      const flaggedCases = await storage.getFlaggedCases();
+      res.json(flaggedCases);
+    } catch (error) {
+      console.error("Error fetching flagged cases:", error);
+      res.status(500).json({ message: "Failed to fetch flagged cases" });
+    }
+  });
+
+  // Get all cases with verification data
+  app.get('/api/admin/verification/all-cases', async (req, res) => {
+    try {
+      const allCases = await storage.getAllCasesWithVerification();
+      res.json(allCases);
+    } catch (error) {
+      console.error("Error fetching all verification cases:", error);
+      res.status(500).json({ message: "Failed to fetch verification cases" });
+    }
+  });
+
+  // Manual approval of flagged case
+  app.post('/api/admin/verification/approve/:id', async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const { notes } = req.body;
+      const adminId = req.user?.id || "mock-admin-1";
+      
+      const updatedCase = await storage.approveVerificationCase(caseId, adminId, notes);
+      
+      console.log(`✅ Case ${caseId} manually approved by admin ${adminId}`);
+      res.json(updatedCase);
+    } catch (error) {
+      console.error("Error approving verification case:", error);
+      res.status(500).json({ message: "Failed to approve case" });
+    }
+  });
+
+  // Manual rejection of flagged case
+  app.post('/api/admin/verification/reject/:id', async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const { notes } = req.body;
+      const adminId = req.user?.id || "mock-admin-1";
+      
+      await storage.rejectVerificationCase(caseId, adminId, notes);
+      
+      console.log(`❌ Case ${caseId} manually rejected by admin ${adminId}`);
+      res.json({ success: true, message: "Case rejected successfully" });
+    } catch (error) {
+      console.error("Error rejecting verification case:", error);
+      res.status(500).json({ message: "Failed to reject case" });
+    }
+  });
+  */
+
+  // === END ADMIN VERIFICATION ROUTES ===
 
   // Get user notifications
   app.get("/api/notifications", isAuthenticated, async (req: any, res) => {

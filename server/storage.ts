@@ -98,6 +98,19 @@ export interface IStorage {
     pendingDocuments: number;
   }>;
   
+  // Verification operations
+  getVerificationStats(): Promise<{
+    pending: number;
+    verified: number;
+    flagged: number;
+    failed: number;
+    requiresReview: number;
+  }>;
+  getFlaggedCases(): Promise<CaseWithAuthor[]>;
+  getAllCasesWithVerification(): Promise<CaseWithAuthor[]>;
+  approveVerificationCase(caseId: number, adminId: string, notes?: string): Promise<Case>;
+  rejectVerificationCase(caseId: number, adminId: string, notes?: string): Promise<void>;
+  
   // Notification operations
   createNotification(notificationData: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string, limit?: number): Promise<Notification[]>;
@@ -225,6 +238,13 @@ export class DatabaseStorage implements IStorage {
         examination: cases.examination,
         management: cases.management,
         isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
         author: users,
         isLikedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseLikes} WHERE ${caseLikes.caseId} = ${cases.id} AND ${caseLikes.userId} = ${userId})` : sql<boolean>`false`,
         isFavoritedByUser: userId ? sql<boolean>`EXISTS(SELECT 1 FROM ${caseFavorites} WHERE ${caseFavorites.caseId} = ${cases.id} AND ${caseFavorites.userId} = ${userId})` : sql<boolean>`false`,
@@ -303,6 +323,13 @@ export class DatabaseStorage implements IStorage {
         examination: cases.examination,
         management: cases.management,
         isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
         author: users,
       })
       .from(cases)
@@ -408,6 +435,13 @@ export class DatabaseStorage implements IStorage {
         examination: cases.examination,
         management: cases.management,
         isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
         author: users,
       })
       .from(cases)
@@ -869,6 +903,13 @@ export class DatabaseStorage implements IStorage {
         examination: cases.examination,
         management: cases.management,
         isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
         author: users,
       })
       .from(cases)
@@ -1145,6 +1186,155 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
     
     return !!(user?.userSpecialtyPreferences && user.userSpecialtyPreferences.length > 0);
+  }
+
+  // Verification operations
+  async getVerificationStats(): Promise<{
+    pending: number;
+    verified: number;
+    flagged: number;
+    failed: number;
+    requiresReview: number;
+  }> {
+    const stats = await db
+      .select({
+        verificationStatus: cases.verificationStatus,
+        requiresManualReview: cases.requiresManualReview,
+      })
+      .from(cases);
+
+    const result = {
+      pending: 0,
+      verified: 0,
+      flagged: 0,
+      failed: 0,
+      requiresReview: 0
+    };
+
+    stats.forEach(stat => {
+      const status = stat.verificationStatus || 'pending';
+      result[status as keyof typeof result] = (result[status as keyof typeof result] || 0) + 1;
+      
+      if (stat.requiresManualReview) {
+        result.requiresReview++;
+      }
+    });
+
+    return result;
+  }
+
+  async getFlaggedCases(): Promise<CaseWithAuthor[]> {
+    return await db
+      .select({
+        id: cases.id,
+        title: cases.title,
+        history: cases.history,
+        format: sql<'short' | 'long'>`COALESCE(${cases.format}, 'short')`.as('format'),
+        specialty: cases.specialty,
+        authorId: cases.authorId,
+        isApproved: cases.isApproved,
+        createdAt: cases.createdAt,
+        updatedAt: cases.updatedAt,
+        approvedAt: cases.approvedAt,
+        approvedBy: cases.approvedBy,
+        imageUrls: cases.imageUrls,
+        likesCount: cases.likesCount,
+        commentsCount: cases.commentsCount,
+        viewsCount: cases.viewsCount,
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
+        isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
+        author: users,
+      })
+      .from(cases)
+      .innerJoin(users, eq(cases.authorId, users.id))
+      .where(eq(cases.verificationStatus, 'flagged'))
+      .orderBy(desc(cases.createdAt));
+  }
+
+  async getAllCasesWithVerification(): Promise<CaseWithAuthor[]> {
+    return await db
+      .select({
+        id: cases.id,
+        title: cases.title,
+        history: cases.history,
+        format: sql<'short' | 'long'>`COALESCE(${cases.format}, 'short')`.as('format'),
+        specialty: cases.specialty,
+        authorId: cases.authorId,
+        isApproved: cases.isApproved,
+        createdAt: cases.createdAt,
+        updatedAt: cases.updatedAt,
+        approvedAt: cases.approvedAt,
+        approvedBy: cases.approvedBy,
+        imageUrls: cases.imageUrls,
+        likesCount: cases.likesCount,
+        commentsCount: cases.commentsCount,
+        viewsCount: cases.viewsCount,
+        chiefComplaint: cases.chiefComplaint,
+        historyOfPresentIllness: cases.historyOfPresentIllness,
+        pastMedicalHistory: cases.pastMedicalHistory,
+        familyHistory: cases.familyHistory,
+        drugHistory: cases.drugHistory,
+        systemicReview: cases.systemicReview,
+        examination: cases.examination,
+        management: cases.management,
+        isHot: cases.isHot,
+        verificationStatus: cases.verificationStatus,
+        verificationConfidence: cases.verificationConfidence,
+        requiresManualReview: cases.requiresManualReview,
+        verificationViolations: cases.verificationViolations,
+        verificationTimestamp: cases.verificationTimestamp,
+        verificationSummary: cases.verificationSummary,
+        verificationNotes: cases.verificationNotes,
+        author: users,
+      })
+      .from(cases)
+      .innerJoin(users, eq(cases.authorId, users.id))
+      .orderBy(desc(cases.createdAt));
+  }
+
+  async approveVerificationCase(caseId: number, adminId: string, notes?: string): Promise<Case> {
+    const [updatedCase] = await db
+      .update(cases)
+      .set({
+        verificationStatus: 'verified',
+        requiresManualReview: false,
+        verificationNotes: notes || null,
+        isApproved: true,
+        approvedAt: new Date(),
+        approvedBy: adminId,
+        updatedAt: new Date()
+      })
+      .where(eq(cases.id, caseId))
+      .returning();
+    
+    return updatedCase;
+  }
+
+  async rejectVerificationCase(caseId: number, adminId: string, notes?: string): Promise<void> {
+    await db
+      .update(cases)
+      .set({
+        verificationStatus: 'failed',
+        requiresManualReview: false,
+        verificationNotes: notes || null,
+        isApproved: false,
+        updatedAt: new Date()
+      })
+      .where(eq(cases.id, caseId));
   }
 }
 

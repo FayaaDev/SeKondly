@@ -434,6 +434,91 @@
             display: inline-block;
         }
         
+        /* Video Section Styles */
+        .video-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+            background: #000;
+            aspect-ratio: 16/9;
+        }
+        
+        .demo-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, rgba(78, 205, 196, 0.1), rgba(68, 160, 141, 0.1));
+            backdrop-filter: blur(2px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-radius: 25px;
+        }
+        
+        .video-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .play-button {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 10px 20px rgba(78, 205, 196, 0.4));
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 15px 30px rgba(78, 205, 196, 0.6));
+        }
+        
+        .video-download {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        /* Remove old video-features styles and update responsive design */
+        @media (max-width: 768px) {
+            .video-container {
+                max-width: 100%;
+                margin: 0 1rem;
+            }
+            
+            .play-button svg {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .video-download {
+                margin-top: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .play-button svg {
+                width: 50px;
+                height: 50px;
+            }
+        }
+        
         /* Gallery Section Styles */
         .gallery-container {
             max-width: 1400px;
@@ -926,6 +1011,7 @@
             <div class="navbar-right">
                 <ul class="navbar-nav">
                     <li><a href="#home" class="nav-link active">Home</a></li>
+                    <li><a href="#video" class="nav-link">Demo</a></li>
                     <li><a href="#screenshots" class="nav-link">App</a></li>
                     <li><a href="#faq" class="nav-link">FAQ</a></li>
                     <li><a href="#support" class="nav-link">Support</a></li>
@@ -984,6 +1070,38 @@
                         <div class="feature-icon">👨‍⚕️</div>
                         <h3>Expert Consultation</h3>
                         <p>Get second opinions from specialists across different medical fields</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Video Section -->
+        <section id="video" class="section">
+            <div class="container">
+                <h2 class="section-title">See SeKondly in Action</h2>
+                <p class="section-subtitle">Watch how medical professionals use SeKondly to collaborate on cases</p>
+                
+                <div class="video-container">
+                    <div class="video-wrapper">
+                        <video 
+                            id="demoVideo"
+                            class="demo-video"
+                            controls
+                            poster="http://sekondly.app/uploads/promovid-poster.jpg"
+                            preload="metadata"
+                        >
+                            <source src="http://sekondly.app/uploads/promovid.mov" type="video/mp4">
+                            <source src="http://sekondly.app/uploads/promovid.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="video-overlay" id="videoOverlay">
+                            <div class="play-button" onclick="playVideo()">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="12" fill="rgba(78, 205, 196, 0.9)"/>
+                                    <path d="M8 5v14l11-7z" fill="white"/>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1196,6 +1314,48 @@
     </footer>
     
     <script>
+        // Video player functionality
+        function playVideo() {
+            const video = document.getElementById('demoVideo');
+            const overlay = document.getElementById('videoOverlay');
+            
+            overlay.classList.add('hidden');
+            video.play();
+        }
+        
+        // Video event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('demoVideo');
+            const overlay = document.getElementById('videoOverlay');
+            
+            if (video && overlay) {
+                // Show overlay when video is paused or ended
+                video.addEventListener('pause', function() {
+                    if (!video.ended) {
+                        overlay.classList.remove('hidden');
+                    }
+                });
+                
+                video.addEventListener('ended', function() {
+                    overlay.classList.remove('hidden');
+                });
+                
+                // Hide overlay when video starts playing
+                video.addEventListener('playing', function() {
+                    overlay.classList.add('hidden');
+                });
+                
+                // Click on video to play/pause
+                video.addEventListener('click', function() {
+                    if (video.paused) {
+                        playVideo();
+                    } else {
+                        video.pause();
+                    }
+                });
+            }
+        });
+        
         // Handle form submission
         document.getElementById('supportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
