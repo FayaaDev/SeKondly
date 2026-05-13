@@ -4,6 +4,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -18,6 +20,7 @@ export default defineConfig({
           ),
         ]
       : []),
+    cloudflare()
   ],
   resolve: {
     alias: {

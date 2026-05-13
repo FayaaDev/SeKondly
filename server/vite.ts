@@ -130,18 +130,20 @@ export function serveStatic(app: Express) {
   // Serve React app for web app routes
   webAppRoutes.forEach(route => {
     app.get(`${route}*`, (_req, res) => {
-      if (fs.existsSync(distPath)) {
-        res.sendFile(path.resolve(distPath, "index.html"));
+      const appHtmlPath = path.resolve(distPath, "app.html");
+      if (fs.existsSync(appHtmlPath)) {
+        res.sendFile(appHtmlPath);
       } else {
         res.status(404).send('Web app not built. Run `npm run build` first.');
       }
     });
   });
 
-  // Route for web app (if needed for specific paths like /app)
-  app.get('/app*', (_req, res) => {
-    if (fs.existsSync(distPath)) {
-      res.sendFile(path.resolve(distPath, "index.html"));
+  // Route for web app at /app
+  app.get('/app', (_req, res) => {
+    const appHtmlPath = path.resolve(distPath, "app.html");
+    if (fs.existsSync(appHtmlPath)) {
+      res.sendFile(appHtmlPath);
     } else {
       res.status(404).send('Web app not built. Run `npm run build` first.');
     }

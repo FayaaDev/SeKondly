@@ -1,0 +1,26 @@
+name = "sekondly"
+main = "dist/index.js"
+compatibility_date = "2026-04-30"
+
+[assets]
+directory = "dist/public"
+
+[[routes]]
+pattern = "/app"
+custom_domain = false
+
+[[routes]]
+pattern = "/app/*"
+custom_domain = false
+
+[[routes]]
+pattern = "/admin"
+custom_domain = false
+
+[[routes]]
+pattern = "/admin/*"
+custom_domain = false
+
+[[routes]]
+pattern = "/api/*"
+custom_domain = false

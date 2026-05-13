@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import Landing from "@/pages/Landing";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import UserProfile from "@/pages/UserProfile";

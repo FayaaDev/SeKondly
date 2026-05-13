@@ -169,7 +169,7 @@ function generateCaseApprovalEmailHTML(data) {
       <div class="container">
         <div class="header">
           <h1>🎉 Case Approved!</h1>
-          <p>Your medical case has been successfully approved and published</p>
+          <p>Your medical case has been processed with automatic privacy protection and is now live on SeKondly!</p>
         </div>
         
         <div class="content">

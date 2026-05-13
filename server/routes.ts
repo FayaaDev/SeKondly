@@ -642,18 +642,51 @@ Website: https://sekondly.app
   }
 }
 
-async function sendCaseApprovalEmail(userEmail: string, firstName: string, lastName: string, caseTitle: string, caseId: number) {
+async function sendCaseApprovalEmail(
+  userEmail: string, 
+  firstName: string, 
+  lastName: string, 
+  caseTitle: string, 
+  caseId: number,
+  verificationData?: {
+    violations?: number;
+    hasViolations?: boolean;
+    autoRedacted?: boolean;
+    confidence?: number;
+  }
+) {
   try {
+    // Create different message based on whether there were violations
+    let mainMessage = '';
+    let privacySection = '';
+    
+    if (verificationData?.hasViolations) {
+      mainMessage = `Your medical case "${caseTitle}" has been processed with automatic privacy protection and is now live on SeKondly.`;
+      
+      privacySection = `
+🛡️ Privacy Protection Applied:
+- ${verificationData.violations} privacy violations detected and automatically redacted
+- Applying automatic de-identification to protect patient privacy
+- Content has been safely processed using AI-powered privacy protection
+- Original medical educational value preserved while ensuring HIPAA compliance
+
+Your case underwent our advanced privacy screening and automatic redaction process to ensure patient confidentiality while maintaining its educational value.`;
+    } else {
+      mainMessage = `Your medical case "${caseTitle}" has been successfully approved and is now live on SeKondly.`;
+      privacySection = '';
+    }
+
     const caseApprovalEmailContent = `
 Dear Dr. ${firstName} ${lastName},
 
-Congratulations! We are pleased to inform you that your case "${caseTitle}" has been approved and is now live on SeKondly.
+Congratulations! We are pleased to inform you that ${mainMessage}
 
 Case Details:
 - Case Title: ${caseTitle}
 - Case ID: ${caseId}
 - Approval Date: ${new Date().toLocaleDateString()}
-- Status: Published and Available to Medical Community
+- Status: Published and Available to Medical Community${verificationData?.hasViolations ? '\n- Privacy Protection: ✅ Automatic de-identification applied' : ''}
+${privacySection}
 
 Your case has been reviewed by our moderation team and meets our high standards for educational content. It is now accessible to healthcare professionals worldwide and will contribute to advancing medical knowledge and collaboration.
 
@@ -716,17 +749,27 @@ Website: https://sekondly.app
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎉 Case Approved!</h1>
-              <p>Your case is now live on SeKondly!</p>
+              <h1>🎉 Case ${verificationData?.hasViolations ? 'Processed' : 'Approved'}!</h1>
+              <p>${verificationData?.hasViolations ? 'Your case has been automatically de-identified and is now live on SeKondly!' : 'Your case is now live on SeKondly!'}</p>
             </div>
             <div class="content">
               <h2>Dear Dr. ${firstName} ${lastName},</h2>
               <div class="approval-announcement">
-                <h3>🎉 Congratulations! Your case has been approved! 🎉</h3>
-                <p>We're excited to see your contribution to our medical community!</p>
+                <h3>🎉 Congratulations! Your case has been ${verificationData?.hasViolations ? 'processed with privacy protection' : 'approved'}! 🎉</h3>
+                <p>${verificationData?.hasViolations ? 'We applied automatic de-identification to protect patient privacy!' : 'We\'re excited to see your contribution to our medical community!'}</p>
               </div>
               
-              <p>We are pleased to inform you that your case "${caseTitle}" has been approved and is now live on <span class="sekondly-branding">SeKondly</span>.</p>
+              <p>We are pleased to inform you that your case "${caseTitle}" has been ${verificationData?.hasViolations ? 'processed with automatic privacy protection' : 'approved'} and is now live on <span class="sekondly-branding">SeKondly</span>.</p>
+              
+              ${verificationData?.hasViolations ? `
+              <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <h3 style="margin-top: 0; color: #856404;">🛡️ Privacy Protection Applied</h3>
+                <p style="margin: 8px 0; color: #856404;"><strong>${verificationData.violations} privacy violations detected and automatically redacted</strong></p>
+                <p style="margin: 8px 0; color: #856404;">✅ Applying automatic de-identification to protect patient privacy</p>
+                <p style="margin: 8px 0; color: #856404;">🔒 Content has been safely processed using AI-powered privacy protection</p>
+                <p style="margin: 8px 0; color: #856404;">📚 Original medical educational value preserved while ensuring HIPAA compliance</p>
+              </div>
+              ` : ''}
               
               <div class="case-info">
                 <h3>📋 Case Details:</h3>
@@ -734,6 +777,7 @@ Website: https://sekondly.app
                 <p><strong>Case ID:</strong> ${caseId}</p>
                 <p><strong>Approval Date:</strong> ${new Date().toLocaleDateString()}</p>
                 <p><strong>Status:</strong> ✅ Published and Available to Medical Community</p>
+                ${verificationData?.hasViolations ? '<p><strong>Privacy Protection:</strong> ✅ Automatic de-identification applied</p>' : ''}
               </div>
               
               <p>Your case has been reviewed by our moderation team and meets our high standards for educational content. It is now accessible to healthcare professionals worldwide and will contribute to advancing medical knowledge and collaboration.</p>
@@ -2689,12 +2733,23 @@ Please respond to: ${validatedData.email}
           console.error(`Email to: ${caseAuthor.email}`);
           console.error(`Case: ${caseBeforeApproval.title}`);
           
+          // Extract verification data for email
+          const verificationData = {
+            violations: caseBeforeApproval.verificationViolations || 0,
+            hasViolations: (caseBeforeApproval.verificationViolations || 0) > 0,
+            autoRedacted: caseBeforeApproval.verificationStatus === 'flagged',
+            confidence: caseBeforeApproval.verificationConfidence || 0
+          };
+          
+          console.error(`Verification data for email:`, verificationData);
+          
           const emailSent = await sendCaseApprovalEmail(
             caseAuthor.email,
             caseAuthor.firstName,
             caseAuthor.lastName,
             caseBeforeApproval.title,
-            caseId
+            caseId,
+            verificationData
           );
           console.error(`=== APPROVAL EMAIL RESULT: ${emailSent ? 'SUCCESS' : 'FAILED'} ===`);
         } else {
@@ -2986,7 +3041,7 @@ Please respond to: ${validatedData.email}
 
   app.post("/api/test-case-approval-email", async (req, res) => {
     try {
-      const { email, firstName, lastName, caseTitle, caseId } = req.body;
+      const { email, firstName, lastName, caseTitle, caseId, violations, hasViolations } = req.body;
       
       if (!email || !firstName || !lastName || !caseTitle || !caseId) {
         return res.status(400).json({ 
@@ -2995,8 +3050,17 @@ Please respond to: ${validatedData.email}
         });
       }
       
+      // Optional verification data for testing
+      const verificationData = violations || hasViolations ? {
+        violations: parseInt(violations) || 0,
+        hasViolations: hasViolations === 'true' || hasViolations === true,
+        autoRedacted: true,
+        confidence: 85
+      } : undefined;
+      
       console.log(`Testing case approval email to: ${email} for case: ${caseTitle}`);
-      const result = await sendCaseApprovalEmail(email, firstName, lastName, caseTitle, parseInt(caseId));
+      console.log(`Verification data:`, verificationData);
+      const result = await sendCaseApprovalEmail(email, firstName, lastName, caseTitle, parseInt(caseId), verificationData);
       
       res.json({ 
         success: true, 

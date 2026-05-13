@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": ["/assets/*", "/uploads/*", "/favicon.png"],
+  "routes": [
+    {
+      "src": "^/app$",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/admin",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/admin-login",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/admin-panel",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/profile",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/user",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/edit-profile",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/notification-settings",
+      "dest": "/app.html"
+    },
+    {
+      "src": "^/api/.*",
+      "dest": "/api/$1"
+    }
+  ]
+}
