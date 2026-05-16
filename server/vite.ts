@@ -88,6 +88,9 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
   const staticLandingPath = path.resolve(__dirname, "static-landing.html");
+  const landingLogoPath = path.resolve(__dirname, "..", "SekondlyApp", "assets", "logo.png");
+  const landingPromoPath = path.resolve(__dirname, "..", "attached_assets", "Promo.mp4");
+  const landingPrivacyPolicyPath = path.resolve(__dirname, "..", "SekondlyApp", "PrivacyPolicy.pdf");
 
   // Serve static assets (like images, CSS, JS) from the dist directory if it exists
   if (fs.existsSync(distPath)) {
@@ -96,6 +99,30 @@ export function serveStatic(app: Express) {
 
   // Serve uploads directory for images
   app.use('/uploads', express.static(path.resolve(__dirname, "..", "uploads")));
+
+  app.get('/landing-assets/logo.png', (_req, res) => {
+    if (fs.existsSync(landingLogoPath)) {
+      res.sendFile(landingLogoPath);
+    } else {
+      res.status(404).send('Landing logo not found');
+    }
+  });
+
+  app.get('/landing-assets/Promo.mp4', (_req, res) => {
+    if (fs.existsSync(landingPromoPath)) {
+      res.sendFile(landingPromoPath);
+    } else {
+      res.status(404).send('Landing promo video not found');
+    }
+  });
+
+  app.get('/landing-assets/PrivacyPolicy.pdf', (_req, res) => {
+    if (fs.existsSync(landingPrivacyPolicyPath)) {
+      res.sendFile(landingPrivacyPolicyPath);
+    } else {
+      res.status(404).send('Privacy policy not found');
+    }
+  });
 
   // Serve favicon from client/public directory
   const faviconPath = path.resolve(__dirname, "..", "client", "public", "favicon.png");
